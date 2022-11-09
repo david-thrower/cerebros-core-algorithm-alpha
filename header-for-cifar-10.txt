@@ -1,0 +1,33 @@
+
+# Header for cifar10
+
+cifar = tf.keras.datasets.cifar10.load_data()
+(x_train, y_train), (x_test, y_test) = cifar
+
+y_train_ohe = tf.one_hot([i[0] for i in  y_train],10)
+indexes_for_rows = tf.range(0,y_train.shape[0])
+shuffled_indexes = tf.random.shuffle(indexes_for_rows)
+selected_indexes = shuffled_indexes[:TRAINING_SET_SIZE]
+selected_x_train = x_train[selected_indexes,:,:,:]
+selected_y_train_ohe = y_train_ohe.numpy()[selected_indexes,:]
+
+
+
+
+mod_with_fc_raw = tf.keras.applications.efficientnet.EfficientNetB7(
+    include_top=True, weights='imagenet', input_tensor=None,
+    input_shape = BASE_MODEL_INPUT_SHAPE, pooling='max', classes=1000
+)
+
+# Make the deepest conv2d layer trainable, leave everything else
+# as not trainable
+for layer in mod_with_fc_raw.layers:
+    layer.trainable = False
+# Last conv2d layer. This we want to train .
+mod_with_fc_raw.layers[-6].trainable = True
+
+# Create the final base model
+# (remove the final Dense and BatchNormalization layers ...)
+efficient_net_b_7_transferable_base_model =\
+    tf.keras.Model(inputs=mod_with_fc_raw.layers[0].input,
+                    outputs=mod_with_fc_raw.layers[-3].output)
