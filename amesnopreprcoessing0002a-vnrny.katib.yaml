@@ -1,0 +1,134 @@
+apiVersion: kubeflow.org/v1beta1
+kind: Experiment
+metadata:
+  name: amesnopreprcoessing0002a-vnrny
+  namespace: kubeflow-user
+spec:
+  algorithm:
+    algorithmName: bayesianoptimization
+    algorithmSettings:
+    - name: random_state
+      value: '10'
+    - name: acq_optimizer
+      value: auto
+    - name: acq_func
+      value: gp_hedge
+    - name: base_estimator
+      value: GP
+  maxFailedTrialCount: 1000
+  maxTrialCount: 1000
+  objective:
+    additionalMetricNames: []
+    goal: 1.0
+    objectiveMetricName: val-root-mean-squared-error
+    type: minimize
+  parallelTrialCount: 3
+  parameters:
+  - feasibleSpace:
+      list:
+      - elu
+      - gelu
+      - relu
+    name: activation
+    parameterType: categorical
+  - feasibleSpace:
+      max: '35'
+      min: '0.2'
+      step: '0.2'
+    name: predecessor_level_connection_affinity_factor_first
+    parameterType: double
+  - feasibleSpace:
+      max: '35'
+      min: '0.2'
+      step: '0.2'
+    name: predecessor_level_connection_affinity_factor_main
+    parameterType: double
+  - feasibleSpace:
+      max: '40'
+      min: '1'
+      step: '1'
+    name: max_consecutive_lateral_connections
+    parameterType: int
+  - feasibleSpace:
+      max: '20'
+      min: '.01'
+      step: '0.2'
+    name: p_lateral_connection
+    parameterType: double
+  - feasibleSpace:
+      max: '20'
+      min: '1'
+      step: '1'
+    name: num_lateral_connection_tries_per_unit
+    parameterType: int
+  - feasibleSpace:
+      max: '0.3'
+      min: '0.0001'
+      step: '0.001'
+    name: learning_rate
+    parameterType: double
+  - feasibleSpace:
+      max: '100'
+      min: '1'
+      step: '2'
+    name: epochs
+    parameterType: int
+  - feasibleSpace:
+      max: '1000'
+      min: '50'
+      step: '10'
+    name: batch_size
+    parameterType: int
+  trialTemplate:
+    primaryContainerName: main
+    retain: true
+    trialParameters:
+    - name: kaleParamTrialName
+      reference: ${trialSpec.Name}
+    - name: activation
+      reference: activation
+    - name: predecessor_level_connection_affinity_factor_first
+      reference: predecessor_level_connection_affinity_factor_first
+    - name: predecessor_level_connection_affinity_factor_main
+      reference: predecessor_level_connection_affinity_factor_main
+    - name: max_consecutive_lateral_connections
+      reference: max_consecutive_lateral_connections
+    - name: p_lateral_connection
+      reference: p_lateral_connection
+    - name: num_lateral_connection_tries_per_unit
+      reference: num_lateral_connection_tries_per_unit
+    - name: learning_rate
+      reference: learning_rate
+    - name: epochs
+      reference: epochs
+    - name: batch_size
+      reference: batch_size
+    trialSpec:
+      apiVersion: batch/v1
+      kind: Job
+      spec:
+        backoffLimit: 0
+        template:
+          metadata:
+            annotations:
+              sidecar.istio.io/inject: 'false'
+            labels:
+              access-ml-pipeline: 'true'
+          spec:
+            containers:
+            - command:
+              - python3 -u -c "from kale.common.katibutils import create_and_wait_kfp_run;               create_and_wait_kfp_run(pipeline_id='f5b01018-672a-40e7-bb10-dd672818c55d',
+                version_id='6881e136-c6b5-479c-a237-c05057e9829c', run_name='${trialParameters.kaleParamTrialName}',
+                experiment_name='amesnopreprcoessing0002a-vnrny', api_version='v1beta1',
+                pipeline_parameters={'activation':'${trialParameters.activation}',
+                'predecessor_level_connection_affinity_factor_first':'${trialParameters.predecessor_level_connection_affinity_factor_first}',
+                'predecessor_level_connection_affinity_factor_main':'${trialParameters.predecessor_level_connection_affinity_factor_main}',
+                'max_consecutive_lateral_connections':'${trialParameters.max_consecutive_lateral_connections}',
+                'p_lateral_connection':'${trialParameters.p_lateral_connection}',
+                'num_lateral_connection_tries_per_unit':'${trialParameters.num_lateral_connection_tries_per_unit}',
+                'learning_rate':'${trialParameters.learning_rate}', 'epochs':'${trialParameters.epochs}',
+                'batch_size':'${trialParameters.batch_size}'})"
+              image: gcr.io/arrikto/kale-py38:release-1.5-l0-release-1.5.3-33-g6bcd56dc8
+              name: main
+            restartPolicy: Never
+            serviceAccountName: pipeline-runner
