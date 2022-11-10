@@ -8,10 +8,10 @@ Objects of class Level.
     will be added to add support for other types of layers, such as
     Conv2D, Conv1D, Conv3D, GRUs, ... and any avante garde layer objects
 """
-from units.units import InputUnit, DenseUnit, FinalDenseUnit
-from nnfuturecomponent.neural_network_future_component\
+from cerebros.units.units import InputUnit, DenseUnit, FinalDenseUnit
+from cerebros.nnfuturecomponent.neural_network_future_component\
     import NeuralNetworkFutureComponent
-from denseautomlstructuralcomponent.dense_automl_structural_component \
+from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component \
     import DenseAutoMlStructuralComponent, DenseLateralConnectivity, \
     zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 import jax.numpy as jnp
@@ -552,7 +552,7 @@ class DenseLevel(Level,
                 unit_0.util_set_predecessor_connectivity_metadata()
 
     def materialize(self):
-        self.parse_units()  ##
+        self.parse_units()
         self.set_connectivity_future_prototype()
         self.parse_meta_predecessor_connectivity()
         self.set_successor_levels()
@@ -561,7 +561,7 @@ class DenseLevel(Level,
         self.util_set_predecessor_connectivity_metadata()
 
         for unit_0 in self.parallel_units:
-            unit_0.materialize() #
+            unit_0.materialize()
 
         # def build_level_future(self):
         #    self.__predecessor_connections_future = []

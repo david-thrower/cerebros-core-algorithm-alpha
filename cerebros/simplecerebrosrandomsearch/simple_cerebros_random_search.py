@@ -2,12 +2,14 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from denseautomlstructuralcomponent.dense_automl_structural_component \
+from cerebros.denseautomlstructuralcomponent.\
+    dense_automl_structural_component \
     import DenseAutoMlStructuralComponent, DenseLateralConnectivity, \
     zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
-from units.units import Unit, InputUnit, FinalDenseUnit
-from neuralnetworkfuture.neural_network_future import NeuralNetworkFuture
-from cmdutil.cmdutil import run_command
+from cerebros.units.units import Unit, InputUnit, FinalDenseUnit
+from cerebros.neuralnetworkfuture.neural_network_future \
+    import NeuralNetworkFuture
+# from cmdutil.cmdutil import run_command
 from multiprocessing import Process, Lock
 import os
 
