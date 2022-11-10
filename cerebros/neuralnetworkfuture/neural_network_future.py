@@ -1,12 +1,12 @@
 """A furutes object that coordinates the neural network's high-level
 architecture"""
-from nnfuturecomponent.neural_network_future_component \
+from cerebros.nnfuturecomponent.neural_network_future_component \
     import NeuralNetworkFutureComponent
-from levels.levels import InputLevel, DenseLevel, FinalDenseLevel
+from cerebros.levels.levels import InputLevel, DenseLevel, FinalDenseLevel
 import numpy as np
 
 
-from denseautomlstructuralcomponent.dense_automl_structural_component \
+from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component \
     import DenseAutoMlStructuralComponent, DenseLateralConnectivity, \
     zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 

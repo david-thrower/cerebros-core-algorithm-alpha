@@ -1,12 +1,12 @@
 import numpy as np
-from multiprocessing import Pool  # , Process
-from simplecerebrosrandomsearch.simple_cerebros_random_search\
+# from multiprocessing import Pool  # , Process
+from cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search\
     import SimpleCerebrosRandomSearch
 import pendulum
 import pandas as pd
 import tensorflow as tf
-from units.units import DenseUnit
-from denseautomlstructuralcomponent.dense_automl_structural_component\
+from cerebros.units.units import DenseUnit
+from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 from ast import literal_eval
 
