@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "1-rearange-the-api-such-that-the-tune-function-and-random-search-are-all-a-self-container-python-package" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
