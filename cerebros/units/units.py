@@ -1,10 +1,11 @@
 import numpy as np
 import jax.numpy as jnp
 import tensorflow as tf
-from nnfuturecomponent.neural_network_future_component import \
+from cerebros.nnfuturecomponent.neural_network_future_component import \
     NeuralNetworkFutureComponent
 
-from denseautomlstructuralcomponent.dense_automl_structural_component \
+from cerebros.denseautomlstructuralcomponent.\
+    dense_automl_structural_component \
     import zero_7_exp_decay, zero_95_exp_decay, \
     simple_sigmoid, \
     DenseAutoMlStructuralComponent, DenseLateralConnectivity
