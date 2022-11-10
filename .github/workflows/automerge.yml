@@ -10,7 +10,6 @@ on:
 permissions:
   contents: read
 
-jobs:1-rearange-the-api-such-that-the-tune-function-and-random-search-are-all-a-self-container-python-package
   build:
     runs-on: ubuntu-latest
     steps:
