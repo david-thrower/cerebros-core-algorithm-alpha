@@ -1,0 +1,288 @@
+metadata:
+  name: winedatamulticlassnopreproc2a-z0klj
+  namespace: kubeflow-user
+  selfLink: >-
+    /apis/kubeflow.org/v1beta1/namespaces/kubeflow-user/experiments/winedatamulticlassnopreproc2a-z0klj
+  uid: 63b5bd33-8a9f-434b-863d-42ba45eb627e
+  resourceVersion: '191212'
+  generation: 1
+  creationTimestamp: '2022-11-11T01:35:50Z'
+  finalizers:
+    - update-prometheus-metrics
+  managedFields:
+    - manager: OpenAPI-Generator
+      operation: Update
+      apiVersion: kubeflow.org/v1beta1
+      time: '2022-11-11T01:35:50Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:spec:
+          .: {}
+          f:algorithm:
+            .: {}
+            f:algorithmName: {}
+            f:algorithmSettings: {}
+          f:maxFailedTrialCount: {}
+          f:maxTrialCount: {}
+          f:objective:
+            .: {}
+            f:additionalMetricNames: {}
+            f:goal: {}
+            f:objectiveMetricName: {}
+            f:type: {}
+          f:parallelTrialCount: {}
+          f:parameters: {}
+          f:trialTemplate:
+            .: {}
+            f:primaryContainerName: {}
+            f:retain: {}
+            f:trialParameters: {}
+            f:trialSpec:
+              .: {}
+              f:apiVersion: {}
+              f:kind: {}
+              f:spec:
+                .: {}
+                f:backoffLimit: {}
+                f:template:
+                  .: {}
+                  f:metadata:
+                    .: {}
+                    f:annotations:
+                      .: {}
+                      f:sidecar.istio.io/inject: {}
+                    f:labels:
+                      .: {}
+                      f:access-ml-pipeline: {}
+                  f:spec:
+                    .: {}
+                    f:containers: {}
+                    f:restartPolicy: {}
+                    f:serviceAccountName: {}
+    - manager: katib-controller
+      operation: Update
+      apiVersion: kubeflow.org/v1beta1
+      time: '2022-11-11T01:48:48Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:finalizers:
+            .: {}
+            v:"update-prometheus-metrics": {}
+        f:status:
+          .: {}
+          f:conditions: {}
+          f:currentOptimalTrial:
+            .: {}
+            f:bestTrialName: {}
+            f:observation:
+              .: {}
+              f:metrics: {}
+            f:parameterAssignments: {}
+          f:runningTrialList: {}
+          f:startTime: {}
+          f:succeededTrialList: {}
+          f:trials: {}
+          f:trialsRunning: {}
+          f:trialsSucceeded: {}
+spec:
+  parameters:
+    - name: activation
+      parameterType: categorical
+      feasibleSpace:
+        list:
+          - gelu
+          - elu
+          - relu
+    - name: predecessor_level_connection_affinity_factor_first
+      parameterType: double
+      feasibleSpace:
+        max: '35'
+        min: '0.2'
+        step: '0.2'
+    - name: predecessor_level_connection_affinity_factor_main
+      parameterType: double
+      feasibleSpace:
+        max: '35'
+        min: '0.2'
+        step: '0.2'
+    - name: max_consecutive_lateral_connections
+      parameterType: int
+      feasibleSpace:
+        max: '45'
+        min: '1'
+        step: '1'
+    - name: p_lateral_connection
+      parameterType: double
+      feasibleSpace:
+        max: '50'
+        min: '.2'
+        step: '0.2'
+    - name: num_lateral_connection_tries_per_unit
+      parameterType: int
+      feasibleSpace:
+        max: '50'
+        min: '1'
+        step: '1'
+    - name: learning_rate
+      parameterType: double
+      feasibleSpace:
+        max: '0.5'
+        min: '.00001'
+        step: '.0001'
+    - name: epochs
+      parameterType: int
+      feasibleSpace:
+        max: '300'
+        min: '10'
+        step: '1'
+    - name: batch_size
+      parameterType: int
+      feasibleSpace:
+        max: '1000'
+        min: '50'
+        step: '1'
+  objective:
+    type: maximize
+    goal: 0.999
+    objectiveMetricName: val-top-1
+    metricStrategies:
+      - name: val-top-1
+        value: max
+  algorithm:
+    algorithmName: bayesianoptimization
+    algorithmSettings:
+      - name: random_state
+        value: '10'
+      - name: acq_optimizer
+        value: auto
+      - name: acq_func
+        value: gp_hedge
+      - name: base_estimator
+        value: GP
+  trialTemplate:
+    retain: true
+    trialSpec:
+      apiVersion: batch/v1
+      kind: Job
+      spec:
+        backoffLimit: 0
+        template:
+          metadata:
+            annotations:
+              sidecar.istio.io/inject: 'false'
+            labels:
+              access-ml-pipeline: 'true'
+          spec:
+            containers:
+              - command:
+                  - >-
+                    python3 -u -c "from kale.common.katibutils import
+                    create_and_wait_kfp_run;
+                    create_and_wait_kfp_run(pipeline_id='bb3587c2-84eb-4997-90b3-f86d511397de',
+                    version_id='608a4143-1111-40f8-903d-7b1fe5f94bb9',
+                    run_name='${trialParameters.kaleParamTrialName}',
+                    experiment_name='winedatamulticlassnopreproc2a-z0klj',
+                    api_version='v1beta1',
+                    pipeline_parameters={'activation':'${trialParameters.activation}',
+                    'predecessor_level_connection_affinity_factor_first':'${trialParameters.predecessor_level_connection_affinity_factor_first}',
+                    'predecessor_level_connection_affinity_factor_main':'${trialParameters.predecessor_level_connection_affinity_factor_main}',
+                    'max_consecutive_lateral_connections':'${trialParameters.max_consecutive_lateral_connections}',
+                    'p_lateral_connection':'${trialParameters.p_lateral_connection}',
+                    'num_lateral_connection_tries_per_unit':'${trialParameters.num_lateral_connection_tries_per_unit}',
+                    'learning_rate':'${trialParameters.learning_rate}',
+                    'epochs':'${trialParameters.epochs}',
+                    'batch_size':'${trialParameters.batch_size}'})"
+                image: >-
+                  gcr.io/arrikto/kale-py38:release-1.5-l0-release-1.5.3-33-g6bcd56dc8
+                name: main
+            restartPolicy: Never
+            serviceAccountName: pipeline-runner
+    trialParameters:
+      - name: kaleParamTrialName
+        reference: ${trialSpec.Name}
+      - name: activation
+        reference: activation
+      - name: predecessor_level_connection_affinity_factor_first
+        reference: predecessor_level_connection_affinity_factor_first
+      - name: predecessor_level_connection_affinity_factor_main
+        reference: predecessor_level_connection_affinity_factor_main
+      - name: max_consecutive_lateral_connections
+        reference: max_consecutive_lateral_connections
+      - name: p_lateral_connection
+        reference: p_lateral_connection
+      - name: num_lateral_connection_tries_per_unit
+        reference: num_lateral_connection_tries_per_unit
+      - name: learning_rate
+        reference: learning_rate
+      - name: epochs
+        reference: epochs
+      - name: batch_size
+        reference: batch_size
+    primaryContainerName: main
+    successCondition: status.conditions.#(type=="Complete")#|#(status=="True")#
+    failureCondition: status.conditions.#(type=="Failed")#|#(status=="True")#
+  parallelTrialCount: 7
+  maxTrialCount: 1000
+  maxFailedTrialCount: 1000
+  metricsCollectorSpec:
+    collector:
+      kind: StdOut
+  resumePolicy: LongRunning
+status:
+  startTime: '2022-11-11T01:35:50Z'
+  conditions:
+    - type: Created
+      status: 'True'
+      reason: ExperimentCreated
+      message: Experiment is created
+      lastUpdateTime: '2022-11-11T01:35:50Z'
+      lastTransitionTime: '2022-11-11T01:35:50Z'
+    - type: Running
+      status: 'True'
+      reason: ExperimentRunning
+      message: Experiment is running
+      lastUpdateTime: '2022-11-11T01:36:15Z'
+      lastTransitionTime: '2022-11-11T01:36:15Z'
+  currentOptimalTrial:
+    bestTrialName: winedatamulticlassnopreproc2a-z0klj-caccc569
+    parameterAssignments:
+      - name: activation
+        value: gelu
+      - name: predecessor_level_connection_affinity_factor_first
+        value: '2.572847387453192'
+      - name: predecessor_level_connection_affinity_factor_main
+        value: '1.9711940494872633'
+      - name: max_consecutive_lateral_connections
+        value: '38'
+      - name: p_lateral_connection
+        value: '5.009570889384792'
+      - name: num_lateral_connection_tries_per_unit
+        value: '2'
+      - name: learning_rate
+        value: '0.02150538218607261'
+      - name: epochs
+        value: '87'
+      - name: batch_size
+        value: '300'
+    observation:
+      metrics:
+        - name: val-top-1
+          min: '0.5807580351829529'
+          max: '0.5807580351829529'
+          latest: '0.5807580351829529'
+  runningTrialList:
+    - winedatamulticlassnopreproc2a-z0klj-97b72573
+    - winedatamulticlassnopreproc2a-z0klj-c8223919
+    - winedatamulticlassnopreproc2a-z0klj-f25c5d05
+    - winedatamulticlassnopreproc2a-z0klj-a2128f7f
+    - winedatamulticlassnopreproc2a-z0klj-b01d8563
+    - winedatamulticlassnopreproc2a-z0klj-1156b046
+    - winedatamulticlassnopreproc2a-z0klj-cf0d31f0
+  succeededTrialList:
+    - winedatamulticlassnopreproc2a-z0klj-caccc569
+    - winedatamulticlassnopreproc2a-z0klj-f96a26b1
+    - winedatamulticlassnopreproc2a-z0klj-93ad5716
+  trials: 10
+  trialsSucceeded: 3
+  trialsRunning: 7
