@@ -43,56 +43,25 @@ training_x = [tensor_x]
 
 INPUT_SHAPES = [training_x[i].shape[1] for i in np.arange(len(training_x))]
 
-
-#alcohol_labels = tf.constant(pd.get_dummies(pd.cut(white['alcohol'], np.arange(
-#    white['alcohol'].min(), white['alcohol'].max()))).values)
-# quality_labels = tf.constant(pd.get_dummies(white['quality']).values)
-
 train_labels = [label.values]
 
 OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
-# for i in np.arange(len(train_labels))]
-
-###
 
 
-def generate_trial(trial_number):
-    trial = {}
-    trial['meta_trial_number'] = trial_number
-    trial['activation'] = np.random.choice(['relu', 'elu', 'gelu'])
-    trial['predecessor_level_connection_affinity_factor_first'] =\
-        np.random.choice(np.linspace(0.2, 20, num=50))
-    trial['predecessor_level_connection_affinity_factor_main'] =\
-        np.random.choice(np.linspace(0.2, 20, 50))
-    trial['max_consecutive_lateral_connections'] =\
-        np.random.choice(np.arange(200))
-    trial['p_lateral_connection'] =\
-        np.random.choice(np.linspace(0.001, .999, 100))
-    trial['num_lateral_connection_tries_per_unit'] =\
-        np.random.choice(np.arange(1, 20))
-    trial['learning_rate'] = np.random.choice(
-        np.linspace(.000001, .999999, 50))
-    trial['epochs'] = np.random.choice(np.arange(2, 8))
-    trial['batch_size'] =\
-        np.random.choice(np.arange(10, 1000))
-    return trial
+# Params for a training function
+meta_trial_number = 0 # In distributed training set this to a random number
+activation = "elu"
+predecessor_level_connection_affinity_factor_first = 15.0313
+predecessor_level_connection_affinity_factor_main = 10.046
+max_consecutive_lateral_connections = 23
+p_lateral_connection = 0.19668
+num_lateral_connection_tries_per_unit = 20
+learning_rate = 0.0664
+epochs = 96
+batch_size = 93
 
-
-def run_param_permutation(trial):
-    meta_trial_number = trial['meta_trial_number']
-    activation = trial['activation']
-    predecessor_level_connection_affinity_factor_first = trial[
-        'predecessor_level_connection_affinity_factor_first']
-    predecessor_level_connection_affinity_factor_main = trial[
-        'predecessor_level_connection_affinity_factor_main']
-    max_consecutive_lateral_connections = trial['max_consecutive_lateral_connections']
-    p_lateral_connection = trial['p_lateral_connection']
-    num_lateral_connection_tries_per_unit = trial['num_lateral_connection_tries_per_unit']
-    learning_rate = trial['learning_rate']
-    epochs = trial['epochs']
-    batch_size = trial['batch_size']
-
-    cerebros = SimpleCerebrosRandomSearch(
+cerebros =\
+    SimpleCerebrosRandomSearch(
         unit_type=DenseUnit,
         input_shapes=INPUT_SHAPES,
         output_shapes=OUTPUT_SHAPES,
@@ -102,15 +71,15 @@ def run_param_permutation(trial):
         direction='minimize',
         metric_to_rank_by='val_root_mean_squared_error',
         minimum_levels=2,
-        maximum_levels=5,
+        maximum_levels=7,
         minimum_units_per_level=1,
         maximum_units_per_level=4,
         minimum_neurons_per_unit=1,
         maximum_neurons_per_unit=4,
         activation=activation,
         final_activation=None,
-        number_of_architecture_moities_to_try=3,
-        number_of_tries_per_architecture_moity=2,
+        number_of_architecture_moities_to_try=7,
+        number_of_tries_per_architecture_moity=1,
         number_of_generations=3,
         minimum_skip_connection_depth=1,
         maximum_skip_connection_depth=7,
@@ -136,38 +105,9 @@ def run_param_permutation(trial):
         model_graphs='model_graphs',
         batch_size=batch_size,
         meta_trial_number=meta_trial_number)
-    result = cerebros.run_random_search()
-    print("result extracted from cerebros")
-    print(result)
-    print(type(result))
-    return result
+result = cerebros.run_random_search()
+print("result extracted from cerebros")
 
-
-trial = generate_trial(0)
-result = run_param_permutation(trial)
 print(f"Final result was: {result}")
 print(f"of type {type(result)}")
 
-# trials=[generate_trial(i) for i in np.arange(
-#     NUMBER_OF_BATCHES_OF_TRIALS * NUMBER_OF_TRAILS_PER_BATCH)]
-# with Pool(2) as p:
-# p.map(run_param_permutation, trials)
-
-# trial_number = 0
-# for i in np.arange(NUMBER_OF_BATCHES_OF_TRIALS):
-#     batch_processes = []
-#     for j in np.arange(NUMBER_OF_TRAILS_PER_BATCH):
-#         trial_0 = generate_trial(trial_number)
-#         trial_number += 1
-#         process = Process(target=run_param_permutation(trial_0))
-#         batch_processes.append(process)
-#     for process in batch_processes:
-#         process.start()
-#     for process in batch_processes:
-#         process.join()
-#     results = [process.returnValue() for process in batch_processes]
-#     print(f"Raw results")
-#     print(results)
-#     results_as_numpy = np.array(results)
-#     best_result = results_as_numpy.max()
-#     print(f"Best result is: {best_result}")
