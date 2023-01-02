@@ -547,7 +547,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         print(f"Type of best result: {type(best)}")
         self.best_model_path =\
             str(oracles[oracles[self.metric_to_rank_by] == best]
-                ['model_name'])
+                ['model_name']).values[0]
         print(f"Best medel name: {self.best_model_path}")
         return best
 
