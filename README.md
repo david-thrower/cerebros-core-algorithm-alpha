@@ -1070,7 +1070,7 @@ SimpleCerebrosRandomSearch
 ```
 
 
-## Here how this all works:
+## How this all works:
 
 We start with some basic structural components:
 
