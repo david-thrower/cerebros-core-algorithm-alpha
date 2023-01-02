@@ -4,7 +4,7 @@ The cerebros package is a Neural Architecture Search package (NAS) and library f
 
 ## Cerebros Community Edition and Cerebros Enterprise
 
-The Cerebros community edition provides a minimum viable single parameter set search and also provides an example manifest for an exhaustive Neural Architecture Search to run on Kubeflow/Katib. You can easily reproduce this with the Jupyter notebook in the directory `/kubeflow`, using the Kale Jupyter notebook extension. For a robust managed neural architecture search experience hosted on Google Cloud Platform and supported by our SLA, we recommend Cerebros enterprise, our commercial version. Soon you will be able to sign up and immediately start using it at `https://www.cerebros.one`. In the meantime, we can set up your own Cerbros managed neural architecture search pipeline for you with a one business day turnaround. We offer consulting, demos, full service machine learning service and can provision you with your own full neural architecture search pipeline complete with automated Bayesian hyperparameter search. Contact David Thrower:`david@cerebros.one` or call us at (US area code 1) `(650) 789-4375`.
+The Cerebros community edition provides a open-source minimum viable single parameter set search and also provides an example manifest for an exhaustive Neural Architecture Search to run on Kubeflow/Katib. This is licensd for free use provided that the use is consistent with the ethical use provisions in the license described at the bottom of this page. You can easily reproduce this with the Jupyter notebook in the directory `/kubeflow`, using the Kale Jupyter notebook extension. For a robust managed neural architecture search experience hosted on Google Cloud Platform and supported by our SLA, we recommend Cerebros enterprise, our commercial version. Soon you will be able to sign up and immediately start using it at `https://www.cerebros.one`. In the meantime, we can set up your own Cerbros managed neural architecture search pipeline for you with a one business day turnaround. We offer consulting, demos, full service machine learning service and can provision you with your own full neural architecture search pipeline complete with automated Bayesian hyperparameter search. Contact David Thrower:`david@cerebros.one` or call us at (US area code 1) `(650) 789-4375`.
 
 ## In summary what is it and what is different:
 
@@ -1120,7 +1120,9 @@ Here are the steps to the process:
 11. Fit models.
 12. Iterate through the results and find best the model.  
 
-1. 7. License: Licensed under the general terms of the Apache license, but with the following exclusions. The following uses and anything like this is prohibited:
+## Open source license:
+
+License: Licensed under the general terms of the Apache license, but with the following exclusions. The following uses and anything like this is prohibited:
     1. Military use, except explicitly authorized by the author
     2. Law enforcement use intended to aide in making decisions that lead to a anyone being  incarcerated or in any way managing an incarceration operation, or criminal prosecution operation, jail, prison, or participating in decisions that flag citizens for investigation or exclusion from public locations, whether physical or virtual.
     3. Use in committing property or violent crimes
