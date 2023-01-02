@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "13-imporve-the-ames-example" ]
+    branches: [ "main", "19-de-clutter-the-codebase" ]
 
 permissions:
   contents: read
@@ -34,7 +34,7 @@ jobs:
 #      run: python3 cerebros.py
 #    - name: Test distributed by running.
 #      run: python3 test_simple_cerebros_gridsearch.py
-    - name: Test distributed random search wine by running.
-      run: python3 random_search.py
+#    - name: Test distributed random search wine by running.
+#      run: python3 random_search.py
     - name: Test distributed random search Ames by running
       run: python3 random-search-ames-no-preproc.py
