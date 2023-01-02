@@ -187,7 +187,7 @@ print(f"Final result was (val_root_mean_squared_error): {result}")
 
 ```
 
-## Example output from this task (Ames data set not pre-processed or scaled: Price predictions, val_rmse $856.25)
+## Example output from this task (Ames data set not pre-processed or scaled: House sell price predictions, val_rmse $856.25)
 
 ```
 Best model: (May need to re-initialize weights, and retrain with early stopping callback)
