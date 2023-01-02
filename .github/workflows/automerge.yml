@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "19-de-clutter-the-codebase" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
