@@ -174,6 +174,8 @@ Run Neural Architecture Search and get results
 ```python3
 result = cerebros.run_random_search()
 
+best_model_found = cerebros.get_best_model()
+print(best_model_found.summary())
 
 print("result extracted from cerebros")
 
@@ -334,11 +336,21 @@ SimpleCerebrosRandomSearch
                 batch_size: int: Keras param
                 meta_trial_number: int: Arbitraty trial number that adds uniqueness to files created suring distributed tuning of tunable hyperparams.
 
+    Methods:
+        run_random_search:
+            Runs a random search over the parametrs chosen and returns the best metric found.
+            
+            Params:
+                None
+            Returns:
+                int: Best metric
+        get_best_model:
+            Params:
+                None
+            Returns:
+                keras.Model: Best model found.
+
 ```
- 
-
-
-
 
 
 ## Here how this all works:
