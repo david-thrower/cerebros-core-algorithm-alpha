@@ -1146,11 +1146,12 @@ License: Licensed under the general terms of the Apache license, but with the fo
         5. Email screening applications that only allow selected categories of email from known customers, employees, constituents, etc to appear in a business or government representative's email inbox, blindly discarding or obfuscating all other inquiries.
         6. These or anything reasonably regarded as similar to these are prohibited uses of this codebase AND ANY DERIVATIVE WORK. Litigation will result upon discovery of any such violations.
 
-2. Acknowledgments:
-        1. My Jennifer and my stepkids who have chosen to stay around and have rode out quite a storm because of my career in science.
-        2. My son Aidyn, daughter Jenna, and my collaborators Max Morganbesser and Andres Espinosa.
-        3. Mingxing Tan, Quoc V. Le for EfficientNet.
-        4. My colleagues who I work with every day.
-        5. Tensorflow, Keras, Kubeflow, Kale, Optuna, Keras Tuner, and Ray open source communities and contributors.
-        6. Google Cloud Platform, Arikto, Canonical, and Paperspace and their support staff for the commercil compute and ML OPS platforms used.
-        7. Microk8s, minikube,and the core Kubernetes communities and associated projects.
+## Acknowledgments:
+
+1. My Jennifer and my stepkids who have chosen to stay around and have rode out quite a storm because of my career in science.
+2. My son Aidyn, daughter Jenna, and my collaborators Max Morganbesser and Andres Espinosa.
+3. Mingxing Tan, Quoc V. Le for EfficientNet.
+4. My colleagues who I work with every day.
+5. Tensorflow, Keras, Kubeflow, Kale, Optuna, Keras Tuner, and Ray open source communities and contributors.
+6. Google Cloud Platform, Arikto, Canonical, and Paperspace and their support staff for the commercil compute and ML OPS platforms used.
+7. Microk8s, minikube,and the core Kubernetes communities and associated projects.
