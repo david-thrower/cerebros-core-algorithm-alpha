@@ -360,6 +360,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.epochs = epochs
         self.batch_size = batch_size
         self.meta_trial_number = meta_trial_number
+        self.best_model_path = ""
         # Can be varied throughout the serch session;
         # must be controlled internally
         DenseAutoMlStructuralComponent.__init__(
@@ -482,10 +483,12 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         with open(neural_network_spec_file, 'w') as f:
             f.write(str(spec))
         next_model_name =\
-            f"{self.project_name}/models/tr_{str(self.trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}"
+            f"{self.project_name}/models/tr_{str(self.trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}"\
+            .lower()
         neural_network.save(next_model_name)
         oracle_0['trial_number'] = self.trial_number
         oracle_0['subtrial_number'] = subtrial_number
+        oracle_0['model_name'] = next_model_name
         print(f"returning trial {self.trial_number} oracles")
         print(oracle_0)
         oracle_0.to_csv(f'{self.project_name}/oracle.csv',
@@ -529,6 +532,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         print(
             f"Type of metric_to_rank_by is: {str(type(self.metric_to_rank_by))}")
         if self.direction == "maximize" or self.direction == "max":
+
             best = float(oracles[oracles[self.metric_to_rank_by]
                          != self.metric_to_rank_by]
                          [self.metric_to_rank_by].astype(float).max())
@@ -541,4 +545,12 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                          [self.metric_to_rank_by].astype(float).min())
         print(f"Best result this trial was: {best}")
         print(f"Type of best result: {type(best)}")
+        self.best_model_path =\
+            oracles[oracles[self.metric_to_rank_by] == best]\
+                ['model_name'].values[0]
+        print(f"Best medel name: {self.best_model_path}")
         return best
+
+    def get_best_model(self):
+        best_model = tf.keras.models.load_model(self.best_model_path)
+        return best_model
