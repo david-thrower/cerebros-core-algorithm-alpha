@@ -37,16 +37,13 @@ What if we made a single-layer perceptron that looks like this:
 ## Use example:
 clone the repo
 
-```
-git checkout https://github.com/david-thrower/cerebros-core-algorithm-alpha.git
-cd cerebros-core-algorithm-alpha
-```
-install all required packages
+`git checkout https://github.com/david-thrower/cerebros-core-algorithm-alpha.git`
+`cd cerebros-core-algorithm-alpha`
 
+install all required packages
 ```
 pip3 install -r requirements.txt
 ```
-
 
 Import packages
 ```python3
@@ -64,7 +61,7 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
 from ast import literal_eval
 ```
 
-Amount of compute resources you want to spend
+Set how much compute resources you want to spend (Cerebros will build and train a number of models that is the product of these 2 numbers)
 ```python3
 
 NUMBER_OF_TRAILS_PER_BATCH = 2
@@ -107,7 +104,7 @@ OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
 ```
 
 Cerebros hyperparameters
-```
+```python3
 
 # Params for a training function (Approximately the oprma
 # discovered in a bayesian tuning study done on Katib)
@@ -174,7 +171,7 @@ cerebros =\
 ```
 
 Run Neural Architecture Search and get results
-```
+```python3
 result = cerebros.run_random_search()
 
 
