@@ -108,6 +108,10 @@ cerebros =\
         batch_size=batch_size,
         meta_trial_number=meta_trial_number)
 result = cerebros.run_random_search()
-print("result extracted from cerebros")
 
+print("Best model: (May need to re-initialize weights, and retrain with early stopping callback)")
+best_model_found = cerebros.get_best_model()
+print(best_model_found.summary())
+
+print("result extracted from cerebros")
 print(f"Final result was (val_root_mean_squared_error): {result}")
