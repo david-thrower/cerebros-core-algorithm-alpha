@@ -483,7 +483,8 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         with open(neural_network_spec_file, 'w') as f:
             f.write(str(spec))
         next_model_name =\
-            f"{self.project_name}/models/tr_{str(self.trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}"
+            f"{self.project_name}/models/tr_{str(self.trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}"\
+            .lower()
         neural_network.save(next_model_name)
         oracle_0['trial_number'] = self.trial_number
         oracle_0['subtrial_number'] = subtrial_number
@@ -551,5 +552,5 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         return best
 
     def get_best_model(self):
-        best_model = tf.keras.model.load(self.best_model_path)
+        best_model = tf.keras.models.load_model(self.best_model_path)
         return best_model
