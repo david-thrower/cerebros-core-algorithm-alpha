@@ -178,16 +178,16 @@ Run Neural Architecture Search and get results
 ```python3
 result = cerebros.run_random_search()
 
+print("Best model: (May need to re-initialize weights, and retrain with early stopping callback)")
 best_model_found = cerebros.get_best_model()
 print(best_model_found.summary())
 
 print("result extracted from cerebros")
-
 print(f"Final result was (val_root_mean_squared_error): {result}")
 
 ```
 
-## Example output from this task (Ames data set not pre-processed or scaled: Price predictions, val_rmse $850)
+## Example output from this task (Ames data set not pre-processed or scaled: Price predictions, val_rmse $856.25)
 
 ```
 Best model: (May need to re-initialize weights, and retrain with early stopping callback)
