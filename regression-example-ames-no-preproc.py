@@ -48,8 +48,10 @@ train_labels = [label.values]
 OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
 
 
-# Params for a training function
-meta_trial_number = 0 # In distributed training set this to a random number
+# Params for a training function (Approximately the oprma
+# discovered in a bayesian tuning study done on Katib)
+
+meta_trial_number = 0  # In distributed training set this to a random number
 activation = "elu"
 predecessor_level_connection_affinity_factor_first = 15.0313
 predecessor_level_connection_affinity_factor_main = 10.046
@@ -108,6 +110,4 @@ cerebros =\
 result = cerebros.run_random_search()
 print("result extracted from cerebros")
 
-print(f"Final result was: {result}")
-print(f"of type {type(result)}")
-
+print(f"Final result was (val_root_mean_squared_error): {result}")
