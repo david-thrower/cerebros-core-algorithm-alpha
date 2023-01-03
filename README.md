@@ -42,7 +42,7 @@ What if we made a single-layer perceptron that looks like this:
 clone the repo
 
 shell:
-`git checkout https://github.com/david-thrower/cerebros-core-algorithm-alpha.git`
+`git clone https://github.com/david-thrower/cerebros-core-algorithm-alpha.git`
 `cd cerebros-core-algorithm-alpha`
 
 install all required packages
