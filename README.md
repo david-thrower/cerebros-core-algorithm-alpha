@@ -1,10 +1,12 @@
 # Cerebros AutoML
 
-The Cerebros package is an ultra-precise Neural Architecture Search (NAS) / AutoML that is intended to much more closely mimic biological neurons than conventional neural network architecture strategies.
+The Cerebros package is an ultra-precise Neural Architecture Search (NAS) / AutoML that is intended to much more closely mimic biological neurons than conventional Multi Layer Perceptron based neural network architecture search strategies.
 
 ## Cerebros Community Edition and Cerebros Enterprise
 
-The Cerebros community edition provides a open-source minimum viable single parameter set search and also provides an example manifest for an exhaustive Neural Architecture Search to run on Kubeflow/Katib. This is licensd for free use provided that the use is consistent with the ethical use provisions in the license described at the bottom of this page. You can easily reproduce this with the Jupyter notebook in the directory `/kubeflow-pipeline`, using the Kale Jupyter notebook extension. For a robust managed neural architecture search experience hosted on Google Cloud Platform and supported by our SLA, we recommend Cerebros enterprise, our commercial version. Soon you will be able to sign up and immediately start using it at `https://www.cerebros.one`. In the meantime, we can set up your own Cerbros managed neural architecture search pipeline for you with a one business day turnaround. We offer consulting, demos, full service machine learning service and can provision you with your own full neural architecture search pipeline complete with automated Bayesian hyperparameter search. Contact David Thrower:`david@cerebros.one` or call us at (US area code 1) `(650) 789-4375`.
+The Cerebros community edition provides an open-source minimum viable single parameter set NAS and also also provides an example manifest for an exhaustive Neural Architecture Search to run on Kubeflow/Katib. This is licensd for free use provided that the use is consistent with the ethical use provisions in the license described at the bottom of this page. You can easily reproduce this with the Jupyter notebook in the directory `/kubeflow-pipeline`, using the Kale Jupyter notebook extension. For a robust managed neural architecture search experience hosted on Google Cloud Platform and supported by our SLA, we recommend Cerebros Enterprise, our commercial version. Soon you will be able to sign up and immediately start using it at `https://www.cerebros.one`. In the meantime, we can set up your own Cerbros managed neural architecture search pipeline for you with a one business day turnaround. We offer consulting, demos, full service machine learning service and can provision you with your own full neural architecture search pipeline complete with automated Bayesian hyperparameter search. Contact David Thrower:`david@cerebros.one` or call us at (US counrty code 1) `(650) 789-4375`. Additionally, we can complete machine learning tasks for your orgniation. Give us a call.
+
+
 
 ## In summary what is it and what is different:
 
@@ -18,15 +20,13 @@ Multi layer perceptrons look like this:
 
 If the goal of MLPs was to mimic how a biological neuron works, why do we still build neural networks that are structurally similar to the first prototypes from 1989? At the time, it was the closest we could get, but both hardware and software have changed since.
 
-The goal here is to recursively generate models consisting of Levels of Dense Layers in parallel, where the Dense layers on one level randomly connect to layers on not only its subsequent Level, but multiple levels below. This may allow more complex networks to gain deeper, more granular insight on smaller data sets before internal covariate shift and vanishing, exploding gradients drive overfitting. Bear in mind that the deepest layers of a Multi - layer perceptron will have the most granular and specific information about a given data set. We have gotten a step closer to this by using single skip connections, but why not simply randomize the connectivity to numerous levels in the network's structure altogether?
+The goal here is to recursively generate models consisting of "Levels" which consist of of Dense Layers in parallel, where the Dense layers on one level randomly connect to layers on not only its subsequent Level, but multiple levels below. In addition to these randomized vertical connections, the Dense layers also connect **latrally** at random to not only their neighboing layer, but to layers multiple layers to the right of them (remember, this architectural pattern consists of "Levels" of Dense layers. The Dense layers make lateral connections to the other Dense layers in the same level, and vertial connections to Dense layers in their level's successor levels). There may also be more than one connection between a given Dense layer and another, both laterally and vertically, which if you have the patience to follow the example neural architectre created by the Ames housing data example below, (I dare you to try following the connectivity in that), you will probably see many instances where this occurs. This may allow more complex networks to gain deeper, more granular insight on smaller data sets before problems like internal covariate shift, vanishing gradients, and exploding gradients drive overfitting, zeroed out weights, and "predictions of [0 | infiniti] for all samples". Bear in mind that the deepest layers of a Multi - Layer Perceptron will have the most granular and specific information about a given data set.  In recent years, we got a step closer twhat this does by using single skip connections, but why not simply randomize the connectivity to numerous levels in the network's structure altogether and add lateral connections that overlap like a biological brain? (We presume God knew what He was doing.)
 
-What if we made a multi-layer pereceptron that looks like this:
-
-Green triangles are Keras Input layers. Blue Squares are Keras Concatenate layers. The Pink stretched ovals are Keras Dense layers. The one stretched red oval is the networ's Output layer.
+What if we made a multi-layer pereceptron that looks like this: (Green triangles are Keras Input layers. Blue Squares are Keras Concatenate layers. The Pink stretched ovals are Keras Dense layers. The one stretched red oval is the networ's Output layer. It is presumed that thre isa batch normaliation layer between each Concatenate layer and Dense layer.)
 
 ![assets/Brain-lookalike1.png](assets/Brain-lookalike1.png)
 
-like this
+... or like this:
 
 ![assets/Brain-lookalike2.png](assets/Brain-lookalike2.png)
 
@@ -38,16 +38,28 @@ What if we made a single-layer perceptron that looks like this:
 
 ![assets/Neuron-lookalike1.png](assets/Neuron-lookalike1.png)
 
-## Use example:
+## Use example: Try it for yourself:
 clone the repo
 
-`git checkout https://github.com/david-thrower/cerebros-core-algorithm-alpha.git`
+shell:
+
+Clone the repo
+`git clone https://github.com/david-thrower/cerebros-core-algorithm-alpha.git`
+
+cd into it
 `cd cerebros-core-algorithm-alpha`
 
 install all required packages
 ```
 pip3 install -r requirements.txt
 ```
+
+Run the Ames housing data example:
+```
+python3 regression-example-ames-no-preproc.py
+```
+
+Let's look at the eample: `regression-example-ames-no-preproc.py`, which is in the main folder of this repo:
 
 Import packages
 ```python3
@@ -75,7 +87,7 @@ Set up project and load data
 ```python3
 
 
-## your data:
+## Set a project name:
 
 
 TIME = pendulum.now().__str__()[:16]\
@@ -85,35 +97,45 @@ TIME = pendulum.now().__str__()[:16]\
 PROJECT_NAME = f'{TIME}_cerebros_auto_ml_test'
 
 
-# white = pd.read_csv('wine_data.csv')
+# Read in the data
+raw_data = pd.read_csv('ames.csv') 
 
-raw_data = pd.read_csv('ames.csv')
+# Rather than doing elaborate preprocessing, let's just drop all the columns 
+# that aren't numbers and impute 0 for anything missing
+
 needed_cols = [
     col for col in raw_data.columns if raw_data[col].dtype != 'object']
 data_numeric = raw_data[needed_cols].fillna(0).astype(float)
 label = raw_data.pop('price')
 
+# Convert to numpy
 data_np = data_numeric.values
 
+# convert to a tensor
 tensor_x =\
     tf.constant(data_np)
 
+# Since Cerebros allows multiple inputs, the inputs are a list of tenors, even if there is just 1
 training_x = [tensor_x]
 
+# Shape if the trining data [number of rows,number of columns]
 INPUT_SHAPES = [training_x[i].shape[1] for i in np.arange(len(training_x))]
 
 train_labels = [label.values]
 
+# Labels are a list of numbers, shape is the length of it
 OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
 ```
 
 Cerebros hyperparameters
 ```python3
 
-# Params for a training function (Approximately the oprma
-# discovered in a bayesian tuning study done on Katib)
+# Params for Cebros training (Approximately the oprma
+# discovered in a bayesian tuning study done on Katib
+# for this data set)
 
-meta_trial_number = 0  # In distributed training set this to a random number
+# In distributed training set this to a random number, otherwise, set it to 0. (it keeps file names unique when this runs multiple times with the same project, like we would in distributed training.)
+meta_trial_number = 0
 activation = "elu"
 predecessor_level_connection_affinity_factor_first = 15.0313
 predecessor_level_connection_affinity_factor_main = 10.046
@@ -902,7 +924,7 @@ Final result was (val_root_mean_squared_error): 856.2445678710938
 
 ## Documentation
 
-Classes:
+Classes: (Meant for direct use)
 
 ```
 SimpleCerebrosRandomSearch
@@ -1074,13 +1096,19 @@ SimpleCerebrosRandomSearch
 
 We start with some basic structural components:
 
-The CerebrosDenseAutoML: The core auto-ML that recursively creates the neural networks, vicariously through the NeuralNetworkFuture object:
+The SimpleCerebrosRandomSearch: The core auto-ML that recursively creates the neural networks, vicariously through the NeuralNetworkFuture object:
 
 NeuralNetworkFuture:
-  - A data structure that is essentially a wrapper around the whole neural network system. You will note the word "Future" in the name of this data structure. This is for a reason. The solution to the problem of recursively parsing neural networks having topologies similar to the connectivity between biological neurons involves a chicken before the egg problem. Specifically this was that randomly assigning neural connectivity will create some errors and disjointed graphs, which once created can't be corrected without starting over. The probability of a given graph passing on the first try is very low, especially if you are building a complex network, nonetheless, the random connections are the key to making this work. The solution was to create a Futures objects that first planned how many levels of Dense layers would exist in the network, how many Dense layers each level would consist of and how many neurons each would consist of, allowed the random connections to be selected, but not materialized. Then it applies a protocol to detect and resolve any inconsistencies, disjointed connections, etc in the planned connectivities before they are materialized. Lastly, once the network's connectivity has been validated, it then materializes the  Dense layers of the neural network per the connectivities planned.
+  - A data structure that is essentially a wrapper around the whole neural network system. 
+  - You will note the word "Future" in the name of this data structure. This is for a reason. The solution to the problem of recursively parsing neural networks having topologies similar to the connectivity between biological neurons involves a chicken before the egg problem. Specifically this was that randomly assigning neural connectivity will create some errors and disjointed graphs, which once created is impractical correct without starting over. Additionally, I have found that for some reason, graphs having some dead ends, but not completey disjointed train very slowly. 
+  - The probability of a given graph passing on the first try is very low, especially if you are building a complex network, nonetheless, the randomized vertical and lateral, and potentially repeating connections are the key to making this all work. 
+  - The solution was to create a Futures objects that first planned how many levels of Dense layers would exist in the network, how many Dense layers each level would consist of, and how many neurons each Dense layer would consist of, allowing the random connections to be tentatively selected, but not materialized. Then it applies a protocol to detect and resolve any inconsistencies, disjointed connections, etc in the planned connectivities before any actual neural network componenta are actually materialized.
+  - A list of errors is compiled and another protocol appends the planned connectivity with additionl connections to fix the breaks in the connectivity. 
+  - Lastly, once the network's connectivity has been validated, it then materializes the Dense layers of the neural network per the connectivities planned, resultin in a neural network ready to be trained.
 
 Level:
-  - A data structure adding a new layer of abstraction above the concept of a Dense layer, which is a wrapper consisting of multiple instances of a future for what we historically called a Dense layer in a neural network. A NeuralNetworkFuture has many Layers, and a layer belongs to a NeuralNetworkFuture.
+  - A data structure adding a new layer of abstraction above the concept of a Dense layer, which is a wrapper consisting of multiple instances of a future for what we historically called a Dense layer in a neural network. A level will consist of multiple Dense Units, which each will materialize to a Dense Layer. Since we are makng both vertical and lateral connections, the term "Layer" loses relevance it has in the traditional sequential MLP context. A NeuralNetworkFuture has many Levels, and a Level belongs to a NeuralNetworkFuture. A Level has many Units, and a Unit belongs to a Level.
+  
 Unit:
   - A data structure which is a future for a single Dense layer. A Level has many Units, and a Unit belongs to a Level.
 
@@ -1089,62 +1117,72 @@ Unit:
 Here are the steps to the process:
 
 0. Some nomenclature:
-  1.1. k referrs to the Level number being immediately discussed.
-  1.2. l referres to the number of DenseUnits the kth Levle has.
-  1.3. k-1 refers to the immediate predecessor Level (Parent Level) number of the kth level.
-  1.4 n refers to the number of DenseUnits the kth Level's parent predecessor has being mentioned has.
-1. CerebrosDenseAutoML.get_networks_for_trials() instantiates a user defined number of NeuralNetworkFuture objects.
-  1.1. CerebrosDenseAutoML.parse_neural_network_structural_spec_random()
-    1.1.1. A random unsigned integer in a user defined range is chosen for the number of DenseLevels which the network will consist of (depth of the network).
-    1.1.2. For each Level, a random unsigned integer in a user defined range is chosen for the number of Units that the layer will consist of.
-    1.1.3. For each unit, a random unsigned integer in a user defined range is chosen for the number of neurons that Dense unit will consist of. Ultimately each DenseUnit will parse a Dense layer in the network.
-    1.1.4. This high-level specification for the neural network (but not edges) will be parsed into a dictionary called a neural_network_spec.
-  1.2. A NeuralNetworkFuture will be Instantiated, taking as an argument, the neural_network_spec as an argument.
-2. **(This is a top down operation starting with InputLevel and proceeding to the last hidden layer in the network)** In each NeuralNetworkFuture, the neural_network_spec will be iterated through, instantiating a DenseLevel object for each element in the dictionary , which will be passed as the argument level_prototype. Each will be linked to the last, and each will maintain access to the same chain of Levels as the list predecessor_levels (The whole thing is essentially like a linked list, having many necessary nested elements).
+  1. k refers to the Level number being immediately discussed.
+  2. l refers to the number of DenseUnits the kth Level has.
+  3. k-1 refers to the immediate predecessor Level (Parent Level) number of the kth level of the level being discussed.
+  4. n refers to the number of DenseUnits the kth Level's parent predecessor has.
+1. SimpleCerebrosRandomSearch.run_random_search().
+    1. This calls SimpleCerebrosRandomSearch.parse_neural_network_structural_spec_random() which chooses the following random unsigned integers:
+        1. How many Levels, the archtecture will consist of;
+        2. For each Level, how many Units the levl will consist of;
+        3. For each unit, how many neurons the Dense layer it will materialize will consist of.
+        4. This is parsed into a dictionary as a high-level specification for the nodes, but not edges called a neural_network_spec.
+        5. This will instantiate a NeuralNetworkFuture of the selected specification for number of Levels, Units per Level, and neurons per Unit, and the NeuralNetworkFuture takes the neural_network_spec as an argument.
+        6. This entire logic will repeat once for each number in range of: number_of_architecture_moities_to_try.
+        7. Step 5 will repea multiple times, for each same neural_network_spec, once for each number in range: number_of_tries_per_architecture_moity.
+        8. All replictions are done as separate Python multiprocessing proces (multiple workers in parallel on separate processor cores).
+2. **(This is a top down operation starting with InputLevel and proceeding to the last hidden layer in the network)** In each NeuralNetworkFuture, the neural_network_spec will be iterated through, instantiating a DenseLevel object for each element in the dictionary , which will be passed as the argument level_prototype. Each will be linked to the last, and each will maintain access to the same chain of Levels as the list predecessor_levels (The whole thing is essentially like a list, having many necessary nested elements).
 3. A dictionary of possible predecessor connections will also be parsed. This is a sybmolic representation of the levels and units above it that is faster to iterate through than the actual Levels and Units objects themselves.
-4. **(Add direction top down or bottom - up)** CerebrosAutoML calls each NeuralNetworkFuture object's .parse_units(), method, which recursively calls the .parse_units() belonging to each Levels object. Within each Levels object, this will iterate through its level_prototype list and will instantiate a DenseUnits object for each item and append DenseLevel.parallel_units with it.
-5. CerebrosAutoML calls each NeuralNetworkFuture object's .determine_upstream_random_connectivity() method. This will recursively call each Levels object's determine_upstream_random_connectivity(). Which will trigger each layer to recursively call each of its constituent DenseUnit objects' determine_upstream_random_connectivity() method. **(This is a bottom - up operation starting with the last hidden layer and and proceeding to the InputLevel)** Each DenseUnit will calculate how many connections to make to DenseUnits in each predecessor Level and will select that many units from its possible_predecessor_connections dictionary, from each of those levels, appending each to its __predecessor_connections_future list.
-6. Once the random predecessor connections have been selected, now, the system will then need to validate the DOWNSTREAM network connectivity of each Dense unit and repair any breaks that would cause a disjointed graph.  (verify that each DenseUnit has at least one connection to a SUCCESSOR Layer's DenseUnit). Here is why: If the random connections were chosen bottom - up, (which is the lesser of two evils) AND each DenseUnit will always select at least one PREDECESSOR connection (I ether validate this to throw an error if the number of connections to the immediate predecessor layer is less than 1 OR it just coerce it to 1 if 0 is calculated, with this said, then upstream connectivity is not possible to break, however, it is inherently possible that at least one predecessor unit was NOT selected by any of its successor's randomly selected connections. (especially if a low value is selected for the predecessor_level_connection_affinity_factor_main), something, I speculate may be advantageous to do, as some research has indicate that making sparse connections can outperform Dense connections, which is what we aim to do. We want not all connections to be made to the immediate successor Level. We want some to connect 2 Levels downstream, 3, ...  4, ... 5, Levels downstream ... The trouble is that the random connections that facilitate this can "leave out" a DenseUnit in a predecessor Level as not being picked at all by any DenseUnit in a SUCCESSOR level, leaving us with a dead end in the network, gence a disjointed graph. There are 3 rules this has to follow: **Rule 1:** Each DenseUnit must connect to SOMETHING upstream (PREDECESSORs) WITHIN max_skip_connection_depth layers of its immediate predecessor. (Random bottom - up assignment can't accidentally violate this rule if it always selects at least one selection, so nothing to worry about or validate here). **Rule 2:** Everything must connect to something something DOWNSTREAM (successors) within max_skip_connection_depth Levels of its level_number. **(Random bottom - up assignment will frequently leave violations of this rule behind. Where this happens, these should either be connected to a randomly selected DenseUnit max_skip_connection_depth layers below | **or a randomly selected DenseUnit residing a randomly chosen number of layers below in the range of [minimum_skip_connection_depth, maximum_skip_connection_depth] below when possible | and if necessary, to the last hidden DenseLevel or the output level)**. Now the third rule **Rule 3:** The connectivity must flow in only one direction vertically and one direction laterally (on a layer - by - layer basis). In other words, a kth Level's DenseUnit can't take its own output as one of its inputs. Nor can a kth Level's DenseUnit take its k+[any number]th successor's output as one of its inputs (because it is also a function of the kth Level's DenseUnit's own output). This would obviously be a contradiction, like filling the tank of an empty fire truck using the fire hose that draws water from its own tank.. or an empty fuel pump at a fuel station filling its own empty tank using the hose that goes in a car's gas tank, ... and gets that fuel from its own tank... Fortunately, both the logic setting the vertical connectivity and the logic setting the lateral connectivity both can't create this inconsistency, so there is nothing to worry about or validate here either. We only have to screen for and fix violations of rule 2, "every DenseUnit must connect to some (DOWNSTREAM / SUCCESSOR) DenseUnit within max_skip_connection_depth of itsself. Here is the logic for this validation and rectification:   
-  5.1. This check must be done by DenseLevel objects:
-  5.2 Scenario 1: **(If the kth DenseLayer is the last Layer)**:
-  5.3 For each layer having a  **layer_number >= k - maximum_skip_connection_depth** (look at possible_predecessor_connections):
-  5.4. For each DenseUnit in said layer, check each successor layer's Dense units' __predecessor_connections_future list for it being selected. if found: pass, else, the kth layer will add it to its own __predecessor_connections_future list.
-  5.5. Scenario 2: **(If the kth DenseLayer is not the last Layer)** Do the same as scenario 1, EXCEPT, only check the layer where **its layer number == (k - maximum_skip_connection_depth)**.    
-7. Lateral connectivity: For each DesnseLayer:
+4. SimpleCerebrosRandomSearch calls each NeuralNetworkFuture.materialize() method which calls NeuralNetworkFuture.parse_units(), method, which recursively calls the .parse_units() belonging to each Levels object. Within each Levels object, this will iterate through its level_prototype list and will instantiate a DenseUnits object for each item and append DenseLevel.parallel_units with it.
+5. NeuralNetworkFuture.materialize() calls each NeuralNetworkFuture object's NeuralNetworkFuture.set_connectivity_future_prototype() method. ... **(This is a bottom - up operation starting with the last hidden layer and and proceeding to the InputLevel)** This will recursively call each Levels object's determine_upstream_random_connectivity(). Which will trigger each layer to recursively call each of its constituent DenseUnit objects' set_connectivity_future_prototype() method. Each DenseUnit will calculate how many connections to make to DenseUnits in each predecessor Level and will select that many units from its possible_predecessor_connections dictionary, from each of those levels, appending each to its __predecessor_connections_future list.
+7. Once the random predecessor connections have been selected, now, the system will then need to validate the DOWNSTREAM network connectivity of each Dense unit and repair any breaks that would cause a disjointed graph.  (verify that each DenseUnit has at least one connection to a SUCCESSOR Layer's DenseUnit). Here is why: If the random connections were chosen bottom - up, (which is the lesser of two evils) AND each DenseUnit will always select at least one PREDECESSOR connection (I ether validate this to throw an error if the number of connections to the immediate predecessor layer is less than 1 OR it just coerce it to 1 if 0 is calculated, with this said, then upstream connectivity is not possible to break, however, it is inherently possible that at least one predecessor unit was NOT selected by any of its successor's randomly selected connections. (especially if a low value is selected for the predecessor_level_connection_affinity_factor_main), something, I speculate may be advantageous to do, as some research has indicate that making sparse connections can outperform Dense connections, which is what we aim to do. We want not all connections to be made to the immediate successor Level. We want some to connect 2 Levels downstream, 3, ...  4, ... 5, Levels downstream ... The trouble is that the random connections that facilitate this can "leave out" a DenseUnit in a predecessor Level as not being picked at all by any DenseUnit in a SUCCESSOR level, leaving us with a dead end in the network, hence a disjointed graph. There are 3 rules this has to follow: 
+    1. **Rule 1:** Each DenseUnit must connect to SOMETHING upstream (PREDECESSORs) WITHIN max_skip_connection_depth layers of its immediate predecessor. (Random bottom - up assignment can't accidentally violate this rule if it always selects at least one selection, so nothing to worry about or validate here). 
+    2. **Rule 2:** Everything must connect to something something DOWNSTREAM (successors) within max_skip_connection_depth Levels of its level_number. **(Random bottom - up assignment will frequently leave violations of this rule behind. Where this happens, these should either be connected to a randomly selected DenseUnit max_skip_connection_depth layers below | **or a randomly selected DenseUnit residing a randomly chosen number of layers below in the range of [minimum_skip_connection_depth, maximum_skip_connection_depth] below when possible | and if necessary, to the last hidden DenseLevel or the output level)**. 
+    3. Now the third rule **Rule 3:** The connectivity must flow in only one direction vertically and one direction laterally (on a layer - by - layer basis). In other words, a kth Level's DenseUnit can't take its own output as one of its inputs. Nor can a kth Level's DenseUnit take its k+[any number]th successor's output as one of its inputs (because it is also a function of the kth Level's DenseUnit's own output). This would obviously be a contradiction, like filling the tank of an empty fire truck using the fire hose that draws water from its own tank.. or an empty fuel pump at a fuel station filling its own empty tank using the hose that goes in a car's gas tank, ... and gets that fuel from its own tank... Fortunately, both the logic setting the vertical connectivity and the logic setting the lateral connectivity both can't create this inconsistency, so there is nothing to worry about or validate here either. We only have to screen for and fix violations of rule 2, "Every DenseUnit must connect to some (DOWNSTREAM / SUCCESSOR) DenseUnit within max_skip_connection_depth of itsself. Here is the logic for this validation and rectification:   
+8. The test to determine whether there are violations of rule 2 desctibed above is done by DenseLevel objects:
+  1. Scenario 1: **(If the kth DenseLayer is the last Layer)**:
+    1. For each layer having a  **layer_number >= k - maximum_skip_connection_depth** (look at possible_predecessor_connections):
+    2. For each DenseUnit in said layer, check each successor layers' Dense units' __predecessor_connections_future list for whether the DenseUnit making the check has been selected. If at least one connection is found: The check passes, else, the kth layer will add itself to the __predecessor_connections_future belonging to a successor meeting the constraint in 7.1.1.
+    3. Scenario 2: **(If the kth DenseLayer is not the last Layer)** Do the same as scenario 1, EXCEPT, only check the layer where **its layer number == (k - maximum_skip_connection_depth) for a pre-existing selection for connection.**.    
+9. Lateral connectivity: For each DesnseLayer:
   7.1 For each DenseUnit:
   7.2 Calculate the number of lateral connections to make.
-  7.3 Select said number of units from level_prototype where unit's unit_id is [less than | greater than (respectively based on right or left connectivity)]. There is nothing to validate here. If this is set uo to only allow right OR left connections, then this can't create a disjointed graph or contradiction. Now all connectivities are planned.
-8. Materialize Dense layers. **(This is a top down operation starting with InputLevel and proceeding to the last hidden layer in the network)**
-9. Create output layer.
-10. compile model.
-11. Fit models.
-12. Iterate through the results and find best the model.  
+  7.3 Randomly select a number of units from level_prototype where unit is > the the current unit's unit id and the connection doesn't violate the max_consecutive_lateral_connections setting. If there has been > gate_after_n_lateral_connections, then apply the gating function and restart the count for this rule. There is nothing to validate here. If this is set uo to only allow right OR left connections, then this can't create a disjointed graph or contradiction. Now all connectivities are planned.
+10. Materialize Dense layers. **(This is a top down operation starting with InputLevel and proceeding to the last hidden layer in the network)**
+11. Create output layer.
+12.Compile model.
+13. Fit the model, save the oracles, and save the model as a daved Keras model.
+14. Iterate through the results and find best the model ad metrics.  
 
 ## Open source license:
 
 License: Licensed under the general terms of the Apache license, but with the following exclusions. The following uses and anything like this is prohibited:
-    1. Military use, except explicitly authorized by the author
-    2. Law enforcement use intended to aide in making decisions that lead to a anyone being  incarcerated or in any way managing an incarceration operation, or criminal prosecution operation, jail, prison, or participating in decisions that flag citizens for investigation or exclusion from public locations, whether physical or virtual.
-    3. Use in committing property or violent crimes
-    4. Use in any application supporting the adult films industry
-    5. Use in any application supporting or in any way promoting the alcoholic beverages, firearms, and / or tobacco industries
-    6. Any use supporting the trade, marketing of, or administration of prescription drugs which are commonly abused
-    7. Use in a manner intended to identify or discriminate against anyone on any ethnic, ideological, religious, racial, demographic,familial status,family of origin, sex or gender, gender identity, sexual orientation, status of being a victim of any crime, having a history or present status of being a good-faith litigant, national origin(including citizenship or lawful resident status), disability, age, pregnancy, parental status, mental health, income, or socioeconomic / *credit status (which includes lawful credit, tenant, and HR screening* other than screening for criminal history).
-    8. Promoting controversial services such as abortion, via any and all types of marketing, market targeting, operational,administrative, or financial support for providers of such serices.
-    9. Any use supporting any operation which attempts to sway public opinion, political alignment, or purchasing habits via means such as:
-        1. Misleading the public to believe that the opinions promoted by said operation are those of a different group of people than those which the campaign portrays them as being. For example, a political group attempting to cast an image that a given political alignment is that of low income rural citizens, when such is not consistent with known statistics on such population (commonly referred to as astroturfing).
-        2. Leading the public to believe premises that contradict duly accepted scientific findings, implausible doctrines, or premises that are generally regarded as heretical or occult.
-        3. Promoting or managing any operation profiting from dishonest or unorthodox marketing practices or marketing unorthodox products generally regarded as a junk deal to consumers or employees: (e.g. multi-level marketing operations, 'businesses' that rely on 1099 contractors not ensured a regular wage for all hours worked, companies having any full time employee paid less than $40,000 per year at the time of this writing weighted to BLS inflation, short term consumer lenders and retailers / car dealers offering credit to consumers who could not be approved for the same loan by an FDIC insured bank, operations that make sales through telemarketing or automated phone calls, non-opt-in email distribution marketing, vacation timeshare operations, etc.)
-    10. Any use that supports copyright, trademark, patent, or trade secret infringement.
-    11. Any use that may reasonably be deemed as negligent.
-    12. Any use intended to prevent Cerebros from operating their own commercial distribution of Cerebros or any attempt to gain a de-facto monopoly on commercial or managed platform use of this or a derivitive work. 
-    12. Any use in an AI system that is inherently designed to avoid contact from customers, employees, applicants, citizens, or otherwise makes decisions that significantly affect a person's life or finances without human review of ALL decisions made by said system having an unfavorable impact on a person.
-        1. Example of acceptable uses under this term:
-        2. An IVR or email routing system that predicts which department a customer's inquiry should be routed to.
-        3. Examples of unacceptable uses under this term:
-        4. An IVR system that is designed to make it cumbersome for a customer to reach a human representative at a company (e.g. the system has no option to reach a human representative or the option is in a nested layer of a multi - layer menu of options).
-        5. Email screening applications that only allow selected categories of email from known customers, employees, constituents, etc to appear in a business or government representative's email inbox, blindly discarding or obfuscating all other inquiries.
-        6. These or anything reasonably regarded as similar to these are prohibited uses of this codebase AND ANY DERIVATIVE WORK. Litigation will result upon discovery of any such violations.
+
+1. Military use, except explicitly authorized by the author
+2. Law enforcement use intended to aide in making decisions that lead to a anyone being  incarcerated or in any way managing an incarceration operation, or criminal prosecution operation, jail, prison, or participating in decisions that flag citizens for investigation or exclusion from public locations, whether physical or virtual.
+3. Use in committing property or violent crimes
+4. Use in any application supporting the adult films industry
+5. Use in any application supporting or in any way promoting the alcoholic beverages, firearms, and / or tobacco industries
+6. Any use supporting the trade, marketing of, or administration of prescription drugs which are commonly abused
+7. Use in a manner intended to identify or discriminate against anyone on any ethnic, ideological, religious, racial, demographic,familial status,family of origin, sex or gender, gender identity, sexual orientation, status of being a victim of any crime, having a history or present status of being a good-faith litigant, national origin(including citizenship or lawful resident status), disability, age, pregnancy, parental status, mental health, income, or socioeconomic / *credit status (which includes lawful credit, tenant, and HR screening* other than screening for criminal history).
+8. Promoting controversial services such as abortion, via any and all types of marketing, market targeting, operational,administrative, or financial support for providers of such serices.
+9. Any use supporting any operation which attempts to sway public opinion, political alignment, or purchasing habits via means such as:
+    1. Misleading the public to believe that the opinions promoted by said operation are those of a different group of people than those which the campaign portrays them as being. For example, a political group attempting to cast an image that a given political alignment is that of low income rural citizens, when such is not consistent with known statistics on such population (commonly referred to as astroturfing).
+    2. Leading the public to believe premises that contradict duly accepted scientific findings, implausible doctrines, or premises that are generally regarded as heretical or occult.
+    3. Promoting or managing any operation profiting from dishonest or unorthodox marketing practices or marketing unorthodox products generally regarded as a junk deal to consumers or employees: (e.g. multi-level marketing operations, 'businesses' that rely on 1099 contractors not ensured a regular wage for all hours worked, companies having any full time employee paid less than $40,000 per year at the time of this writing weighted to BLS inflation, short term consumer lenders and retailers / car dealers offering credit to consumers who could not be approved for the same loan by an FDIC insured bank, operations that make sales through telemarketing or automated phone calls, non-opt-in email distribution marketing, vacation timeshare operations, etc.)
+10. Any use that supports copyright, trademark, patent, or trade secret infringement.
+11. Any use that may reasonably be deemed as negligent.
+12. Any use intended to prevent Cerebros from operating their own commercial distribution of Cerebros or any attempt to gain a de-facto monopoly on commercial or managed platform use of this or a derivitive work. 
+12. Any use in an AI system that is inherently designed to avoid contact from customers, employees, applicants, citizens, or otherwise makes decisions that significantly affect a person's life or finances without human review of ALL decisions made by said system having an unfavorable impact on a person.
+    1. Example of acceptable uses under this term:
+    2. An IVR or email routing system that predicts which department a customer's inquiry should be routed to.
+    3. Examples of unacceptable uses under this term:
+    4. An IVR system that is designed to make it cumbersome for a customer to reach a human representative at a company (e.g. the system has no option to reach a human representative or the option is in a nested layer of a multi - layer menu of options).
+    5. Email screening applications that only allow selected categories of email from known customers, employees, constituents, etc to appear in a business or government representative's email inbox, blindly discarding or obfuscating all other inquiries.
+13. These or anything reasonably regarded as similar to these are prohibited uses of this codebase AND ANY DERIVATIVE WORK. Litigation will result upon discovery of any such violations.
+
+**Licnse terms may be amended at any time as deemed necessry at Cerebros sole discretion.**
+
 
 ## Acknowledgments:
 
