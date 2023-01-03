@@ -1113,10 +1113,10 @@ Unit:
 Here are the steps to the process:
 
 0. Some nomenclature:
-  1.1. k referrs to the Level number being immediately discussed.
-  1.2. l referres to the number of DenseUnits the kth Level has.
-  1.3. k-1 refers to the immediate predecessor Level (Parent Level) number of the kth level of the level being discussed.
-  1.4 n refers to the number of DenseUnits the kth Level's parent predecessor has.
+  1. k referrs to the Level number being immediately discussed.
+  2. l referres to the number of DenseUnits the kth Level has.
+  3. k-1 refers to the immediate predecessor Level (Parent Level) number of the kth level of the level being discussed.
+  4. n refers to the number of DenseUnits the kth Level's parent predecessor has.
 1. SimpleCerebrosRandomSearch.run_random_search().
     1. This calls SimpleCerebrosRandomSearch.parse_neural_network_structural_spec_random() which chooses the following random unsigned integers:
         1. How many Levels, the archtecture will consist of;
