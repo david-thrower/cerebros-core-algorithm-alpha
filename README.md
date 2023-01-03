@@ -50,6 +50,11 @@ install all required packages
 pip3 install -r requirements.txt
 ```
 
+Run the Ames housing data example:
+```
+python3 regression-example-ames-no-preproc.py
+```
+
 Let's look at the eample: `regression-example-ames-no-preproc.py`, which is in the main folder of this repo:
 
 Import packages
