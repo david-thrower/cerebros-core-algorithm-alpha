@@ -4,7 +4,9 @@ The Cerebros package is an ultra-precise Neural Architecture Search (NAS) / Auto
 
 ## Cerebros Community Edition and Cerebros Enterprise
 
-The Cerebros community edition provides a open-source minimum viable single parameter set search and also provides an example manifest for an exhaustive Neural Architecture Search to run on Kubeflow/Katib. This is licensd for free use provided that the use is consistent with the ethical use provisions in the license described at the bottom of this page. You can easily reproduce this with the Jupyter notebook in the directory `/kubeflow-pipeline`, using the Kale Jupyter notebook extension. For a robust managed neural architecture search experience hosted on Google Cloud Platform and supported by our SLA, we recommend Cerebros enterprise, our commercial version. Soon you will be able to sign up and immediately start using it at `https://www.cerebros.one`. In the meantime, we can set up your own Cerbros managed neural architecture search pipeline for you with a one business day turnaround. We offer consulting, demos, full service machine learning service and can provision you with your own full neural architecture search pipeline complete with automated Bayesian hyperparameter search. Contact David Thrower:`david@cerebros.one` or call us at (US area code 1) `(650) 789-4375`.
+The Cerebros community edition provides an open-source minimum viable single parameter set NAS and also also provides an example manifest for an exhaustive Neural Architecture Search to run on Kubeflow/Katib. This is licensd for free use provided that the use is consistent with the ethical use provisions in the license described at the bottom of this page. You can easily reproduce this with the Jupyter notebook in the directory `/kubeflow-pipeline`, using the Kale Jupyter notebook extension. For a robust managed neural architecture search experience hosted on Google Cloud Platform and supported by our SLA, we recommend Cerebros Enterprise, our commercial version. Soon you will be able to sign up and immediately start using it at `https://www.cerebros.one`. In the meantime, we can set up your own Cerbros managed neural architecture search pipeline for you with a one business day turnaround. We offer consulting, demos, full service machine learning service and can provision you with your own full neural architecture search pipeline complete with automated Bayesian hyperparameter search. Contact David Thrower:`david@cerebros.one` or call us at (US area code 1) `(650) 789-4375`. Additionally, we can comlete machine learning tasks for your orgniation. Give us a call.
+
+
 
 ## In summary what is it and what is different:
 
@@ -18,15 +20,13 @@ Multi layer perceptrons look like this:
 
 If the goal of MLPs was to mimic how a biological neuron works, why do we still build neural networks that are structurally similar to the first prototypes from 1989? At the time, it was the closest we could get, but both hardware and software have changed since.
 
-The goal here is to recursively generate models consisting of Levels of Dense Layers in parallel, where the Dense layers on one level randomly connect to layers on not only its subsequent Level, but multiple levels below. This may allow more complex networks to gain deeper, more granular insight on smaller data sets before internal covariate shift and vanishing, exploding gradients drive overfitting. Bear in mind that the deepest layers of a Multi - layer perceptron will have the most granular and specific information about a given data set. We have gotten a step closer to this by using single skip connections, but why not simply randomize the connectivity to numerous levels in the network's structure altogether?
+The goal here is to recursively generate models consisting of "Levels" which consist of of Dense Layers in parallel, where the Dense layers on one level randomly connect to layers on not only its subsequent Level, but multiple levels below. In addition to these randomized vertical connections, the Dense layers also connect **latrally** at random to not only their neighboing layer, but to layers multiple layers to the right of them (remember, this architectural pattern consists of "Levels" of Dense layers. The Dense layers make lateral connections tothe othr Dense layers in the same level, and vertial connections to Dense layers in their leval's successor levels). There may also be moe than one connection between a given Dense layer and another , both laterally nd vertically, which if you ave the patience to follow the example neural architectre created by the Ames housing data example, you ill see many instances where this occurs. This may allow more complex networks to gain deeper, more granular insight on smaller data sets before problems like internal covariate shift, vanishinggradients, and exploding gradients drive overfitting, zeroed out weights, and "predictions of [0 | infiniti] for all samples". Bear in mind that the deepest layers of a Multi - layer perceptron will have the most granular and specific information about a given data set.  In recent years, we got a step closer to this by using single skip connections, but why not simply randomize the connectivity to numerous levels in the network's structure altogether and add lateral connections?
 
-What if we made a multi-layer pereceptron that looks like this:
-
-Green triangles are Keras Input layers. Blue Squares are Keras Concatenate layers. The Pink stretched ovals are Keras Dense layers. The one stretched red oval is the networ's Output layer.
+What if we made a multi-layer pereceptron that looks like this: (Green triangles are Keras Input layers. Blue Squares are Keras Concatenate layers. The Pink stretched ovals are Keras Dense layers. The one stretched red oval is the networ's Output layer. It is presumed that thre isa batch normaliation layer between each Concatenate layer and Dense layer.)
 
 ![assets/Brain-lookalike1.png](assets/Brain-lookalike1.png)
 
-like this
+... or like this:
 
 ![assets/Brain-lookalike2.png](assets/Brain-lookalike2.png)
 
@@ -38,9 +38,10 @@ What if we made a single-layer perceptron that looks like this:
 
 ![assets/Neuron-lookalike1.png](assets/Neuron-lookalike1.png)
 
-## Use example:
+## Use example: Try it for yourself:
 clone the repo
 
+shell:
 `git checkout https://github.com/david-thrower/cerebros-core-algorithm-alpha.git`
 `cd cerebros-core-algorithm-alpha`
 
@@ -48,6 +49,8 @@ install all required packages
 ```
 pip3 install -r requirements.txt
 ```
+
+Let's look at the eample: `regression-example-ames-no-preproc.py`, which is in the main folder of this repo:
 
 Import packages
 ```python3
@@ -75,7 +78,7 @@ Set up project and load data
 ```python3
 
 
-## your data:
+## Set a project name:
 
 
 TIME = pendulum.now().__str__()[:16]\
@@ -85,35 +88,45 @@ TIME = pendulum.now().__str__()[:16]\
 PROJECT_NAME = f'{TIME}_cerebros_auto_ml_test'
 
 
-# white = pd.read_csv('wine_data.csv')
+# Read in the data
+raw_data = pd.read_csv('ames.csv') 
 
-raw_data = pd.read_csv('ames.csv')
+# Rather than doing elaborate preprocessing, let's just drop all the columns 
+# that aren't numbers and impute 0 for anything missing
+
 needed_cols = [
     col for col in raw_data.columns if raw_data[col].dtype != 'object']
 data_numeric = raw_data[needed_cols].fillna(0).astype(float)
 label = raw_data.pop('price')
 
+# Convert to numpy
 data_np = data_numeric.values
 
+# convert to a tensor
 tensor_x =\
     tf.constant(data_np)
 
+# Since Cerebros allows multiple inputs, the inputs are a list of tenors, even if there is just 1
 training_x = [tensor_x]
 
+# Shape if the trining data [number of rows,number of columns]
 INPUT_SHAPES = [training_x[i].shape[1] for i in np.arange(len(training_x))]
 
 train_labels = [label.values]
 
+# Labels are a list of numbers, shape is the length of it
 OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
 ```
 
 Cerebros hyperparameters
 ```python3
 
-# Params for a training function (Approximately the oprma
-# discovered in a bayesian tuning study done on Katib)
+# Params for Cebros training (Approximately the oprma
+# discovered in a bayesian tuning study done on Katib
+# for this data set)
 
-meta_trial_number = 0  # In distributed training set this to a random number
+# In distributed training set this to a random number, otherwise, set it to 0. (it keeps file names unique when this runs multiple times with the same project, like we would in distributed training.)
+meta_trial_number = 0
 activation = "elu"
 predecessor_level_connection_affinity_factor_first = 15.0313
 predecessor_level_connection_affinity_factor_main = 10.046
@@ -902,7 +915,7 @@ Final result was (val_root_mean_squared_error): 856.2445678710938
 
 ## Documentation
 
-Classes:
+Classes: (Meant for direct use)
 
 ```
 SimpleCerebrosRandomSearch
@@ -1074,13 +1087,19 @@ SimpleCerebrosRandomSearch
 
 We start with some basic structural components:
 
-The CerebrosDenseAutoML: The core auto-ML that recursively creates the neural networks, vicariously through the NeuralNetworkFuture object:
+The SimpleCerebrosRandomSearch: The core auto-ML that recursively creates the neural networks, vicariously through the NeuralNetworkFuture object:
 
 NeuralNetworkFuture:
-  - A data structure that is essentially a wrapper around the whole neural network system. You will note the word "Future" in the name of this data structure. This is for a reason. The solution to the problem of recursively parsing neural networks having topologies similar to the connectivity between biological neurons involves a chicken before the egg problem. Specifically this was that randomly assigning neural connectivity will create some errors and disjointed graphs, which once created can't be corrected without starting over. The probability of a given graph passing on the first try is very low, especially if you are building a complex network, nonetheless, the random connections are the key to making this work. The solution was to create a Futures objects that first planned how many levels of Dense layers would exist in the network, how many Dense layers each level would consist of and how many neurons each would consist of, allowed the random connections to be selected, but not materialized. Then it applies a protocol to detect and resolve any inconsistencies, disjointed connections, etc in the planned connectivities before they are materialized. Lastly, once the network's connectivity has been validated, it then materializes the  Dense layers of the neural network per the connectivities planned.
+  - A data structure that is essentially a wrapper around the whole neural network system. 
+  - You will note the word "Future" in the name of this data structure. This is for a reason. The solution to the problem of recursively parsing neural networks having topologies similar to the connectivity between biological neurons involves a chicken before the egg problem. Specifically this was that randomly assigning neural connectivity will create some errors and disjointed graphs, which once created is impractical correct without starting over. Additionally, I have found that for some reson, graphs having some dead ends, but not completey disjointed train very slowly. 
+  - The probability of a given graph passing on the first try is very low, especially if you are building a complex network, nonetheless, the randomized vertical and lateral, and potentially repeating connections are the key to making this all work. 
+  - The solution was to create a Futures objects that first planned how many levels of Dense layers would exist in the network, how many Dense layers each level would consist of, and how many neurons each would consist of, allowing the random connections to be tentatively selected, but not materialized. Then it applies a protocol to detect and resolve any inconsistencies, disjointed connections, etc in the planned connectivities before any actual neural network componenta are  actually materialized.
+  - A list of errors is compiled and another protocol appends the planned connectivity with additionl connections to fix the breaks in the connectivity. 
+  - Lastly, once the network's connectivity has been validated, it then materializes the Dense layers of the neural network per the connectivities planned, resultin in a neural network ready to be trained.
 
 Level:
-  - A data structure adding a new layer of abstraction above the concept of a Dense layer, which is a wrapper consisting of multiple instances of a future for what we historically called a Dense layer in a neural network. A NeuralNetworkFuture has many Layers, and a layer belongs to a NeuralNetworkFuture.
+  - A data structure adding a new layer of abstraction above the concept of a Dense layer, which is a wrapper consisting of multiple instances of a future for what we historically called a Dense layer in a neural network. A level will consist of multiple Dense Units, which each will materialize to a Dense Layer. Since we are makng both vertical and lateral connections, the term "Layer" loses relevance it has in the traditional sequential MLP context. The Level. A NeuralNetworkFuture has many Levels, and a Level belongs to a NeuralNetworkFuture. A Level has many Units, and a Unit belongs to a Level.
+  
 Unit:
   - A data structure which is a future for a single Dense layer. A Level has many Units, and a Unit belongs to a Level.
 
@@ -1090,10 +1109,18 @@ Here are the steps to the process:
 
 0. Some nomenclature:
   1.1. k referrs to the Level number being immediately discussed.
-  1.2. l referres to the number of DenseUnits the kth Levle has.
-  1.3. k-1 refers to the immediate predecessor Level (Parent Level) number of the kth level.
-  1.4 n refers to the number of DenseUnits the kth Level's parent predecessor has being mentioned has.
-1. CerebrosDenseAutoML.get_networks_for_trials() instantiates a user defined number of NeuralNetworkFuture objects.
+  1.2. l referres to the number of DenseUnits the kth Level has.
+  1.3. k-1 refers to the immediate predecessor Level (Parent Level) number of the kth level of the level being discussed.
+  1.4 n refers to the number of DenseUnits the kth Level's parent predecessor has.
+1. SimpleCerebrosRandomSearch.run_random_search().
+    1. This calls SimpleCerebrosRandomSearch.parse_neural_network_structural_spec_random() which chooses the following random unsigned integers:
+        1. How many Levels, the archtecture will consist of;
+        2. For each Level, how many Units the levl will consist of;
+        3. For each unit, how many neurons the Dense layer it will materialize will consist of.
+        4. This will instantiate a NeuralNetworkFuture of the selected specification for number of Levels, Units per Level, and neurons per Unit.
+        5. This entire logic will repeat once for each number in range of number of  number_of_architecture_moities_to_try.
+        6. Step 4 will repea multiple times, once for each number in range number_of_tries_per_architecture_moity. 
+1. CerebrosDenseAutoML.get_networks_for_trials() instantiates a user defined number of NeuralNetworkFuture objects. This is compile into a dictionary of lists, where each list is a prototyp of a Level, consisting of one unsigned integer for each Unit planned for this level. 
   1.1. CerebrosDenseAutoML.parse_neural_network_structural_spec_random()
     1.1.1. A random unsigned integer in a user defined range is chosen for the number of DenseLevels which the network will consist of (depth of the network).
     1.1.2. For each Level, a random unsigned integer in a user defined range is chosen for the number of Units that the layer will consist of.
