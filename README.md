@@ -1117,16 +1117,11 @@ Here are the steps to the process:
         1. How many Levels, the archtecture will consist of;
         2. For each Level, how many Units the levl will consist of;
         3. For each unit, how many neurons the Dense layer it will materialize will consist of.
-        4. This will instantiate a NeuralNetworkFuture of the selected specification for number of Levels, Units per Level, and neurons per Unit.
-        5. This entire logic will repeat once for each number in range of number of  number_of_architecture_moities_to_try.
-        6. Step 4 will repea multiple times, once for each number in range number_of_tries_per_architecture_moity. 
-1. CerebrosDenseAutoML.get_networks_for_trials() instantiates a user defined number of NeuralNetworkFuture objects. This is compile into a dictionary of lists, where each list is a prototyp of a Level, consisting of one unsigned integer for each Unit planned for this level. 
-  1.1. CerebrosDenseAutoML.parse_neural_network_structural_spec_random()
-    1.1.1. A random unsigned integer in a user defined range is chosen for the number of DenseLevels which the network will consist of (depth of the network).
-    1.1.2. For each Level, a random unsigned integer in a user defined range is chosen for the number of Units that the layer will consist of.
-    1.1.3. For each unit, a random unsigned integer in a user defined range is chosen for the number of neurons that Dense unit will consist of. Ultimately each DenseUnit will parse a Dense layer in the network.
-    1.1.4. This high-level specification for the neural network (but not edges) will be parsed into a dictionary called a neural_network_spec.
-  1.2. A NeuralNetworkFuture will be Instantiated, taking as an argument, the neural_network_spec as an argument.
+        4. This is parsed into a dictionary as a high-level specification for the nodes, but not edges called a neural_network_spec.
+        5. This will instantiate a NeuralNetworkFuture of the selected specification for number of Levels, Units per Level, and neurons per Unit, and the NeuralNetworkFuture takes the neural_network_spec as an argument.
+        6. This entire logic will repeat once for each number in range of number of the number_of_architecture_moities_to_try.
+        7. Step 5 will repea multiple times, once threin with the same neural_network_spec, once for each number in range number_of_tries_per_architecture_moity.
+        8. All replictions are done as separate Python multiprocessing proces (multiple workers in parallel on separate processor cores).
 2. **(This is a top down operation starting with InputLevel and proceeding to the last hidden layer in the network)** In each NeuralNetworkFuture, the neural_network_spec will be iterated through, instantiating a DenseLevel object for each element in the dictionary , which will be passed as the argument level_prototype. Each will be linked to the last, and each will maintain access to the same chain of Levels as the list predecessor_levels (The whole thing is essentially like a linked list, having many necessary nested elements).
 3. A dictionary of possible predecessor connections will also be parsed. This is a sybmolic representation of the levels and units above it that is faster to iterate through than the actual Levels and Units objects themselves.
 4. **(Add direction top down or bottom - up)** CerebrosAutoML calls each NeuralNetworkFuture object's .parse_units(), method, which recursively calls the .parse_units() belonging to each Levels object. Within each Levels object, this will iterate through its level_prototype list and will instantiate a DenseUnits object for each item and append DenseLevel.parallel_units with it.
