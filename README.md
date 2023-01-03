@@ -1,6 +1,6 @@
 # Cerebros AutoML
 
-The Cerebros package is an ultra-precise Neural Architecture Search (NAS) / AutoML that is intended to much more closely mimic biological neurons than conventional neural network architecture strategies.
+The Cerebros package is an ultra-precise Neural Architecture Search (NAS) / AutoML that is intended to much more closely mimic biological neurons than conventional neural network architecture search strategies.
 
 ## Cerebros Community Edition and Cerebros Enterprise
 
