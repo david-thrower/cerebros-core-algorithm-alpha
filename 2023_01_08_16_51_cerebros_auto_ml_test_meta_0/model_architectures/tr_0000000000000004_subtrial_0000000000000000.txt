@@ -1,0 +1,1 @@
+{'0': [{'1': <class 'cerebros.units.units.InputUnit'>}], '1': [{'9': <class 'cerebros.units.units.DenseUnit'>}, {'23': <class 'cerebros.units.units.DenseUnit'>}], '2': [{'6': <class 'cerebros.units.units.DenseUnit'>}, {'8': <class 'cerebros.units.units.DenseUnit'>}], '3': [{'1': <class 'cerebros.units.units.FinalDenseUnit'>}]}
