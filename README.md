@@ -1184,7 +1184,7 @@ License: Licensed under the general terms of the Apache license, but with the fo
 **Licnse terms may be amended at any time as deemed necessry at Cerebros sole discretion.**
 
 
-## Acknowledgments:
+## Acknowledgements:
 
 1. My Jennifer and my stepkids who have chosen to stay around and have rode out quite a storm because of my career in science.
 2. My son Aidyn, daughter Jenna, and my collaborators Max Morganbesser and Andres Espinosa.
