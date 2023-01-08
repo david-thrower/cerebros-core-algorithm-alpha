@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "44-update-demo-with-new-best-run" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
