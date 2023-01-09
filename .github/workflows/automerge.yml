@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "46-fix-cve-2022-41902-and-cve-2022-41902" ]
 
 permissions:
   contents: read
