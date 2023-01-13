@@ -948,7 +948,8 @@ class RealLevel(NeuralNetworkFutureComponent,
 
     def __init__(self,
                  axon_activation: str,
-                 n_dendrites: int,
+                 min_n_dendrites: int,
+                 max_n_dendrites: int,
                  dendrite_activation: str,
                  level_prototype: list,
                  predecessor_levels: list,
@@ -987,7 +988,8 @@ class RealLevel(NeuralNetworkFutureComponent,
 
         # super().__init__(self, *args, **kwargs)
 
-        self.n_dendrites = n_dendrites
+        self.min_n_dendrites
+        self.max_n_dendrites
         self.axon_activation = axon_activation
         self.dendrite_activation = dendrite_activation
 
@@ -1042,8 +1044,8 @@ class RealLevel(NeuralNetworkFutureComponent,
                  k: int,
                  v: list):
         k1 = int(k)
-        n_dendrites = int(np.random.randint(self.min_dendrites,
-                                            self.max_dendrites))
+        n_dendrites = int(np.random.randint(self.min_n_dendrites,
+                                            self.max_n_dendrites))
         if self.level_number != 0:
             unit_0 =\
                 RealNeuron(
