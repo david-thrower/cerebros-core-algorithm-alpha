@@ -3,7 +3,7 @@ architecture"""
 from cerebros.nnfuturecomponent.neural_network_future_component \
     import NeuralNetworkFutureComponent
 from cerebros.levels.levels import InputLevel, DenseLevel, FinalDenseLevel, \
-    RealLevel
+    RealLevel, FinalRealLevel
 import numpy as np
 
 
@@ -434,7 +434,6 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
              trial_number: int,
              subtrial_number: int,
              level_number='nan',
-             activation='elu',
              final_activation=None,
              merging_strategy="concatenate",
              minimum_skip_connection_depth=1,
@@ -464,11 +463,10 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
         self.output_shapes = output_shapes
         self.neural_network_spec = neural_network_spec
         self.name = f"{project_name}_trial_{str(trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}"
-        axon_activation = axon_activation
+        self.axon_activation = axon_activation
         self.min_n_dendrites = min_n_dendrites
         self.max_n_dendrites = max_n_dendrites
         self.dendrite_activation = dendrite_activation
-        self.activation = activation
         self.final_activation = final_activation
         self.merging_strategy = merging_strategy
         self.predecessor_level_connection_affinity_factor_final_to_kminus1 =\
@@ -559,7 +557,6 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
                                   neural_network_future_name=self.name,
                                   trial_number=self.trial_number,
                                   level_number=k1,
-                                  activation=self.activation,
                                   minimum_skip_connection_depth=self.minimum_skip_connection_depth,
                                   maximum_skip_connection_depth=self.maximum_skip_connection_depth,
                                   predecessor_level_connection_affinity_factor_first=self.predecessor_level_connection_affinity_factor_first,
@@ -584,7 +581,7 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
                 print(
                     f"We think level final level {k1}'s predecessors are: {[l.level_number for l in predecessor_levels]}")
                 final_level =\
-                    FinalDenseLevel(
+                    FinalRealLevel(
                         output_shapes=self.output_shapes,
                         merging_strategy=self.merging_strategy,
                         level_prototype=v,
