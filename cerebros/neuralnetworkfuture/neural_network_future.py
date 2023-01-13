@@ -582,6 +582,9 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
                     f"We think level final level {k1}'s predecessors are: {[l.level_number for l in predecessor_levels]}")
                 final_level =\
                     FinalRealLevel(
+                        axon_activation=self.axon_activation,
+                        min_n_dendrites=self.min_n_dendrites,
+                        max_n_dendrites=self.max_n_dendrites,
                         output_shapes=self.output_shapes,
                         merging_strategy=self.merging_strategy,
                         level_prototype=v,
