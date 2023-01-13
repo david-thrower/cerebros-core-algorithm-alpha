@@ -52,7 +52,6 @@ OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
 # discovered in a bayesian tuning study done on Katib)
 
 meta_trial_number = 0  # In distributed training set this to a random number
-activation = "gelu"
 predecessor_level_connection_affinity_factor_first = 19.613
 predecessor_level_connection_affinity_factor_main = 0.5518
 max_consecutive_lateral_connections = 34
@@ -92,7 +91,6 @@ cerebros =\
         min_n_dendrites=min_n_dendrites,
         max_n_dendrites=max_n_dendrites,
         dendrite_activation=dendrite_activation,
-        activation=activation,
         final_activation=None,
         number_of_architecture_moities_to_try=7,
         number_of_tries_per_architecture_moity=1,
