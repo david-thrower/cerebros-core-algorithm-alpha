@@ -988,8 +988,8 @@ class RealLevel(NeuralNetworkFutureComponent,
 
         # super().__init__(self, *args, **kwargs)
 
-        self.min_n_dendrites
-        self.max_n_dendrites
+        self.min_n_dendrites = min_n_dendrites
+        self.max_n_dendrites = max_n_dendrites
         self.axon_activation = axon_activation
         self.dendrite_activation = dendrite_activation
 
@@ -1171,7 +1171,7 @@ class RealLevel(NeuralNetworkFutureComponent,
                     f"asigning unit level {unselected_unit.level_number}, unit: {unselected_unit.unit_id} to be the input of: level: {unit_to_assign.level_number} unit: {unit_to_assign.unit_id}")
 
 
-class FinalDenseLevel(DenseLevel):
+class FinalRealLevel(RealLevel):
     """docstring for FinalDenseLevel."""
 
     def __init__(
@@ -1182,7 +1182,6 @@ class FinalDenseLevel(DenseLevel):
             neural_network_future_name: str,
             trial_number: int,
             level_number: int,
-            # activation set by final_activation
             merging_strategy="concatenate",
             final_activation=None,
             minimum_skip_connection_depth=1,
@@ -1212,6 +1211,10 @@ class FinalDenseLevel(DenseLevel):
         has_successors = False
 
         super().__init__(
+                axon_activation = axon_activation,
+                min_n_dendrites = min_n_dendrites,
+                max_n_dendrites = max_n_dendrites,
+                dendrite_activation = final_activation,
                 level_prototype=level_prototype,
                 predecessor_levels=predecessor_levels,
                 has_predecessors=has_predecessors,
@@ -1244,6 +1247,8 @@ class FinalDenseLevel(DenseLevel):
             output_shape = self.output_shapes[i_int]
             unit_0 =\
                 FinalRealNeuron(
+                    n_axon_nuerons =self.n_axon_neurons,
+                    axon_activation = self.axon_activation,
                     output_shape=output_shape,
                     predecessor_levels=self.predecessor_levels,
                     possible_predecessor_connections=self.possible_predecessor_connections,
@@ -1271,173 +1276,3 @@ class FinalDenseLevel(DenseLevel):
     def set_final_connectivity_future_prototype(self):
         for unit_0 in self.parallel_units:
             unit_0.set_final_connectivity_future_prototype()
-
-
-class DenseLevel(Level,
-                 DenseLateralConnectivity):
-    """
-    Params:
-        merging_strategy: str,
-        level_prototype: list,
-        predecessor_levels: list,
-        has_predecessors: str,
-        has_successors: str,
-        neural_network_future_name: str,
-        trial_number: int,
-        level_number: int,
-        activation: str: defaults to 'elu',
-        minimum_skip_connection_depth: int: defaults to 1,
-        maximum_skip_connection_depth: int: defaults to 7,
-        predecessor_level_connection_affinity_factor_first: int: defauts to 5,
-        predecessor_level_connection_affinity_factor_first_rounding_rule: str: defaults to 'ceil',
-        predecessor_level_connection_affinity_factor_main: float: defaults to 0.7,
-        predecessor_level_connection_affinity_factor_main_rounding_rule: str: defaults to 'ceil',
-        predecessor_level_connection_affinity_factor_decay_main: object: defaults to zero_7_exp_decay,
-        seed=8675309,
-        max_consecutive_lateral_connections: int: defaults to 7,
-        gate_after_n_lateral_connections: int: defaults to 3,
-        gate_activation_function: object: defaults to simple_sigmoid,
-        p_lateral_connection: float: defaults to .97,
-        p_lateral_connection_decay: object: defaults to zero_95_exp_decay,
-        num_lateral_connection_tries_per_unit: int: defaults to 1,
-    public methods:
-        set_possible_predecessor_connections:
-            parses the variable __possible_predecessor_connections.
-        get_possible_predecessor_connections:
-            Returns a copy of __possible_predecessor_connections.
-        parse_units:
-            From the level_prototype and predecessor_levels, parses a Unit
-            object for each Unit prescribed in its level_prototype.
-    build_level_future:
-        sets the variable:
-            parallel_units by instantiating the selected number of _Units futures (instantiated, but not materialized)
-        materialize:
-            calls the .materialize() method on each of its_units objects,
-            creating their real respective tf.keras.layers.? object.
-         *args,
-         **kwargs):
-    """
-
-    def __init__(self,
-                 level_prototype: list,
-                 predecessor_levels: list,
-                 has_predecessors: str,
-                 has_successors: str,
-                 neural_network_future_name: str,
-                 trial_number: int,
-                 level_number: int,
-                 activation='elu',
-                 merging_strategy="concatenate",
-                 minimum_skip_connection_depth=1,
-                 maximum_skip_connection_depth=7,
-                 predecessor_level_connection_affinity_factor_first=5,
-                 predecessor_level_connection_affinity_factor_first_rounding_rule='ceil',
-                 predecessor_level_connection_affinity_factor_main=0.7,
-                 predecessor_level_connection_affinity_factor_main_rounding_rule='ceil',
-                 predecessor_level_connection_affinity_factor_decay_main=zero_7_exp_decay,
-                 seed=8675309,
-                 max_consecutive_lateral_connections=7,
-                 gate_after_n_lateral_connections=3,
-                 gate_activation_function=simple_sigmoid,
-                 p_lateral_connection=.97,
-                 p_lateral_connection_decay=zero_95_exp_decay,
-                 num_lateral_connection_tries_per_unit=1,
-                 *args,
-                 **kwargs):
-        Level.__init__(
-           self,
-           level_prototype=level_prototype,
-           predecessor_levels=predecessor_levels,
-           has_predecessors=has_predecessors,
-           has_successors=has_successors,
-           neural_network_future_name=neural_network_future_name,
-           trial_number=trial_number,
-           level_number=level_number,
-           minimum_skip_connection_depth=minimum_skip_connection_depth,
-           maximum_skip_connection_depth=maximum_skip_connection_depth,
-           predecessor_level_connection_affinity_factor_first=predecessor_level_connection_affinity_factor_first,
-           predecessor_level_connection_affinity_factor_first_rounding_rule=predecessor_level_connection_affinity_factor_first_rounding_rule,
-           predecessor_level_connection_affinity_factor_main=predecessor_level_connection_affinity_factor_main,
-           predecessor_level_connection_affinity_factor_main_rounding_rule=predecessor_level_connection_affinity_factor_main_rounding_rule,
-           predecessor_level_connection_affinity_factor_decay_main=predecessor_level_connection_affinity_factor_decay_main,
-           seed=seed,
-           *args,
-           **kwargs)
-        DenseLateralConnectivity.__init__(
-            self,
-            max_consecutive_lateral_connections=max_consecutive_lateral_connections,
-            gate_after_n_lateral_connections=gate_after_n_lateral_connections,
-            gate_activation_function=gate_activation_function,
-            p_lateral_connection=p_lateral_connection,
-            p_lateral_connection_decay=p_lateral_connection_decay,
-            num_lateral_connection_tries_per_unit=num_lateral_connection_tries_per_unit)
-        if self.level_number < 1:
-            raise ValueError("Level number 0 is reserved for "
-                             "tf.keras.layers.Input objects, and negative "
-                             "level numbers don't make any sense. "
-                             "level_number must be at least 1")
-        self.activation = activation
-        self.merging_strategy = merging_strategy
-        self.meta_predecessor_connectivity_level_number = jnp.array([])
-        self.meta_predecessor_connectivity_unit_id = jnp.array([])
-
-    def parse_meta_predecessor_connectivity(self):
-        """The purpose of this class is to refactor the 6 - dimentional
-        breadth first search necessary for Predecessors to validate that they
-        have at least one Successor connection (no disjointed graph).
-        Without this, each Unit (that isn't one of the level's layer's Units,
-        would need to query 1. each successor Level, in it, each successor Unit,
-        and in it, each Level in its' predecessor_conenctivity_future, in range
-        minimum_skip_connection_depth, maximum_skip_connection_depth, then each
-        level therein for any unit having the same level_number and unit_id as
-        self. Obviously this has numerous problems. 1. It is a 6 dimentional
-        bredth first search. (Refactoring can reduce the problem some).
-        2. Iterating through large Units objects is not a computationally
-        efficient way to do a traversal that may consist of more than a bilion
-        individual comparisons. It is beter to extract the metadata from each of
-        these Units and make a list at the units level (Then merge this list at
-        the Levels level)."""
-        meta_level_number = jnp.array([], dtype=jnp.int32)
-        meta_unit_id = jnp.array([], dtype=jnp.int32)
-        for unit_0 in self.parallel_units:
-            print("debug: meta_level_number")
-            meta_level_number =\
-                jnp.concatenate(
-                    [meta_level_number,
-                     unit_0.meta_predecessor_connectivity_level_number],
-                    dtype=jnp.int32)
-            meta_unit_id =\
-                jnp.concatenate(
-                    [meta_unit_id,
-                     unit_0.meta_predecessor_connectivity_unit_id],
-                    dtype=jnp.int32)
-        check_unique_units = jnp.column_stack(
-            [meta_level_number, meta_unit_id])
-        unique_units = jnp.unique(check_unique_units, axis=0)
-
-        self.meta_predecessor_connectivity_level_number = unique_units[:, 0]
-        self.meta_predecessor_connectivity_unit_id = unique_units[:, 1]
-
-    def util_set_predecessor_connectivity_metadata(self):
-        for unit_0 in self.parallel_units:
-            if unit_0.unit_id != 0:
-                unit_0.util_set_predecessor_connectivity_metadata()
-
-    def materialize(self):
-        self.parse_units()
-        self.set_connectivity_future_prototype()
-        self.parse_meta_predecessor_connectivity()
-        self.set_successor_levels()
-        self.detect_successor_connectivity_errors()
-        self.resolve_successor_connectivity_errors()
-        self.util_set_predecessor_connectivity_metadata()
-
-        for unit_0 in self.parallel_units:
-            unit_0.materialize()
-
-        # def build_level_future(self):
-        #    self.__predecessor_connections_future = []
-
-        # Test cases passing # Case 1: Instantiate a DenseLevel,
-        # see that it inherits from Level
-# level_prototype: list, predecessor_levels: list, has_predecessors: str, has_successors: str, *, trial_number, level_number

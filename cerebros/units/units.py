@@ -746,6 +746,7 @@ class RealNeuron(Unit,
              trial_number: int,
              level_number: int,
              # minimum_skip_connection_depth = 1,
+             dendrite_units=1,
              merging_strategy="concatenate",
              maximum_skip_connection_depth=7,
              predecessor_level_connection_affinity_factor_first=5,
@@ -790,6 +791,7 @@ class RealNeuron(Unit,
         self.n_dendrites = n_dendrites
         self.dendrite_activation = dendrite_activation
         self.merging_strategy = merging_strategy
+        self.dendrite_units = dendrite_units
         if self.level_number < 1:
             raise ValueError("Level number 0 is reserved for "
                              "tf.keras.layers.Input objects, and negative "
@@ -1044,7 +1046,7 @@ class RealNeuron(Unit,
                     name=f"{self.name}_dns")(merged_neural_network_layer_input)
             self.dendrites =\
                 [
-                    tf.keras.layers.Dense(1,
+                    tf.keras.layers.Dense(self.dendrite_units,
                                           activation=self.dendrite_activation,
                                           name=f"{self.name}_dend-{int(i)}")
                     for i in np.arange(self.n_dendrites)]
@@ -1057,6 +1059,8 @@ class FinalRealNeuron(RealNeuron):
 
     def __init__(
             self,
+            n_axon_nuerons: int,
+            axon_activation: str,
             output_shape: int,
             predecessor_levels: list,
             possible_predecessor_connections: dict,
@@ -1083,10 +1087,12 @@ class FinalRealNeuron(RealNeuron):
             **kwargs
             ):
 
-        activation = final_activation
-        n_neurons = output_shape
+        # n_axon_nuerons: int, axon_activation: str, n_dendrites: int, dendrite_activation: str
 
-        super().__init__(n_neurons=n_neurons,
+        super().__init__(n_axon_nuerons=n_axon_nuerons,
+                         axon_activation=axon_activation,
+                         n_dendrites=1,
+                         dendrite_activation=final_activation,
                          predecessor_levels=predecessor_levels,
                          possible_predecessor_connections=possible_predecessor_connections,
                          parallel_units=parallel_units,
@@ -1094,7 +1100,7 @@ class FinalRealNeuron(RealNeuron):
                          level_name=level_name,
                          trial_number=trial_number,
                          level_number=level_number,
-                         activation=activation,
+                         dendrite_units=output_shape,
                          maximum_skip_connection_depth=maximum_skip_connection_depth,
                          predecessor_level_connection_affinity_factor_first=predecessor_level_connection_affinity_factor_first,
                          predecessor_level_connection_affinity_factor_first_rounding_rule=predecessor_level_connection_affinity_factor_first_rounding_rule,
