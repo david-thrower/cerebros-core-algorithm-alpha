@@ -1168,6 +1168,7 @@ class RealLevel(NeuralNetworkFutureComponent,
                 print(
                     f"asigning unit level {unselected_unit.level_number}, unit: {unselected_unit.unit_id} to be the input of: level: {unit_to_assign.level_number} unit: {unit_to_assign.unit_id}")
 
+
 class FinalDenseLevel(DenseLevel):
     """docstring for FinalDenseLevel."""
 
@@ -1268,7 +1269,6 @@ class FinalDenseLevel(DenseLevel):
     def set_final_connectivity_future_prototype(self):
         for unit_0 in self.parallel_units:
             unit_0.set_final_connectivity_future_prototype()
-
 
 
 class DenseLevel(Level,
