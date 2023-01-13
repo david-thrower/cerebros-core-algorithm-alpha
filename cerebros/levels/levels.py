@@ -1176,6 +1176,9 @@ class FinalRealLevel(RealLevel):
 
     def __init__(
             self,
+            axon_activation: str,
+            min_n_dendrites: int,
+            max_n_dendrites: int,
             output_shapes: list,
             level_prototype: list,
             predecessor_levels: list,
@@ -1211,10 +1214,10 @@ class FinalRealLevel(RealLevel):
         has_successors = False
 
         super().__init__(
-                axon_activation = axon_activation,
-                min_n_dendrites = min_n_dendrites,
-                max_n_dendrites = max_n_dendrites,
-                dendrite_activation = final_activation,
+                axon_activation=axon_activation,
+                min_n_dendrites=min_n_dendrites,
+                max_n_dendrites=max_n_dendrites,
+                dendrite_activation=final_activation,
                 level_prototype=level_prototype,
                 predecessor_levels=predecessor_levels,
                 has_predecessors=has_predecessors,
@@ -1247,8 +1250,8 @@ class FinalRealLevel(RealLevel):
             output_shape = self.output_shapes[i_int]
             unit_0 =\
                 FinalRealNeuron(
-                    n_axon_nuerons =self.n_axon_neurons,
-                    axon_activation = self.axon_activation,
+                    n_axon_nuerons=self.n_axon_neurons,
+                    axon_activation=self.axon_activation,
                     output_shape=output_shape,
                     predecessor_levels=self.predecessor_levels,
                     possible_predecessor_connections=self.possible_predecessor_connections,
