@@ -735,7 +735,9 @@ class RealNeuron(Unit,
     def __init__(
              self,
              n_axon_nuerons: int,
+             axon_activation: str,
              n_dendrites: int,
+             dendrite_activation: str,
              predecessor_levels: list,
              possible_predecessor_connections: dict,
              parallel_units: list,
@@ -783,10 +785,11 @@ class RealNeuron(Unit,
               num_lateral_connection_tries_per_unit=num_lateral_connection_tries_per_unit,
               * args,
               **kwargs)
+
         self.n_axon_neurons = self.n_neurons
-        self.n_dendrites = n_dendrites
         self.axon_activation = axon_activation
-        self.dendrite_activation
+        self.n_dendrites = n_dendrites
+        self.dendrite_activation = dendrite_activation
         self.merging_strategy = merging_strategy
         if self.level_number < 1:
             raise ValueError("Level number 0 is reserved for "
@@ -1048,3 +1051,83 @@ class RealNeuron(Unit,
                     for i in np.arange(self.n_dendrites)]
 
             self.materialized = True
+
+
+class FinalRealNeuron(RealNeuron):
+    """docstring for FinalDenseUnit."""
+
+    def __init__(
+            self,
+            output_shape: int,
+            predecessor_levels: list,
+            possible_predecessor_connections: dict,
+            parallel_units: list,
+            unit_id: int,
+            level_name: str,
+            trial_number: int,
+            level_number: int,
+            final_activation=None,
+            maximum_skip_connection_depth=7,
+            predecessor_level_connection_affinity_factor_first=5,
+            predecessor_level_connection_affinity_factor_first_rounding_rule='ceil',
+            predecessor_level_connection_affinity_factor_main=0.7,
+            predecessor_level_connection_affinity_factor_main_rounding_rule='ceil',
+            predecessor_level_connection_affinity_factor_decay_main=zero_7_exp_decay,
+            predecessor_level_connection_affinity_factor_final_to_kminus1=2,
+            max_consecutive_lateral_connections=7,
+            gate_after_n_lateral_connections=3,
+            gate_activation_function=simple_sigmoid,
+            p_lateral_connection=.97,
+            p_lateral_connection_decay=zero_95_exp_decay,
+            num_lateral_connection_tries_per_unit=1,
+            *args,
+            **kwargs
+            ):
+
+        activation = final_activation
+        n_neurons = output_shape
+
+        super().__init__(n_neurons=n_neurons,
+                         predecessor_levels=predecessor_levels,
+                         possible_predecessor_connections=possible_predecessor_connections,
+                         parallel_units=parallel_units,
+                         unit_id=unit_id,
+                         level_name=level_name,
+                         trial_number=trial_number,
+                         level_number=level_number,
+                         activation=activation,
+                         maximum_skip_connection_depth=maximum_skip_connection_depth,
+                         predecessor_level_connection_affinity_factor_first=predecessor_level_connection_affinity_factor_first,
+                         predecessor_level_connection_affinity_factor_first_rounding_rule=predecessor_level_connection_affinity_factor_first_rounding_rule,
+                         predecessor_level_connection_affinity_factor_main=predecessor_level_connection_affinity_factor_main,
+                         predecessor_level_connection_affinity_factor_main_rounding_rule=predecessor_level_connection_affinity_factor_main_rounding_rule,
+                         predecessor_level_connection_affinity_factor_decay_main=predecessor_level_connection_affinity_factor_decay_main,
+                         max_consecutive_lateral_connections=max_consecutive_lateral_connections,
+                         gate_after_n_lateral_connections=gate_after_n_lateral_connections,
+                         gate_activation_function=gate_activation_function,
+                         p_lateral_connection=p_lateral_connection,
+                         p_lateral_connection_decay=p_lateral_connection_decay,
+                         num_lateral_connection_tries_per_unit=num_lateral_connection_tries_per_unit,
+                         *args,
+                         **kwargs)
+
+        self.predecessor_level_connection_affinity_factor_final_to_kminus1 =\
+            predecessor_level_connection_affinity_factor_final_to_kminus1
+
+    def set_final_connectivity_future_prototype(self):
+        last_level_units = self.predecessor_levels[-1].parallel_units
+        print(
+            f"Debug: I am {self.level_number} selecting {last_level_units[0].level_number}")
+        num_units_0 = len(last_level_units)
+        indexes_oflast_level_units = np.arange(num_units_0)
+
+        num_to_pick = self.predecessor_level_connection_affinity_factor_final_to_kminus1 *\
+            num_units_0
+        units_chosen_by_index =\
+            np.random.choice(indexes_oflast_level_units,
+                             size=num_to_pick)
+        for i in units_chosen_by_index:
+            self.predecessor_connectivity_future.append(last_level_units[i])
+        self.set_connectivity_future_prototype()
+        self.set_lateral_connectivity_future()
+        self.parse_meta_predecessor_connectivity()
