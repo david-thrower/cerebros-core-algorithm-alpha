@@ -704,12 +704,12 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
                     .parallel_units[0].neural_network_layer
 
         if len(self.levels_unmaterialized[-1].parallel_units) > 1:
-            materialized_neural_network_outputs =\
-                [unit_0.neural_network_layer
-                 for unit_0 in self.levels_unmaterialized[-1].parallel_units]
+            materialized_neural_network_outputs = []
+            for unit_0 in self.levels_unmaterialized[-1].parallel_units:
+                materialized_neural_network_outputs += unit_0.dendrites
         else:
             materialized_neural_network_outputs =\
-                self.levels_unmaterialized[-1].parallel_units[0].neural_network_layer
+                self.levels_unmaterialized[-1].parallel_units[0].dendrites[0]
 
         print("inputs")
         print(materialized_neural_network_inputs)

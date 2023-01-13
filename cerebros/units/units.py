@@ -1006,7 +1006,16 @@ class RealNeuron(Unit,
                 self.lateral_connectivity_future + self.predecessor_connectivity_future
             materialized_predecessor_units = []
             for unit_0 in un_materilized_predecessor_units:
-                materialized_predecessor_units += unit_0.materialized_predecessor_units
+                if isinstance(unit_0, InputUnit):
+                    materialized_predecessor_units.append(
+                        unit_0.neural_network_layer)
+                else:
+                    print(f"Trying unit (should be input):{unit_0}")
+                    materialized_predecessor_units += unit_0.dendrites
+                    print("materialized network layers: case RealNeuron")
+                    print(materialized_predecessor_units)
+                    print("materialized network layers case: Input")
+                    print(materialized_predecessor_units)
             print("materialized network layers")
             print(materialized_predecessor_units)
             if self.merging_strategy == "concatenate":
@@ -1041,14 +1050,14 @@ class RealNeuron(Unit,
             rn_5 = int(np.round(np.random.random(1)[0]*10**12))
             self.axon =\
                 tf.keras.layers.Dense(
-                    self.n_neurons,
-                    self.activation,
-                    name=f"{self.name}_dns")(merged_neural_network_layer_input)
+                    self.n_axon_neurons,
+                    self.axon_activation,
+                    name=f"{self.name}_axn")(merged_neural_network_layer_input)
             self.dendrites =\
                 [
                     tf.keras.layers.Dense(self.dendrite_units,
                                           activation=self.dendrite_activation,
-                                          name=f"{self.name}_dend-{int(i)}")
+                                          name=f"{self.name}_dend-{int(i)}")(self.axon)
                     for i in np.arange(self.n_dendrites)]
 
             self.materialized = True
