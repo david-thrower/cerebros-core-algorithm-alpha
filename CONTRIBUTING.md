@@ -1,5 +1,7 @@
 # Contributing guidelines:
 
+![assets/0-cerebros-logo.png](assets/0-cerebros-logo.png)
+
 ## Workflow for contributing
 
 1. Any member of the public may create an Issue in Github.
