@@ -305,6 +305,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                  project_name='cerebros-auto-ml-test',
                  batch_size=200,
                  meta_trial_number=0,
+                 base_models=[''],
                  *args,
                  **kwargs):
 
@@ -360,6 +361,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.epochs = epochs
         self.batch_size = batch_size
         self.meta_trial_number = meta_trial_number
+        self.base_models = base_models
         self.best_model_path = ""
         # Can be varied throughout the serch session;
         # must be controlled internally
@@ -441,6 +443,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
             project_name=self.project_name,
             trial_number=self.trial_number,
             subtrial_number=self.subtrial_number,
+            base_models=self.base_models,
             activation=self.activation,
             final_activation=self.final_activation,
             minimum_skip_connection_depth=self.minimum_skip_connection_depth,
@@ -770,6 +773,7 @@ class CerebrosRealNeuronNetwork(DenseAutoMlStructuralComponent,
                  project_name='cerebros-auto-ml-test',
                  batch_size=200,
                  meta_trial_number=0,
+                 base_models=[''],
                  *args,
                  **kwargs):
 
@@ -854,6 +858,7 @@ class CerebrosRealNeuronNetwork(DenseAutoMlStructuralComponent,
             num_lateral_connection_tries_per_unit=num_lateral_connection_tries_per_unit)
         self.trial_number = 0
         self.subtrial_number = 0
+        self.base_models = base_models
         self.neural_network_specs = []
         self.neural_network_futures = []
         self.needs_oracle_header = True
@@ -913,6 +918,7 @@ class CerebrosRealNeuronNetwork(DenseAutoMlStructuralComponent,
             project_name=self.project_name,
             trial_number=self.trial_number,
             subtrial_number=self.subtrial_number,
+            base_models=self.base_models,
             final_activation=self.final_activation,
             minimum_skip_connection_depth=self.minimum_skip_connection_depth,
             maximum_skip_connection_depth=self.maximum_skip_connection_depth,
