@@ -79,11 +79,13 @@ class InputUnit(Unit):
                  predecessor_levels=[],
                  n_neurons=1,
                  level_number=0,
+                 base_models=[''],
                  *args,
                  **kwargs):
 
         self.input_shape = input_shape
         self.neural_network_layer = []
+        self.base_models = base_models
 
         super().__init__(n_neurons,
                          predecessor_levels,
@@ -95,9 +97,14 @@ class InputUnit(Unit):
                          **kwargs)
 
     def materialize(self):
-        self.neural_network_layer =\
-            tf.keras.layers.Input(self.input_shape,
-                                  name=f"{self.name}_inp")
+        raw_input = tf.keras.layers.Input(self.input_shape,
+                                          name=f"{self.name}_inp")
+        if self.base_models != ['']:
+            self.neural_network_layer =\
+                self.base_models[self.unit_id](raw_input)
+        else:
+            self.neural_network_layer =\
+                raw_input
 
 
 class DenseUnit(Unit,

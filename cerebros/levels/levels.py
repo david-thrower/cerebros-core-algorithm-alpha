@@ -309,7 +309,8 @@ class Level(NeuralNetworkFutureComponent,
                 InputUnit(input_shape=self.input_shapes[unit_id_0],
                           unit_id=unit_id_0,
                           level_name=self.name,
-                          trial_number=self.trial_number)
+                          trial_number=self.trial_number,
+                          base_models=self.base_models)
 
         if unit_0.name not in [u.name for u in self.parallel_units]:
             self.parallel_units.append(unit_0)
@@ -624,6 +625,7 @@ class InputLevel(Level):
                  neural_network_future_name: str,
                  trial_number: int,
                  level_number: int,
+                 base_models=[''],
                  minimum_skip_connection_depth=1,
                  maximum_skip_connection_depth=7,
                  predecessor_level_connection_affinity_factor_first=5,
@@ -661,6 +663,7 @@ class InputLevel(Level):
         self.level_prototype = [{"0": 'InputUnitModule'}
                                 for _ in input_shapes]
         self.level_number = 0
+        self.base_models = base_models
         self.has_predecessors = "no"
         self.has_successors = "yes"
         self.input_shapes = input_shapes
@@ -1092,7 +1095,8 @@ class RealLevel(NeuralNetworkFutureComponent,
                 InputUnit(input_shape=self.input_shapes[unit_id_0],
                           unit_id=unit_id_0,
                           level_name=self.name,
-                          trial_number=self.trial_number)
+                          trial_number=self.trial_number,
+                          base_models=self.base_models)
 
         if unit_0.name not in [u.name for u in self.parallel_units]:
             self.parallel_units.append(unit_0)

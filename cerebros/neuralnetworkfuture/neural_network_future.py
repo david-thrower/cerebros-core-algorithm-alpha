@@ -29,6 +29,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
              project_name: str,
              trial_number: int,
              subtrial_number: int,
+             base_models=[''],
              level_number='nan',
              activation='elu',
              final_activation=None,
@@ -59,6 +60,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
         self.input_shapes = input_shapes
         self.output_shapes = output_shapes
         self.neural_network_spec = neural_network_spec
+        self.base_models = base_models
         self.name = f"{project_name}_trial_{str(trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}"
         self.activation = activation
         self.final_activation = final_activation
@@ -111,6 +113,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
                              has_successors="yes",
                              neural_network_future_name=self.name,
                              trial_number=self.trial_number,
+                             base_models=self.base_models,
                              level_number=0)]
         print(
             f">nnf>{self.predecessor_level_connection_affinity_factor_first_rounding_rule}")
@@ -433,6 +436,7 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
              project_name: str,
              trial_number: int,
              subtrial_number: int,
+             base_models=[''],
              level_number='nan',
              final_activation=None,
              merging_strategy="concatenate",
@@ -463,6 +467,7 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
         self.output_shapes = output_shapes
         self.neural_network_spec = neural_network_spec
         self.name = f"{project_name}_trial_{str(trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}"
+        self.base_models = base_models
         self.axon_activation = axon_activation
         self.min_n_dendrites = min_n_dendrites
         self.max_n_dendrites = max_n_dendrites
@@ -517,6 +522,7 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
                              has_successors="yes",
                              neural_network_future_name=self.name,
                              trial_number=self.trial_number,
+                             base_models=self.base_models,
                              level_number=0)]
         print(
             f">nnf>{self.predecessor_level_connection_affinity_factor_first_rounding_rule}")
