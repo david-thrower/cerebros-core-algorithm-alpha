@@ -98,8 +98,10 @@ class InputUnit(Unit):
 
     def materialize(self):
         if self.base_models != [''] and self.base_models[self.unit_id] != "":
+            inp = tf.keras.layers.Input(self.input_shape,
+                                        name=f"{self.name}_inp")
             self.neural_network_layer =\
-                self.base_models[self.unit_id]
+                self.base_models[self.unit_id](inp)
         else:
             self.neural_network_layer =\
                 tf.keras.layers.Input(self.input_shape,
