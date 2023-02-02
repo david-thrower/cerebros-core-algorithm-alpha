@@ -76,7 +76,7 @@ TIME = pendulum.now(tz='America/New_York').__str__()[:16]\
     .replace(':', '_')\
     .replace('-', '_')
 PROJECT_NAME = f'{TIME}_cerebros_auto_ml_test'
-INPUT_SHAPES = [1]
+INPUT_SHAPES = [()]
 
 # Cerebros parameters:
 
