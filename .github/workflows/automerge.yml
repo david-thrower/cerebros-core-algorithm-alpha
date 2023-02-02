@@ -40,3 +40,5 @@ jobs:
       run: python3 realnn-regression-example-ames-no-preproc.py
     - name: Test distributed random search Ames by running
       run: python3 regression-example-ames-no-preproc.py
+    - name: Test text classifier - random search - ham-spam
+      run: python3 text-class-ham-or-spam.py
