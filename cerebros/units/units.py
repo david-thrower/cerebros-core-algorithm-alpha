@@ -97,15 +97,17 @@ class InputUnit(Unit):
                          **kwargs)
 
     def materialize(self):
+
+        raw_input = tf.keras.layers.Input(self.input_shape,
+                                          name=f"{self.name}_inp")
+        print(f"$$$$$$>>>>> Base model: {self.base_models[self.unit_id]}")
+        print(f"input_shape: {self.input_shape}")
         if self.base_models != [''] and self.base_models[self.unit_id] != "":
-            inp = tf.keras.layers.Input(self.input_shape,
-                                        name=f"{self.name}_inp")
             self.neural_network_layer =\
-                self.base_models[self.unit_id](inp)
+                self.base_models[self.unit_id](raw_input)
         else:
             self.neural_network_layer =\
-                tf.keras.layers.Input(self.input_shape,
-                                      name=f"{self.name}_inp")
+                raw_input
 
 
 class DenseUnit(Unit,
