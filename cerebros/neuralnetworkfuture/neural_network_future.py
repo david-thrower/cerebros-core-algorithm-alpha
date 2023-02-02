@@ -308,9 +308,14 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
         print("")
         print("outputs")
         print(materialized_neural_network_outputs)
-
-        self.materialized_neural_network =\
-            tf.keras.Model(inputs=materialized_neural_network_inputs,
+        if self.base_models == ['']:
+            self.materialized_neural_network =\
+                tf.keras.Model(inputs=materialized_neural_network_inputs,
+                           outputs=materialized_neural_network_outputs,
+                           name=f"{self.name}_nn_materialized")
+        else:
+            self.materialized_neural_network =\
+                tf.keras.Model(inputs=materialized_neural_network_inputs.inputs,
                            outputs=materialized_neural_network_outputs,
                            name=f"{self.name}_nn_materialized")
 
