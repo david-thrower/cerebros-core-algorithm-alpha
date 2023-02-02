@@ -288,12 +288,12 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
             level.materialize()
         if len(self.levels_unmaterialized[0].parallel_units) > 1:
             materialized_neural_network_inputs =\
-                [unit_0.neural_network_layer
+                [unit_0.raw_input
                  for unit_0 in self.levels_unmaterialized[0].parallel_units]
         else:
             materialized_neural_network_inputs =\
                 self.levels_unmaterialized[0]\
-                    .parallel_units[0].neural_network_layer
+                    .parallel_units[0].raw_input
 
         if len(self.levels_unmaterialized[-1].parallel_units) > 1:
             materialized_neural_network_outputs =\
@@ -311,13 +311,13 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
         if self.base_models == ['']:
             self.materialized_neural_network =\
                 tf.keras.Model(inputs=materialized_neural_network_inputs,
-                           outputs=materialized_neural_network_outputs,
-                           name=f"{self.name}_nn_materialized")
+                               outputs=materialized_neural_network_outputs,
+                               name=f"{self.name}_nn_materialized")
         else:
             self.materialized_neural_network =\
-                tf.keras.Model(inputs=materialized_neural_network_inputs.inputs,
-                           outputs=materialized_neural_network_outputs,
-                           name=f"{self.name}_nn_materialized")
+                tf.keras.Model(inputs=materialized_neural_network_inputs,
+                               outputs=materialized_neural_network_outputs,
+                               name=f"{self.name}_nn_materialized")
 
     def compile_neural_network(self):
         self.materialized_neural_network.compile(
