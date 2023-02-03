@@ -324,10 +324,9 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
                                name=f"{self.name}_nn_materialized")
 
     def compile_neural_network(self):
-        if self.base_models == ['']:
-            jit_compile = True
-        else:
-            jit_compile = False
+        # Reserved in case we need to add conditional logic when JIT
+        # compilation will and won't work.
+        jit_compile = True
 
         self.materialized_neural_network.compile(
             loss=self.loss,
