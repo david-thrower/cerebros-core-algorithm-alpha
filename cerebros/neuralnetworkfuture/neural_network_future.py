@@ -55,6 +55,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
              loss="mse",
              metrics=[tf.keras.metrics.RootMeanSquaredError()],
              model_graph_file='test_model_graph.html',
+             train_data_dtype = tf.float32,
              *args,
              **kwargs):
         print(level_number)
@@ -74,6 +75,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
         self.uncompiled_materialized_neural_network = []
         self.compiled_materialized_neural_network = []
         self.model_graph_file = model_graph_file
+        self.train_data_dtype = train_data_dtype
 
         # super().__init__(self,
         #                 *args,
@@ -115,7 +117,8 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
                              neural_network_future_name=self.name,
                              trial_number=self.trial_number,
                              base_models=self.base_models,
-                             level_number=0)]
+                             level_number=0,
+                             train_data_dtype=self.train_data_dtype)]
         print(
             f">nnf>{self.predecessor_level_connection_affinity_factor_first_rounding_rule}")
         max_k = int(np.max([int(k)
@@ -332,7 +335,6 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
             optimizer=tf.keras.optimizers.Adam(
                     learning_rate=self.learning_rate),
             jit_compile=jit_compile)
-
 
     def util_parse_connectivity_csv(self):
 

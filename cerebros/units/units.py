@@ -80,12 +80,14 @@ class InputUnit(Unit):
                  n_neurons=1,
                  level_number=0,
                  base_models=[''],
+                 train_data_dtype=tf.float32,
                  *args,
                  **kwargs):
 
         self.input_shape = input_shape
         self.neural_network_layer = []
         self.base_models = base_models
+        self.train_data_dtype = train_data_dtype
 
         super().__init__(n_neurons,
                          predecessor_levels,
@@ -99,7 +101,8 @@ class InputUnit(Unit):
     def materialize(self):
 
         self.raw_input = tf.keras.layers.Input(self.input_shape,
-                                               name=f"{self.name}_inp")
+                                               name=f"{self.name}_inp",
+                                               dtype=self.train_data_dtype)
         print(f"$$$$$$>>>>> Base model: {self.base_models[self.unit_id]}")
         print(f"input_shape: {self.input_shape}")
         if self.base_models != [''] and self.base_models[self.unit_id] != "":
