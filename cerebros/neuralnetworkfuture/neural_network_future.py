@@ -55,7 +55,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
              loss="mse",
              metrics=[tf.keras.metrics.RootMeanSquaredError()],
              model_graph_file='test_model_graph.html',
-             train_data_dtype = tf.float32,
+             train_data_dtype=tf.float32,
              *args,
              **kwargs):
         print(level_number)
