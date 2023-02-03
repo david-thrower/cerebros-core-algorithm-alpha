@@ -306,6 +306,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                  batch_size=200,
                  meta_trial_number=0,
                  base_models=[''],
+                 train_data_dtype=tf.float32,
                  *args,
                  **kwargs):
 
@@ -363,6 +364,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.meta_trial_number = meta_trial_number
         self.base_models = base_models
         self.best_model_path = ""
+        self.train_data_dtype = train_data_dtype
         # Can be varied throughout the serch session;
         # must be controlled internally
         DenseAutoMlStructuralComponent.__init__(
@@ -463,7 +465,8 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
             learning_rate=self.learning_rate,
             loss=self.loss,
             metrics=self.metrics,
-            model_graph_file=model_graph_file
+            model_graph_file=model_graph_file,
+            train_data_dtype=self.train_data_dtype
             )
         nnf.materialize()
         nnf.compile_neural_network()

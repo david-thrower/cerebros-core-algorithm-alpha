@@ -17,7 +17,7 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component \
     zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 import jax.numpy as jnp
 import numpy as np
-
+from tensorflow import float32
 
 class Level(NeuralNetworkFutureComponent,
             DenseAutoMlStructuralComponent):
@@ -207,6 +207,7 @@ class Level(NeuralNetworkFutureComponent,
                  predecessor_level_connection_affinity_factor_main_rounding_rule='ceil',
                  predecessor_level_connection_affinity_factor_decay_main=zero_7_exp_decay,
                  seed=8675309,
+                 train_data_dtype=float32,
                  *args,
                  **kwargs):
         # inbound_connections now kept at the DenseUnit level.
@@ -310,7 +311,8 @@ class Level(NeuralNetworkFutureComponent,
                           unit_id=unit_id_0,
                           level_name=self.name,
                           trial_number=self.trial_number,
-                          base_models=self.base_models)
+                          base_models=self.base_models,
+                          train_data_dtype=self.train_data_dtype)
 
         if unit_0.name not in [u.name for u in self.parallel_units]:
             self.parallel_units.append(unit_0)
