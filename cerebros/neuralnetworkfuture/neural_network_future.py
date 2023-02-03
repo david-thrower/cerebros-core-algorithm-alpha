@@ -321,25 +321,18 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
                                name=f"{self.name}_nn_materialized")
 
     def compile_neural_network(self):
-        try:
-            self.materialized_neural_network.compile(
-                loss=self.loss,
-                metrics=self.metrics,
-                optimizer=tf.keras.optimizers.Adam(
-                        learning_rate=self.learning_rate),
-                jit_compile=True)
-        except Exception as exc:
-            warnings.warn("Warning: Jit compilation was unsuccessful for this "
-                          "model. Attempting to compile without JIT "
-                          "compilation. This may take longer to train than it "
-                          "would otherwise. Error encountered (stack trace): "
-                          f"{exc}", Warning)
-            self.materialized_neural_network.compile(
-                loss=self.loss,
-                metrics=self.metrics,
-                optimizer=tf.keras.optimizers.Adam(
-                        learning_rate=self.learning_rate),
-                jit_compile=False)
+        if self.base_models == ['']:
+            jit_compile = True
+        else:
+            jit_compile = False
+
+        self.materialized_neural_network.compile(
+            loss=self.loss,
+            metrics=self.metrics,
+            optimizer=tf.keras.optimizers.Adam(
+                    learning_rate=self.learning_rate),
+            jit_compile=jit_compile)
+
 
     def util_parse_connectivity_csv(self):
 

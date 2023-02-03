@@ -26,7 +26,7 @@ prediction_target_column = "Class"
 positive_class_label = "spam"  # Label
 
 # How many of the samples in the data set to actually use on this training run
-number_of_samples_to_use = 1000
+number_of_samples_to_use = 200
 
 # Cerebros configurables:
 
@@ -58,8 +58,8 @@ sequence_output = outputs["sequence_output"]  # [batch_size, seq_length, 768].
 embedding_model = tf.keras.Model(text_input, pooled_output)
 
 ### Load the Data set
-raw_text = pd.read_csv('SMSCollection.csv', dtype='object')
-raw_text = raw_text.iloc[:1000, :]
+raw_text = pd.read_csv(data_file, dtype='object')
+raw_text = raw_text.iloc[:number_of_samples_to_use, :]
 # One hot encode the label
 raw_text[prediction_target_column] =\
   raw_text[prediction_target_column]\
