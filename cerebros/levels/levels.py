@@ -19,6 +19,7 @@ import jax.numpy as jnp
 import numpy as np
 from tensorflow import float32
 
+
 class Level(NeuralNetworkFutureComponent,
             DenseAutoMlStructuralComponent):
     """
@@ -242,6 +243,7 @@ class Level(NeuralNetworkFutureComponent,
                              "real objects just doesn't make any sense.")
         self.successor_levels = []
         self.successor_connectivity_errors_2d = jnp.array([])
+        self.train_data_dtype = train_data_dtype
 
     def set_possible_predecessor_connections(self):
         """
