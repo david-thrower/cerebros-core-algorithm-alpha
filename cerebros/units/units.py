@@ -99,7 +99,7 @@ class InputUnit(Unit):
     def materialize(self):
 
         self.raw_input = tf.keras.layers.Input(self.input_shape,
-                                          name=f"{self.name}_inp")
+                                               name=f"{self.name}_inp")
         print(f"$$$$$$>>>>> Base model: {self.base_models[self.unit_id]}")
         print(f"input_shape: {self.input_shape}")
         if self.base_models != [''] and self.base_models[self.unit_id] != "":

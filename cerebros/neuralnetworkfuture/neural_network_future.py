@@ -1,5 +1,6 @@
 """A furutes object that coordinates the neural network's high-level
 architecture"""
+import warnings
 from cerebros.nnfuturecomponent.neural_network_future_component \
     import NeuralNetworkFutureComponent
 from cerebros.levels.levels import InputLevel, DenseLevel, FinalDenseLevel, \
@@ -320,12 +321,25 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
                                name=f"{self.name}_nn_materialized")
 
     def compile_neural_network(self):
-        self.materialized_neural_network.compile(
-            loss=self.loss,
-            metrics=self.metrics,
-            optimizer=tf.keras.optimizers.Adam(
-                    learning_rate=self.learning_rate),
-            jit_compile=True)
+        try:
+            self.materialized_neural_network.compile(
+                loss=self.loss,
+                metrics=self.metrics,
+                optimizer=tf.keras.optimizers.Adam(
+                        learning_rate=self.learning_rate),
+                jit_compile=True)
+        except Exception as exc:
+            warnings.warn("Warning: Jit compilation was unsuccessful for this "
+                          "model. Attempting to compile without JIT "
+                          "compilation. This may take longer to train than it "
+                          "would otherwise. Error encountered (stack trace): "
+                          f"{exc}", Warning)
+            self.materialized_neural_network.compile(
+                loss=self.loss,
+                metrics=self.metrics,
+                optimizer=tf.keras.optimizers.Adam(
+                        learning_rate=self.learning_rate),
+                jit_compile=False)
 
     def util_parse_connectivity_csv(self):
 
