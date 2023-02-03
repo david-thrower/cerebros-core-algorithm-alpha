@@ -39,8 +39,8 @@ num_lateral_connection_tries_per_unit = 2
 learning_rate = 0.001
 epochs = 10  # [1, 100]
 batch_size = 20
-maximum_levels = 6  # [3,7]
-maximum_units_per_level = 4  # [2,10]
+maximum_levels = 4  # [3,7]
+maximum_units_per_level = 7  # [2,10]
 maximum_neurons_per_unit = 4  # [2,20]
 
 
@@ -103,7 +103,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     maximum_neurons_per_unit=maximum_neurons_per_unit,
     activation=activation,
     final_activation='sigmoid',
-    number_of_architecture_moities_to_try=7,
+    number_of_architecture_moities_to_try=2,
     number_of_tries_per_architecture_moity=1,
     minimum_skip_connection_depth=1,
     maximum_skip_connection_depth=7,
