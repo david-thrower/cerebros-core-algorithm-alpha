@@ -50,7 +50,7 @@ for layer in foundation_model.layers:
 
 relevant_layers = foundation_model.layers[-2]
 embedding_model = tf.keras.Model(inputs=foundation_model.layers[0].input,
-                    outputs=foundation_model.layers[-2].output)
+                                 outputs=foundation_model.layers[-2].output)
 
 ##### Fix the data ingestion and the Cerebros config ...
 ### Load the Data set ... repalce with image ingestion
@@ -60,9 +60,9 @@ embedding_model = tf.keras.Model(inputs=foundation_model.layers[0].input,
 # raw_text[prediction_target_column] =\
 #   raw_text[prediction_target_column]\
 #   .apply(lambda x: 1 if x == positive_class_label else 0)
-labels = '' # raw_text.pop(prediction_target_column)
-labels = '' # labels.values
-data = '' # raw_text.values
+labels = ''  # raw_text.pop(prediction_target_column)
+labels = ''  # labels.values
+data = ''  # raw_text.values
 
 labels_tensor = tf.constant(labels, dtype=tf.int8)
 data_tensor = tf.constant(data, dtype=tf.string)
