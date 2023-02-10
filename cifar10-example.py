@@ -5,7 +5,7 @@ import tensorflow as tf
 import tensorflow_hub as hub
 import pandas as pd
 import numpy as np
-import imageio
+import imageio.v3 as iio
 # from multiprocessing import Pool  # , Process
 from cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search\
     import SimpleCerebrosRandomSearch
@@ -36,7 +36,7 @@ def make_dataset(dataset):
     labels = []
     for i in np.arange(ciphar10_metadata.shape[0]):
         imfile = ciphar10_metadata.loc[i]['file_name']
-        img = imageio.imread(imfile)
+        img = iio.imageio.imread(imfile)
         images.append(np.array(img))
         labels.append(int(ciphar10_metadata.loc[i]['label']))
     data_tensor = tf.constant(images)
@@ -47,7 +47,6 @@ def make_dataset(dataset):
 
 selected_x_train, selected_y_train_ohe =\
     make_dataset(ciphar10_train)
-
 
 # Cerebros configurables:
 
