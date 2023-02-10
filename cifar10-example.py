@@ -36,12 +36,14 @@ def make_dataset(dataset):
     labels = []
     for i in np.arange(ciphar10_metadata.shape[0]):
         imfile = ciphar10_metadata.loc[i]['file_name']
-        img = iio.imageio.imread(imfile)
+        img = iio.imread(imfile)
         images.append(np.array(img))
         labels.append(int(ciphar10_metadata.loc[i]['label']))
     data_tensor = tf.constant(images)
     labels_tensor = tf.constant(labels)
     labels_tensor_ohe = tf.one_hot(labels_tensor)
+    print(f"labels_tensor shape: {labels_tensor.shape}")
+    print(f"data_tensor shape: {data_tensor.shape}")
     return data_tensor, labels_tensor_ohe
 
 
