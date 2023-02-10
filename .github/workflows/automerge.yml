@@ -42,3 +42,5 @@ jobs:
       run: python3 regression-example-ames-no-preproc.py
     - name: Test text classifier - random search - ham-spam
       run: python3 text-class-ham-or-spam.py
+    - name: Test image classifier - small subset of CIFAR10
+      run: python3 cifar10-example.py
