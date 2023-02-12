@@ -48,7 +48,7 @@ def make_dataset(dataset):
     labels_tensor = tf.constant(labels)
     labels_tensor_ohe = tf.one_hot(indices=labels_tensor,
                                    depth=10)
-    print(f"labels_tensor shape: {labels_tensor.shape}")
+    print(f"labels_tensor_ohe shape: {labels_tensor_ohe.shape}")
     print(f"data_tensor shape: {data_tensor.shape}")
     return data_tensor, labels_tensor_ohe
 
@@ -74,12 +74,13 @@ maximum_neurons_per_unit = 4  # [2,20]
 
 # Build BERT base model
 image_input_0 = tf.keras.layers.Input(shape=INPUT_SHAPES[0])
-resized = tf.keras.layers.Resizing(
+resizing = tf.keras.layers.Resizing(
     height=RESIZE_TO[0],
     width=RESIZE_TO[1],
     interpolation='bilinear',
-    crop_to_aspect_ratio=False)(image_input_0)
-
+    crop_to_aspect_ratio=False)
+print(resizing)
+resized = resizing(image_input_0)
 base_model_url = "https://tfhub.dev/google/tf2-preview/mobilenet_v2/"\
     + "classification/4"
 preprocessor = hub.KerasLayer(base_model_url,
@@ -91,9 +92,25 @@ foundation_model = tf.keras.Model(image_input_0,
 for layer in foundation_model.layers:
     layer.trainable = True
 
-relevant_layers = foundation_model.layers[-2]
+last_relevant_layer = foundation_model.layers[-2]
 embedding_model = tf.keras.Model(inputs=foundation_model.layers[0].input,
-                                 outputs=foundation_model.layers[-2].output)
+                                 outputs=last_relevant_layer.output)
+
+## ### replace with this
+# tf.keras.applications.MobileNetV3Large(
+#     input_shape=None,
+#     alpha=1.0,
+#     minimalistic=False,
+#     include_top=True,
+#     weights="imagenet",
+#     input_tensor=None,
+#     classes=1000,
+#     pooling=None,
+#     dropout_rate=0.2,
+#     classifier_activation="softmax",
+#     include_preprocessing=True,
+# )
+
 
 ##### Fix the data ingestion and the Cerebros config ...
 ### Load the Data set ... repalce with image ingestion
