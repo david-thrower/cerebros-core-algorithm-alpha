@@ -36,7 +36,12 @@ def make_dataset(dataset):
     labels = []
     for i in np.arange(ciphar10_metadata.shape[0]):
         imfile = ciphar10_metadata.loc[i]['file_name']
+
+        # Debug delete
+        print(f"$$$$: attempting file: {imfile}")
+
         img = iio.imread(imfile)
+
         images.append(np.array(img))
         labels.append(int(ciphar10_metadata.loc[i]['label']))
     data_tensor = tf.constant(images)
