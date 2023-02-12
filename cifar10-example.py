@@ -38,7 +38,7 @@ def make_dataset(dataset):
         imfile = ciphar10_metadata.loc[i]['file_name']
 
         # Debug delete
-        print(f"$$$$: attempting file: {imfile}")
+        # print(f"$$$$: attempting file: {imfile}")
 
         img = iio.imread(imfile)
 
@@ -79,7 +79,9 @@ resized = tf.keras.layers.Resizing(
     interpolation='bilinear',
     crop_to_aspect_ratio=False)(image_input_0)
 
-preprocessor = hub.KerasLayer("https://tfhub.dev/google/tf2-preview/mobilenet_v2/classification/4",
+base_model_url = "https://tfhub.dev/google/tf2-preview/mobilenet_v2/"\
+    + "classification/4"
+preprocessor = hub.KerasLayer(base_model_url,
                               output_shape=[1001])(resized)
 classifier_output = preprocessor(image_input_0)
 foundation_model = tf.keras.Model(image_input_0,
