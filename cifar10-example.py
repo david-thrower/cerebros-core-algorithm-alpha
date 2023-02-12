@@ -83,8 +83,8 @@ resized = tf.keras.layers.Resizing(
 base_model_url = "https://tfhub.dev/google/tf2-preview/mobilenet_v2/"\
     + "classification/4"
 preprocessor = hub.KerasLayer(base_model_url,
-                              output_shape=[1001])(resized)
-classifier_output = preprocessor(image_input_0)
+                              output_shape=[1001])
+classifier_output = preprocessor(resized)
 foundation_model = tf.keras.Model(image_input_0,
                                   classifier_output)
 
