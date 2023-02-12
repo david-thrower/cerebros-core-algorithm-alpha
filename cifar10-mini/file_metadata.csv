@@ -1499,7 +1499,6 @@ cifar10-mini/train/image_1496.png,train,7,horse
 cifar10-mini/train/image_1497.png,train,0,airplane
 cifar10-mini/train/image_1498.png,train,5,dog
 cifar10-mini/train/image_1499.png,train,8,boat
-file_name,data_set,label,label_annotation
 cifar10-mini/test/image_0.png,test,7,horse
 cifar10-mini/test/image_1.png,test,3,cat
 cifar10-mini/test/image_2.png,test,8,boat
