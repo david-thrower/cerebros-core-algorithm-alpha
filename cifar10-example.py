@@ -46,7 +46,8 @@ def make_dataset(dataset):
         labels.append(int(ciphar10_metadata.loc[i]['label']))
     data_tensor = tf.constant(images)
     labels_tensor = tf.constant(labels)
-    labels_tensor_ohe = tf.one_hot(labels_tensor)
+    labels_tensor_ohe = tf.one_hot(indices=labels_tensor,
+                                   depth=10)
     print(f"labels_tensor shape: {labels_tensor.shape}")
     print(f"data_tensor shape: {data_tensor.shape}")
     return data_tensor, labels_tensor_ohe
