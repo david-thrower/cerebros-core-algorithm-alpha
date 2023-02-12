@@ -84,9 +84,9 @@ base_model_url = "https://tfhub.dev/google/tf2-preview/mobilenet_v2/"\
     + "classification/4"
 preprocessor = hub.KerasLayer(base_model_url,
                               output_shape=[1001])
-classifier_output = preprocessor(resized)
+preprocessor_output = preprocessor(resized)
 foundation_model = tf.keras.Model(image_input_0,
-                                  classifier_output)
+                                  preprocessor_output)
 
 for layer in foundation_model.layers:
     layer.trainable = True
