@@ -490,6 +490,9 @@ class DenseUnit(Unit,
             if self.merging_strategy == "concatenate":
                 # rn_1 = int(np.round(np.random.random(1)[0]*10**12))
                 rn_1 = ""
+                print(
+                    "materialized_predecessor_units "
+                    f"{materialized_predecessor_units}")
                 unprocessed_merged_nn_layer_input = tf.keras.layers.Concatenate(
                     axis=1, name=f"{self.name}_cat_{rn_1}")(materialized_predecessor_units)
             elif self.merging_strategy == "add":
