@@ -18,7 +18,7 @@ from ast import literal_eval
 
 
 # How many of the samples in the data set to actually use on this training run
-number_of_samples_to_use = 200
+number_of_samples_to_use = 400
 INPUT_SHAPES = [(32, 32, 3)]  # resize from ]
 RESIZE_TO = (224, 224, 3)
 
