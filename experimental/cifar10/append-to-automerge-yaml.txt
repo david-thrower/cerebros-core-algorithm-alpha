@@ -1,0 +1,2 @@
+- name: Test image classifier - small subset of CIFAR10 no embedding
+  run: python3 cerebros-no-embedding-image-example.py
