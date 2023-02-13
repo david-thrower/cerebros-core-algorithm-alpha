@@ -438,6 +438,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
     def run_moity_permutations(self, spec, subtrial_number, lock):
         model_graph_file = f"{self.project_name}/model_graphs/tr_{str(self.trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}.html"
         #with STRATEGY.scope():
+        print(f"SimpleCerebrosRandomSearch.input_shapes: {self.input_shapes}")
         nnf = NeuralNetworkFuture(
             input_shapes=self.input_shapes,
             output_shapes=self.output_shapes,
