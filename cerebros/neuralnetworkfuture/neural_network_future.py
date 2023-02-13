@@ -1,5 +1,6 @@
 """A furutes object that coordinates the neural network's high-level
 architecture"""
+import warnings
 from cerebros.nnfuturecomponent.neural_network_future_component \
     import NeuralNetworkFutureComponent
 from cerebros.levels.levels import InputLevel, DenseLevel, FinalDenseLevel, \
@@ -23,12 +24,13 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
 
     def __init__(
              self,
-             input_shapes: tuple,
+             input_shapes: list,
              output_shapes: list,
              neural_network_spec: dict,
              project_name: str,
              trial_number: int,
              subtrial_number: int,
+             base_models=[''],
              level_number='nan',
              activation='elu',
              final_activation=None,
@@ -53,12 +55,14 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
              loss="mse",
              metrics=[tf.keras.metrics.RootMeanSquaredError()],
              model_graph_file='test_model_graph.html',
+             train_data_dtype=tf.float32,
              *args,
              **kwargs):
         print(level_number)
         self.input_shapes = input_shapes
         self.output_shapes = output_shapes
         self.neural_network_spec = neural_network_spec
+        self.base_models = base_models
         self.name = f"{project_name}_trial_{str(trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}"
         self.activation = activation
         self.final_activation = final_activation
@@ -71,6 +75,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
         self.uncompiled_materialized_neural_network = []
         self.compiled_materialized_neural_network = []
         self.model_graph_file = model_graph_file
+        self.train_data_dtype = train_data_dtype
 
         # super().__init__(self,
         #                 *args,
@@ -111,7 +116,9 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
                              has_successors="yes",
                              neural_network_future_name=self.name,
                              trial_number=self.trial_number,
-                             level_number=0)]
+                             base_models=self.base_models,
+                             level_number=0,
+                             train_data_dtype=self.train_data_dtype)]
         print(
             f">nnf>{self.predecessor_level_connection_affinity_factor_first_rounding_rule}")
         max_k = int(np.max([int(k)
@@ -285,12 +292,12 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
             level.materialize()
         if len(self.levels_unmaterialized[0].parallel_units) > 1:
             materialized_neural_network_inputs =\
-                [unit_0.neural_network_layer
+                [unit_0.raw_input
                  for unit_0 in self.levels_unmaterialized[0].parallel_units]
         else:
             materialized_neural_network_inputs =\
                 self.levels_unmaterialized[0]\
-                    .parallel_units[0].neural_network_layer
+                    .parallel_units[0].raw_input
 
         if len(self.levels_unmaterialized[-1].parallel_units) > 1:
             materialized_neural_network_outputs =\
@@ -305,19 +312,29 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
         print("")
         print("outputs")
         print(materialized_neural_network_outputs)
-
-        self.materialized_neural_network =\
-            tf.keras.Model(inputs=materialized_neural_network_inputs,
-                           outputs=materialized_neural_network_outputs,
-                           name=f"{self.name}_nn_materialized")
+        if self.base_models == ['']:
+            self.materialized_neural_network =\
+                tf.keras.Model(inputs=materialized_neural_network_inputs,
+                               outputs=materialized_neural_network_outputs,
+                               name=f"{self.name}_nn_materialized")
+        else:
+            self.materialized_neural_network =\
+                tf.keras.Model(inputs=materialized_neural_network_inputs,
+                               outputs=materialized_neural_network_outputs,
+                               name=f"{self.name}_nn_materialized")
 
     def compile_neural_network(self):
+        if self.base_models == ['']:
+            jit_compile = True
+        else:
+            jit_compile = False
+
         self.materialized_neural_network.compile(
             loss=self.loss,
             metrics=self.metrics,
             optimizer=tf.keras.optimizers.Adam(
                     learning_rate=self.learning_rate),
-            jit_compile=True)
+            jit_compile=jit_compile)
 
     def util_parse_connectivity_csv(self):
 
@@ -423,7 +440,7 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
 
     def __init__(
              self,
-             input_shapes: tuple,
+             input_shapes: list,
              output_shapes: list,
              neural_network_spec: dict,
              axon_activation: str,
@@ -433,6 +450,7 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
              project_name: str,
              trial_number: int,
              subtrial_number: int,
+             base_models=[''],
              level_number='nan',
              final_activation=None,
              merging_strategy="concatenate",
@@ -463,6 +481,7 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
         self.output_shapes = output_shapes
         self.neural_network_spec = neural_network_spec
         self.name = f"{project_name}_trial_{str(trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}"
+        self.base_models = base_models
         self.axon_activation = axon_activation
         self.min_n_dendrites = min_n_dendrites
         self.max_n_dendrites = max_n_dendrites
@@ -517,6 +536,7 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
                              has_successors="yes",
                              neural_network_future_name=self.name,
                              trial_number=self.trial_number,
+                             base_models=self.base_models,
                              level_number=0)]
         print(
             f">nnf>{self.predecessor_level_connection_affinity_factor_first_rounding_rule}")

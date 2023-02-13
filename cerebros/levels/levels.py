@@ -17,6 +17,7 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component \
     zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 import jax.numpy as jnp
 import numpy as np
+from tensorflow import float32
 
 
 class Level(NeuralNetworkFutureComponent,
@@ -207,6 +208,7 @@ class Level(NeuralNetworkFutureComponent,
                  predecessor_level_connection_affinity_factor_main_rounding_rule='ceil',
                  predecessor_level_connection_affinity_factor_decay_main=zero_7_exp_decay,
                  seed=8675309,
+                 train_data_dtype=float32,
                  *args,
                  **kwargs):
         # inbound_connections now kept at the DenseUnit level.
@@ -241,6 +243,7 @@ class Level(NeuralNetworkFutureComponent,
                              "real objects just doesn't make any sense.")
         self.successor_levels = []
         self.successor_connectivity_errors_2d = jnp.array([])
+        self.train_data_dtype = train_data_dtype
 
     def set_possible_predecessor_connections(self):
         """
@@ -305,11 +308,14 @@ class Level(NeuralNetworkFutureComponent,
                   p_lateral_connection_decay=self.p_lateral_connection_decay,
                   num_lateral_connection_tries_per_unit=self.num_lateral_connection_tries_per_unit)
         else:
+            print(f"InputLevel.input_shapes {self.input_shapes}")
             unit_0 = \
                 InputUnit(input_shape=self.input_shapes[unit_id_0],
                           unit_id=unit_id_0,
                           level_name=self.name,
-                          trial_number=self.trial_number)
+                          trial_number=self.trial_number,
+                          base_models=self.base_models,
+                          train_data_dtype=self.train_data_dtype)
 
         if unit_0.name not in [u.name for u in self.parallel_units]:
             self.parallel_units.append(unit_0)
@@ -624,6 +630,7 @@ class InputLevel(Level):
                  neural_network_future_name: str,
                  trial_number: int,
                  level_number: int,
+                 base_models=[''],
                  minimum_skip_connection_depth=1,
                  maximum_skip_connection_depth=7,
                  predecessor_level_connection_affinity_factor_first=5,
@@ -661,6 +668,7 @@ class InputLevel(Level):
         self.level_prototype = [{"0": 'InputUnitModule'}
                                 for _ in input_shapes]
         self.level_number = 0
+        self.base_models = base_models
         self.has_predecessors = "no"
         self.has_successors = "yes"
         self.input_shapes = input_shapes
@@ -1092,7 +1100,8 @@ class RealLevel(NeuralNetworkFutureComponent,
                 InputUnit(input_shape=self.input_shapes[unit_id_0],
                           unit_id=unit_id_0,
                           level_name=self.name,
-                          trial_number=self.trial_number)
+                          trial_number=self.trial_number,
+                          base_models=self.base_models)
 
         if unit_0.name not in [u.name for u in self.parallel_units]:
             self.parallel_units.append(unit_0)
