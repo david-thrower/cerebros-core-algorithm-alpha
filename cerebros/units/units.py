@@ -104,7 +104,7 @@ class InputUnit(Unit):
                                                name=f"{self.name}_inp",
                                                dtype=self.train_data_dtype)
         print(f"$$$$$$>>>>> Base model: {self.base_models[self.unit_id]}")
-        print(f"input_shape: {self.input_shape}")
+        print(f"InputUnit.input_shape: {self.input_shape}")
         if self.base_models != [''] and self.base_models[self.unit_id] != "":
             self.neural_network_layer =\
                 self.base_models[self.unit_id](self.raw_input)
