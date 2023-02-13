@@ -308,6 +308,7 @@ class Level(NeuralNetworkFutureComponent,
                   p_lateral_connection_decay=self.p_lateral_connection_decay,
                   num_lateral_connection_tries_per_unit=self.num_lateral_connection_tries_per_unit)
         else:
+            print(f"InputLevel.input_shapes {self.input_shapes}")
             unit_0 = \
                 InputUnit(input_shape=self.input_shapes[unit_id_0],
                           unit_id=unit_id_0,
