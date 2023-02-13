@@ -44,3 +44,5 @@ jobs:
       run: python3 text-class-ham-or-spam.py
     - name: Test image classifier - small subset of CIFAR10
       run: python3 cifar10-example.py
+    - name: Test image classifier - small subset of CIFAR10 no embedding
+      run: python3 cerebros-no-embedding-image-example.py
