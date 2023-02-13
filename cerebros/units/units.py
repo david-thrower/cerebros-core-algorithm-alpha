@@ -79,11 +79,15 @@ class InputUnit(Unit):
                  predecessor_levels=[],
                  n_neurons=1,
                  level_number=0,
+                 base_models=[''],
+                 train_data_dtype=tf.float32,
                  *args,
                  **kwargs):
 
         self.input_shape = input_shape
         self.neural_network_layer = []
+        self.base_models = base_models
+        self.train_data_dtype = train_data_dtype
 
         super().__init__(n_neurons,
                          predecessor_levels,
@@ -95,9 +99,18 @@ class InputUnit(Unit):
                          **kwargs)
 
     def materialize(self):
-        self.neural_network_layer =\
-            tf.keras.layers.Input(self.input_shape,
-                                  name=f"{self.name}_inp")
+
+        self.raw_input = tf.keras.layers.Input(self.input_shape,
+                                               name=f"{self.name}_inp",
+                                               dtype=self.train_data_dtype)
+        print(f"$$$$$$>>>>> Base model: {self.base_models[self.unit_id]}")
+        print(f"InputUnit.input_shape: {self.input_shape}")
+        if self.base_models != [''] and self.base_models[self.unit_id] != "":
+            self.neural_network_layer =\
+                self.base_models[self.unit_id](self.raw_input)
+        else:
+            self.neural_network_layer =\
+                self.raw_input
 
 
 class DenseUnit(Unit,
@@ -477,6 +490,9 @@ class DenseUnit(Unit,
             if self.merging_strategy == "concatenate":
                 # rn_1 = int(np.round(np.random.random(1)[0]*10**12))
                 rn_1 = ""
+                print(
+                    "materialized_predecessor_units "
+                    f"{materialized_predecessor_units}")
                 unprocessed_merged_nn_layer_input = tf.keras.layers.Concatenate(
                     axis=1, name=f"{self.name}_cat_{rn_1}")(materialized_predecessor_units)
             elif self.merging_strategy == "add":

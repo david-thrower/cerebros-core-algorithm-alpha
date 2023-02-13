@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "54-create-new-architectural-pattern"]
+    branches: [ "main", "67-base-models-embeddings-encoders"]
 
 permissions:
   contents: read
@@ -40,3 +40,7 @@ jobs:
       run: python3 realnn-regression-example-ames-no-preproc.py
     - name: Test distributed random search Ames by running
       run: python3 regression-example-ames-no-preproc.py
+    - name: Test text classifier - random search - ham-spam
+      run: python3 text-class-ham-or-spam.py
+    - name: Test image classifier - small subset of CIFAR10
+      run: python3 cifar10-example.py
