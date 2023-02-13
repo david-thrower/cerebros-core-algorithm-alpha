@@ -89,10 +89,10 @@ base_new = tf.keras.applications.MobileNetV3Large(
 for layer in base_new.layers:
     layer.trainable = True
 
-last_relevant_layer = base_new.layers[-4]
-last_relevant_layer_extracted = last_relevant_layer.output[0][0][0]
+last_relevant_layer = base_new.layers[-2]
+# last_relevant_layer_extracted = last_relevant_layer #.output[0][0][0]
 base_embedding = tf.keras.Model(inputs=base_new.layers[0].input,
-                                outputs=last_relevant_layer_extracted)
+                                outputs=last_relevant_layer.output)
 
 
 image_input_0 = tf.keras.layers.Input(shape=INPUT_SHAPES[0])
@@ -121,7 +121,7 @@ PROJECT_NAME = f'{TIME}_cerebros_auto_ml_test'
 training_x = [selected_x_train]
 train_labels = [selected_y_train_ohe]
 
-OUTPUT_SHAPES = [3]
+OUTPUT_SHAPES = [10]
 meta_trial_number = str(int(np.random.random() * 10 ** 12))
 
 cerebros_automl = SimpleCerebrosRandomSearch(
