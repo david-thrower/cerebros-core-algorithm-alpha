@@ -1,4 +1,5 @@
 
+
 # Imports
 import tensorflow as tf
 import tensorflow_hub as hub
@@ -15,6 +16,7 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
 from ast import literal_eval
 
 ### Global configurables:
+
 
 # How many of the samples in the data set to actually use on this training run
 number_of_samples_to_use = 400
@@ -69,42 +71,14 @@ maximum_levels = 4  # [3,7]
 maximum_units_per_level = 7  # [2,10]
 maximum_neurons_per_unit = 4  # [2,20]
 
+# Base model that doe not embed, only flattens the image
 
-## ### replace with this
-base_new = tf.keras.applications.MobileNetV3Large(
-    input_shape=None,
-    alpha=1.0,
-    minimalistic=False,
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    classes=1000,
-    pooling=None,
-    dropout_rate=0.2,
-    classifier_activation="softmax",
-    include_preprocessing=True,
-)
+new_inp = tf.keras.layers.Input(shape=(32,32,3))
+flattened = tf.keras.layers.Flatten()(new_inp)
+flat_model = tf.keras.Model(inputs = new_inp, outputs = flattened)
+flat_model.summary()
 
-for layer in base_new.layers:
-    layer.trainable = True
-
-last_relevant_layer = base_new.layers[-2]
-# last_relevant_layer_extracted = last_relevant_layer #.output[0][0][0]
-base_embedding = tf.keras.Model(inputs=base_new.layers[0].input,
-                                outputs=last_relevant_layer.output)
-
-
-image_input_0 = tf.keras.layers.Input(shape=INPUT_SHAPES[0])
-resizing = tf.keras.layers.Resizing(
-    height=RESIZE_TO[0],
-    width=RESIZE_TO[1],
-    interpolation='bilinear',
-    crop_to_aspect_ratio=False)
-resized = resizing(image_input_0)
-embedded = base_embedding(resized)
-
-embedding_model = tf.keras.Model(image_input_0,
-                                 embedded)
+#
 
 # Final training task
 
@@ -166,7 +140,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     model_graphs='model_graphs',
     batch_size=batch_size,
     meta_trial_number=meta_trial_number,
-    base_models=[embedding_model])
+    base_models=[flat_model])
 val_top_1_categorical_accuracy =\
     cerebros_automl.run_random_search()
 print(val_top_1_categorical_accuracy)
