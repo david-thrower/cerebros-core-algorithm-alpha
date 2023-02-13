@@ -440,7 +440,7 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
 
     def __init__(
              self,
-             input_shapes: tuple,
+             input_shapes: list,
              output_shapes: list,
              neural_network_spec: dict,
              axon_activation: str,
