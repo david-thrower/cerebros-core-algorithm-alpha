@@ -32,16 +32,16 @@ number_of_samples_to_use = 200
 
 activation = 'gelu'
 predecessor_level_connection_affinity_factor_first = 49.9999
-predecessor_level_connection_affinity_factor_main = 0.15665
-max_consecutive_lateral_connections = 34
-p_lateral_connection = 0.1
-num_lateral_connection_tries_per_unit = 49
-learning_rate = 0.000104681
-epochs = 8  # [1, 100]
-batch_size = 19
-maximum_levels = 3  # [3,7]
-maximum_units_per_level = 10  # [2,10]
-maximum_neurons_per_unit = 3  # [2,20]
+predecessor_level_connection_affinity_factor_main = 0.31456
+max_consecutive_lateral_connections = 22
+p_lateral_connection = 0.39256
+num_lateral_connection_tries_per_unit = 10
+learning_rate = 0.0000511065
+epochs = 6  # [1, 100]
+batch_size = 13
+maximum_levels = 4  # [3,7]
+maximum_units_per_level = 8  # [2,10]
+maximum_neurons_per_unit = 5  # [2,20]
 
 
 # Build BERT base model
