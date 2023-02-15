@@ -1424,11 +1424,13 @@ Here are the steps to the process:
 
 1. My Jennifer and my step-kids who have chosen to stay around and have rode out quite a storm because of my career in science.
 2. My son Aidyn, daughter Jenna, and my collaborators Max Morganbesser and Andres Espinosa.
-3. Mingxing Tan, Quoc V. Le for EfficientNet.
+3. Mingxing Tan, Quoc V. Le for EfficientNet (recommeded image embedding base model).
 4. My colleagues who I work with every day.
 5. Tensorflow, Keras, Kubeflow, Kale, Optuna, Keras Tuner, and Ray open source communities and contributors.
 6. Google Cloud Platform, Arikto, Canonical, and Paperspace and their support staff for the commercial compute and ML OPS platforms used.
 7. Microk8s, minikube,and the core Kubernetes communities and associated projects.
+8. Jacob Devlin, Ming-Wei Chang, Kenton Lee, Kristina Toutanova: "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding", 2018. Base embedding usee for text classification tests.
+9. Andrew Howard1, Mark Sandler1, Grace Chu1, Liang-Chieh Chen1, Bo Chen1, Mingxing Tan2, Weijun Wang1, Yukun Zhu1, Ruoming Pang2, Vijay Vasudevan2, Quoc V. Le2, Hartwig Ada MobileNet image embedding used for CICD tests.
 
 ## Legal disclaimers:
 
