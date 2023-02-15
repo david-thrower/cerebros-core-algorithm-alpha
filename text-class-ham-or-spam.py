@@ -30,18 +30,18 @@ number_of_samples_to_use = 200
 
 # Cerebros configurables:
 
-activation = 'relu'
-predecessor_level_connection_affinity_factor_first = 2.0
-predecessor_level_connection_affinity_factor_main = 0.97
-max_consecutive_lateral_connections = 5
-p_lateral_connection = 0.97
-num_lateral_connection_tries_per_unit = 2
-learning_rate = 0.001
-epochs = 10  # [1, 100]
+activation = 'gelu'
+predecessor_level_connection_affinity_factor_first = 49.2525
+predecessor_level_connection_affinity_factor_main = 0.21509
+max_consecutive_lateral_connections = 28
+p_lateral_connection = 0.21658
+num_lateral_connection_tries_per_unit = 27
+learning_rate = 0.0005292
+epochs = 7  # [1, 100]
 batch_size = 20
-maximum_levels = 4  # [3,7]
-maximum_units_per_level = 7  # [2,10]
-maximum_neurons_per_unit = 4  # [2,20]
+maximum_levels = 6  # [3,7]
+maximum_units_per_level = 8  # [2,10]
+maximum_neurons_per_unit = 3  # [2,20]
 
 
 # Build BERT base model
