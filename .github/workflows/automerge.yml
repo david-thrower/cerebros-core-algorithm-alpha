@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "71-add-customer-template-for-nlp-text-classification" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
