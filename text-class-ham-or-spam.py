@@ -31,16 +31,16 @@ number_of_samples_to_use = 200
 # Cerebros configurables:
 
 activation = 'gelu'
-predecessor_level_connection_affinity_factor_first = 49.2525
-predecessor_level_connection_affinity_factor_main = 0.21509
-max_consecutive_lateral_connections = 28
-p_lateral_connection = 0.21658
-num_lateral_connection_tries_per_unit = 27
-learning_rate = 0.0005292
-epochs = 7  # [1, 100]
-batch_size = 20
-maximum_levels = 6  # [3,7]
-maximum_units_per_level = 8  # [2,10]
+predecessor_level_connection_affinity_factor_first = 49.9999
+predecessor_level_connection_affinity_factor_main = 0.15665
+max_consecutive_lateral_connections = 34
+p_lateral_connection = 0.1
+num_lateral_connection_tries_per_unit = 49
+learning_rate = 0.000104681
+epochs = 8  # [1, 100]
+batch_size = 19
+maximum_levels = 3  # [3,7]
+maximum_units_per_level = 10  # [2,10]
 maximum_neurons_per_unit = 3  # [2,20]
 
 
