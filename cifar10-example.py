@@ -54,18 +54,18 @@ selected_x_train, selected_y_train_ohe =\
 
 # Cerebros configurables:
 
-activation = 'gelu'
-predecessor_level_connection_affinity_factor_first = 39.6439
-predecessor_level_connection_affinity_factor_main = 0.22216
-max_consecutive_lateral_connections = 28
-p_lateral_connection = 0.21658
-num_lateral_connection_tries_per_unit = 22
-learning_rate = 0.0005292
-epochs = 5  # [1, 100]
-batch_size = 39
-maximum_levels = 7  # [3,7]
-maximum_units_per_level = 7  # [2,10]
-maximum_neurons_per_unit = 3  # [2,20]
+activation = 'elu'
+predecessor_level_connection_affinity_factor_first = 40
+predecessor_level_connection_affinity_factor_main = 65
+max_consecutive_lateral_connections = 2
+p_lateral_connection = 0.22299
+num_lateral_connection_tries_per_unit = 1
+learning_rate = 0.000129686
+epochs = 7  # [1, 100]
+batch_size = 27
+maximum_levels = 8  # [3,7]
+maximum_units_per_level = 10  # [2,10]
+maximum_neurons_per_unit = 2  # [2,20]
 
 
 ## ### replace with this
