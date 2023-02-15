@@ -30,18 +30,18 @@ number_of_samples_to_use = 200
 
 # Cerebros configurables:
 
-activation = 'relu'
-predecessor_level_connection_affinity_factor_first = 2.0
-predecessor_level_connection_affinity_factor_main = 0.97
-max_consecutive_lateral_connections = 5
-p_lateral_connection = 0.97
-num_lateral_connection_tries_per_unit = 2
-learning_rate = 0.001
-epochs = 10  # [1, 100]
-batch_size = 20
+activation = 'gelu'
+predecessor_level_connection_affinity_factor_first = 49.9999
+predecessor_level_connection_affinity_factor_main = 0.31456
+max_consecutive_lateral_connections = 22
+p_lateral_connection = 0.39256
+num_lateral_connection_tries_per_unit = 10
+learning_rate = 0.0000511065
+epochs = 6  # [1, 100]
+batch_size = 13
 maximum_levels = 4  # [3,7]
-maximum_units_per_level = 7  # [2,10]
-maximum_neurons_per_unit = 4  # [2,20]
+maximum_units_per_level = 8  # [2,10]
+maximum_neurons_per_unit = 5  # [2,20]
 
 
 # Build BERT base model
@@ -57,7 +57,7 @@ pooled_output = outputs["pooled_output"]      # [batch_size, 768].
 sequence_output = outputs["sequence_output"]  # [batch_size, seq_length, 768].
 embedding_model = tf.keras.Model(text_input, pooled_output)
 
-### Load the Data set
+## Load the Data set
 raw_text = pd.read_csv(data_file, dtype='object')
 raw_text = raw_text.iloc[:number_of_samples_to_use, :]
 # One hot encode the label
