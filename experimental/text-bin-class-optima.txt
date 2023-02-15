@@ -1,29 +1,29 @@
 
 Metrics
 Val binary accuracy
-0.97142
+0.98571
 Parameters
 Activation
 gelu
 Predecessor level connection affinity factor first
-49.2525
+49.9999
 Predecessor level connection affinity factor main
-0.21509
+0.15665
 Max consecutive lateral connections
-28
+34
 P lateral connection
-0.21658
+0.1
 Num lateral connection tries per unit
-27
+49
 Learning rate
-5.292e-4
+1.04681e-4
 Epochs
-7
-Batch size
-20
-Maximum levels
-6
-Maximum units per level
 8
+Batch size
+19
+Maximum levels
+3
+Maximum units per level
+10
 Maximum neurons per unit
-3 
+3
