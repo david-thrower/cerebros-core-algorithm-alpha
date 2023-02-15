@@ -57,7 +57,7 @@ pooled_output = outputs["pooled_output"]      # [batch_size, 768].
 sequence_output = outputs["sequence_output"]  # [batch_size, seq_length, 768].
 embedding_model = tf.keras.Model(text_input, pooled_output)
 
-### Load the Data set
+## Load the Data set
 raw_text = pd.read_csv(data_file, dtype='object')
 raw_text = raw_text.iloc[:number_of_samples_to_use, :]
 # One hot encode the label

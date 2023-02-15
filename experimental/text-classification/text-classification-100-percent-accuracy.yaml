@@ -1,0 +1,338 @@
+metadata:
+  name: text-bin-classification-eluvr
+  namespace: kubeflow-user
+  uid: 8f9b13fa-8f1e-4371-a866-0215e46e814b
+  resourceVersion: '206555'
+  generation: 1
+  creationTimestamp: '2023-02-15T01:24:00Z'
+  finalizers:
+    - update-prometheus-metrics
+  managedFields:
+    - manager: OpenAPI-Generator
+      operation: Update
+      apiVersion: kubeflow.org/v1beta1
+      time: '2023-02-15T01:24:00Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:spec:
+          .: {}
+          f:algorithm:
+            .: {}
+            f:algorithmName: {}
+            f:algorithmSettings: {}
+          f:maxFailedTrialCount: {}
+          f:maxTrialCount: {}
+          f:objective:
+            .: {}
+            f:additionalMetricNames: {}
+            f:goal: {}
+            f:objectiveMetricName: {}
+            f:type: {}
+          f:parallelTrialCount: {}
+          f:parameters: {}
+          f:trialTemplate:
+            .: {}
+            f:primaryContainerName: {}
+            f:retain: {}
+            f:trialParameters: {}
+            f:trialSpec:
+              .: {}
+              f:apiVersion: {}
+              f:kind: {}
+              f:spec:
+                .: {}
+                f:backoffLimit: {}
+                f:template:
+                  .: {}
+                  f:metadata:
+                    .: {}
+                    f:annotations:
+                      .: {}
+                      f:sidecar.istio.io/inject: {}
+                    f:labels:
+                      .: {}
+                      f:access-ml-pipeline: {}
+                  f:spec:
+                    .: {}
+                    f:containers: {}
+                    f:restartPolicy: {}
+                    f:serviceAccountName: {}
+    - manager: katib-controller
+      operation: Update
+      apiVersion: kubeflow.org/v1beta1
+      time: '2023-02-15T01:24:00Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:finalizers:
+            .: {}
+            v:"update-prometheus-metrics": {}
+    - manager: katib-controller
+      operation: Update
+      apiVersion: kubeflow.org/v1beta1
+      time: '2023-02-15T04:08:53Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:status:
+          .: {}
+          f:completionTime: {}
+          f:conditions: {}
+          f:currentOptimalTrial:
+            .: {}
+            f:bestTrialName: {}
+            f:observation:
+              .: {}
+              f:metrics: {}
+            f:parameterAssignments: {}
+          f:startTime: {}
+          f:succeededTrialList: {}
+          f:trials: {}
+          f:trialsSucceeded: {}
+spec:
+  parameters:
+    - name: activation
+      parameterType: categorical
+      feasibleSpace:
+        list:
+          - gelu
+          - relu
+          - elu
+    - name: predecessor_level_connection_affinity_factor_first
+      parameterType: double
+      feasibleSpace:
+        max: '50'
+        min: '0.1'
+        step: '0.1'
+    - name: predecessor_level_connection_affinity_factor_main
+      parameterType: double
+      feasibleSpace:
+        max: '50'
+        min: '0.1'
+        step: '0.1'
+    - name: max_consecutive_lateral_connections
+      parameterType: int
+      feasibleSpace:
+        max: '40'
+        min: '2'
+        step: '1'
+    - name: p_lateral_connection
+      parameterType: double
+      feasibleSpace:
+        max: '50'
+        min: '0.1'
+        step: '0.1'
+    - name: num_lateral_connection_tries_per_unit
+      parameterType: int
+      feasibleSpace:
+        max: '50'
+        min: '1'
+        step: '1'
+    - name: learning_rate
+      parameterType: double
+      feasibleSpace:
+        max: '0.3'
+        min: '0.00001'
+        step: '0.00001'
+    - name: epochs
+      parameterType: int
+      feasibleSpace:
+        max: '10'
+        min: '1'
+        step: '1'
+    - name: batch_size
+      parameterType: int
+      feasibleSpace:
+        max: '20'
+        min: '1'
+        step: '1'
+    - name: maximum_levels
+      parameterType: int
+      feasibleSpace:
+        max: '7'
+        min: '2'
+        step: '1'
+    - name: maximum_units_per_level
+      parameterType: int
+      feasibleSpace:
+        max: '10'
+        min: '2'
+        step: '1'
+    - name: maximum_neurons_per_unit
+      parameterType: int
+      feasibleSpace:
+        max: '7'
+        min: '2'
+        step: '1'
+  objective:
+    type: maximize
+    goal: 1
+    objectiveMetricName: val-binary-accuracy
+    metricStrategies:
+      - name: val-binary-accuracy
+        value: max
+  algorithm:
+    algorithmName: bayesianoptimization
+    algorithmSettings:
+      - name: random_state
+        value: '10'
+      - name: acq_optimizer
+        value: auto
+      - name: acq_func
+        value: gp_hedge
+      - name: base_estimator
+        value: GP
+  trialTemplate:
+    retain: true
+    trialSpec:
+      apiVersion: batch/v1
+      kind: Job
+      spec:
+        backoffLimit: 0
+        template:
+          metadata:
+            annotations:
+              sidecar.istio.io/inject: 'false'
+            labels:
+              access-ml-pipeline: 'true'
+          spec:
+            containers:
+              - command:
+                  - >-
+                    python3 -u -c "from kale.common.katibutils import
+                    create_and_wait_kfp_run;
+                    create_and_wait_kfp_run(pipeline_id='d2869304-afa4-4700-adfa-4b8f06bf079a',
+                    version_id='d3b11d8e-5b29-478f-b187-c87cda6ebb80',
+                    run_name='${trialParameters.kaleParamTrialName}',
+                    experiment_name='text-bin-classification-eluvr',
+                    api_version='v1beta1',
+                    pipeline_parameters={'activation':'${trialParameters.activation}',
+                    'predecessor_level_connection_affinity_factor_first':'${trialParameters.predecessor_level_connection_affinity_factor_first}',
+                    'predecessor_level_connection_affinity_factor_main':'${trialParameters.predecessor_level_connection_affinity_factor_main}',
+                    'max_consecutive_lateral_connections':'${trialParameters.max_consecutive_lateral_connections}',
+                    'p_lateral_connection':'${trialParameters.p_lateral_connection}',
+                    'num_lateral_connection_tries_per_unit':'${trialParameters.num_lateral_connection_tries_per_unit}',
+                    'learning_rate':'${trialParameters.learning_rate}',
+                    'epochs':'${trialParameters.epochs}',
+                    'batch_size':'${trialParameters.batch_size}',
+                    'maximum_levels':'${trialParameters.maximum_levels}',
+                    'maximum_units_per_level':'${trialParameters.maximum_units_per_level}',
+                    'maximum_neurons_per_unit':'${trialParameters.maximum_neurons_per_unit}'})"
+                image: >-
+                  gcr.io/arrikto/kale-py38:release-2.0-l0-release-2.0-39-gc3abc739f
+                name: main
+            restartPolicy: Never
+            serviceAccountName: pipeline-runner
+    trialParameters:
+      - name: kaleParamTrialName
+        reference: ${trialSpec.Name}
+      - name: activation
+        reference: activation
+      - name: predecessor_level_connection_affinity_factor_first
+        reference: predecessor_level_connection_affinity_factor_first
+      - name: predecessor_level_connection_affinity_factor_main
+        reference: predecessor_level_connection_affinity_factor_main
+      - name: max_consecutive_lateral_connections
+        reference: max_consecutive_lateral_connections
+      - name: p_lateral_connection
+        reference: p_lateral_connection
+      - name: num_lateral_connection_tries_per_unit
+        reference: num_lateral_connection_tries_per_unit
+      - name: learning_rate
+        reference: learning_rate
+      - name: epochs
+        reference: epochs
+      - name: batch_size
+        reference: batch_size
+      - name: maximum_levels
+        reference: maximum_levels
+      - name: maximum_units_per_level
+        reference: maximum_units_per_level
+      - name: maximum_neurons_per_unit
+        reference: maximum_neurons_per_unit
+    primaryContainerName: main
+    successCondition: status.conditions.#(type=="Complete")#|#(status=="True")#
+    failureCondition: status.conditions.#(type=="Failed")#|#(status=="True")#
+  parallelTrialCount: 2
+  maxTrialCount: 25
+  maxFailedTrialCount: 25
+  metricsCollectorSpec:
+    collector:
+      kind: StdOut
+  resumePolicy: LongRunning
+status:
+  startTime: '2023-02-15T01:24:00Z'
+  completionTime: '2023-02-15T03:53:14Z'
+  conditions:
+    - type: Created
+      status: 'True'
+      reason: ExperimentCreated
+      message: Experiment is created
+      lastUpdateTime: '2023-02-15T01:24:00Z'
+      lastTransitionTime: '2023-02-15T01:24:00Z'
+    - type: Running
+      status: 'False'
+      reason: ExperimentRunning
+      message: Experiment is running
+      lastUpdateTime: '2023-02-15T03:53:14Z'
+      lastTransitionTime: '2023-02-15T03:53:14Z'
+    - type: Succeeded
+      status: 'True'
+      reason: ExperimentGoalReached
+      message: Experiment has succeeded because Objective goal has reached
+      lastUpdateTime: '2023-02-15T03:53:14Z'
+      lastTransitionTime: '2023-02-15T03:53:14Z'
+  currentOptimalTrial:
+    bestTrialName: text-bin-classification-eluvr-3420ddfe
+    parameterAssignments:
+      - name: activation
+        value: gelu
+      - name: predecessor_level_connection_affinity_factor_first
+        value: '49.99999999999999'
+      - name: predecessor_level_connection_affinity_factor_main
+        value: '0.3145671627389466'
+      - name: max_consecutive_lateral_connections
+        value: '22'
+      - name: p_lateral_connection
+        value: '0.3925693570678051'
+      - name: num_lateral_connection_tries_per_unit
+        value: '10'
+      - name: learning_rate
+        value: '5.110647590500439e-05'
+      - name: epochs
+        value: '6'
+      - name: batch_size
+        value: '13'
+      - name: maximum_levels
+        value: '4'
+      - name: maximum_units_per_level
+        value: '8'
+      - name: maximum_neurons_per_unit
+        value: '5'
+    observation:
+      metrics:
+        - name: val-binary-accuracy
+          min: '1.0'
+          max: '1.0'
+          latest: '1.0'
+  succeededTrialList:
+    - text-bin-classification-eluvr-525e6abb
+    - text-bin-classification-eluvr-ffdd692b
+    - text-bin-classification-eluvr-96e471ab
+    - text-bin-classification-eluvr-4301bec7
+    - text-bin-classification-eluvr-3d4ce243
+    - text-bin-classification-eluvr-f1d8db88
+    - text-bin-classification-eluvr-10117306
+    - text-bin-classification-eluvr-3ecfaa5e
+    - text-bin-classification-eluvr-aac2ccd3
+    - text-bin-classification-eluvr-3420ddfe
+    - text-bin-classification-eluvr-7e94e1db
+    - text-bin-classification-eluvr-c66cabe3
+    - text-bin-classification-eluvr-e24c0364
+    - text-bin-classification-eluvr-9f5ce21a
+    - text-bin-classification-eluvr-d6a1b470
+    - text-bin-classification-eluvr-82098347
+    - text-bin-classification-eluvr-8de67da0
+    - text-bin-classification-eluvr-12875da9
+    - text-bin-classification-eluvr-833b6e6c
+  trials: 19
+  trialsSucceeded: 19

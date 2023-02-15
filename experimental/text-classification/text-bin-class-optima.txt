@@ -1,0 +1,49 @@
+### got 100% correct
+
+Metrics
+Val binary accuracy
+1
+Parameters
+activation: gelu
+predecessor_level_connection_affinity_factor_first: 49.9999
+predecessor_level_connection_affinity_factor_main: 0.31456
+max_consecutive_lateral_connections: 22
+p_lateral_connection: 0.39256
+num_lateral_connection_tries_per_unit: 10
+learning_rate: 5.11065e-5
+epochs: 6
+batch_size: 13
+maximum_levels: 4
+maximum_units_per_level: 8
+maximum_neurons_per_unit: 5
+
+# Close second
+
+Metrics
+Val binary accuracy
+0.98571
+Parameters
+Activation
+gelu
+Predecessor level connection affinity factor first
+49.9999
+Predecessor level connection affinity factor main
+0.15665
+Max consecutive lateral connections
+34
+P lateral connection
+0.1
+Num lateral connection tries per unit
+49
+Learning rate
+1.04681e-4
+Epochs
+8
+Batch size
+19
+Maximum levels
+3
+Maximum units per level
+10
+Maximum neurons per unit
+3
