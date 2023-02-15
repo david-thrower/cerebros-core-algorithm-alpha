@@ -1,0 +1,59 @@
+## Best yet,86.9%
+
+Metrics
+Val top 1 categorical accuracy
+0.86857
+Parameters
+Activation
+elu
+Predecessor level connection affinity factor first
+40
+Predecessor level connection affinity factor main
+65
+Max consecutive lateral connections
+2
+P lateral connection
+0.22299
+Num lateral connection tries per unit
+1
+Learning rate
+1.29686e-4
+Epochs
+7
+Batch size
+27
+Maximum levels
+8
+Maximum units per level
+10
+Maximum neurons per unit
+2
+
+
+
+####  val_top_1 0.83999
+
+Activation
+gelu
+Predecessor level connection affinity factor first
+39.6439
+Predecessor level connection affinity factor main
+0.22216
+Max consecutive lateral connections
+28
+P lateral connection
+0.21658
+Num lateral connection tries per unit
+22
+Learning rate
+5.292e-4
+Epochs
+5
+Batch size
+39
+Maximum levels
+7
+Maximum units per level
+7
+Maximum neurons per unit
+3

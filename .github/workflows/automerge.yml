@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "67-base-models-embeddings-encoders"]
+    branches: [ "main" ]
 
 permissions:
   contents: read
