@@ -7,10 +7,10 @@ The current stable API contains the following modules intended to interact with 
 # File structure
 
 1. cerebros
-  1. cerebros.simplecerebrosrandomsearch
-    1. cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search:
+   1. cerebros.simplecerebrosrandomsearch
+      1. cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search:
 
-       ![simplecerebrosrandomsearch/simple_cerebros_random_search.md](simplecerebrosrandomsearch/simple_cerebros_random_search.md)
+        ![simplecerebrosrandomsearch/simple_cerebros_random_search.md](simplecerebrosrandomsearch/simple_cerebros_random_search.md)
 
        1. cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search.SimpleCerebrosRandomSearch
 
