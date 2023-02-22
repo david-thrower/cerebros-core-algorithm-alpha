@@ -9,13 +9,11 @@ cd into it
 `cd cerebros-core-algorithm-alpha`
 
 install all required packages
-```
-pip3 install -r requirements.txt
-```
+`pip3 install -r requirements.tx`
+
 Run the Ames housing data example:
-```
-python3 regression-example-ames-no-preproc.py
-```
+
+`python3 regression-example-ames-no-preproc.py`
 
 Let's look at the example: `regression-example-ames-no-preproc.py`, which is in the main folder of this repo:
 
