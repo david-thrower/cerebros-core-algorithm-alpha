@@ -7,12 +7,12 @@ The current stable API contains the following modules intended to interact with 
 # File structure
 
 1. cerebros
-  1.1. cerebros.simplecerebrosrandomsearch
-    1.1.1. cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search:
+  1. cerebros.simplecerebrosrandomsearch
+    1. cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search:
 
     ![simplecerebrosrandomsearch/simple_cerebros_random_search.md](simplecerebrosrandomsearch/simple_cerebros_random_search.md)
 
-      1.1.1.1. cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search.SimpleCerebrosRandomSearch
+      1. cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search.SimpleCerebrosRandomSearch
 
       This is the main API for users wanting to use Cerebros AutoML.
 
