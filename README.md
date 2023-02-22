@@ -6,7 +6,7 @@ The Cerebros package is an ultra-precise Neural Architecture Search (NAS) / Auto
 
 ## Cerebros Community Edition and Cerebros Enterprise
 
-The Cerebros community edition provides an open-source minimum viable single parameter set NAS and also also provides an example manifest for an exhaustive Neural Architecture Search to run on Kubeflow/Katib. This is licensd for free use provided that the use is consistent with the ethical use provisions in the license described at the bottom of this page. You can easily reproduce this with the Jupyter notebook in the directory `/kubeflow-pipeline`, using the Kale Jupyter notebook extension. For a robust managed neural architecture search experience hosted on Google Cloud Platform and supported by our SLA, we recommend Cerebros Enterprise, our commercial version. Soon you will be able to sign up and immediately start using it at `https://www.cerebros.one`. In the meantime, we can set up your own Cerbros managed neural architecture search pipeline for you with a one business day turnaround. We offer consulting, demos, full service machine learning service and can provision you with your own full neural architecture search pipeline complete with automated Bayesian hyperparameter search. Contact David Thrower:`david@cerebros.one` or call us at (US counrty code 1) `(650) 789-4375`. Additionally, we can complete machine learning tasks for your orgniation. Give us a call.
+The Cerebros community edition provides an open-source minimum viable single parameter set NAS and also also provides an example manifest for an exhaustive Neural Architecture Search to run on Kubeflow/Katib. This is licensed for free use provided that the use is consistent with the ethical use provisions in the license described at the bottom of this page. You can easily reproduce this with the Jupyter notebook in the directory `/kubeflow-pipeline`, using the Kale Jupyter notebook extension. For a robust managed neural architecture search experience hosted on Google Cloud Platform and supported by our SLA, we recommend Cerebros Enterprise, our commercial version. Soon you will be able to sign up and immediately start using it at `https://www.cerebros.one`. In the meantime, we can set up your own Cerbros managed neural architecture search pipeline for you with a one business day turnaround. We offer consulting, demos, full service machine learning service and can provision you with your own full neural architecture search pipeline complete with automated Bayesian hyperparameter search. Contact David Thrower:`david@cerebros.one` or call us at (US country code 1) `(650) 789-4375`. Additionally, we can complete machine learning tasks for your organization. Give us a call.
 
 
 
@@ -22,13 +22,17 @@ Multi layer perceptrons look like this:
 
 If the goal of MLPs was to mimic how a biological neuron works, why do we still build neural networks that are structurally similar to the first prototypes from 1989? At the time, it was the closest we could get, but both hardware and software have changed since.
 
-The goal here is to recursively generate models consisting of "Levels" which consist of of Dense Layers in parallel, where the Dense layers on one level randomly connect to layers on not only its subsequent Level, but multiple levels below. In addition to these randomized vertical connections, the Dense layers also connect **latrally** at random to not only their neighboing layer, but to layers multiple layers to the right of them (remember, this architectural pattern consists of "Levels" of Dense layers. The Dense layers make lateral connections to the other Dense layers in the same level, and vertial connections to Dense layers in their level's successor levels). There may also be more than one connection between a given Dense layer and another, both laterally and vertically, which if you have the patience to follow the example neural architectre created by the Ames housing data example below, (I dare you to try following the connectivity in that), you will probably see many instances where this occurs. This may allow more complex networks to gain deeper, more granular insight on smaller data sets before problems like internal covariate shift, vanishing gradients, and exploding gradients drive overfitting, zeroed out weights, and "predictions of [0 | infiniti] for all samples". Bear in mind that the deepest layers of a Multi - Layer Perceptron will have the most granular and specific information about a given data set.  In recent years, we got a step closer twhat this does by using single skip connections, but why not simply randomize the connectivity to numerous levels in the network's structure altogether and add lateral connections that overlap like a biological brain? (We presume God knew what He was doing.)
+In a biological brain, neurons connect in a multi-dimensional lattice of vertical and lateral connections, which may repeat. Why don't we try to mimic this? In recent years, we got a step closer to this by using single skip connections, but why not simply randomize the connectivity to numerous levels in the network's structure altogether and add lateral connections that overlap like a biological brain? (We presume God knew what He was doing, so why re-invent the wheel.)
 
-What if we made a multi-layer pereceptron that looks like this: (Green triangles are Keras Input layers. Blue Squares are Keras Concatenate layers. The Pink stretched ovals are Keras Dense layers. The one stretched red oval is the networ's Output layer. It is presumed that thre isa batch normaliation layer between each Concatenate layer and Dense layer.)
+That is what we did here. We built a neural architecture search that connects Dense layers in this manner. ![documentation/cerebros-technical-details.md](documentation/cerebros-technical-details.md)
+
+########
+
+What if we made a multi-layer pereceptron that looks like this: (Green triangles are Keras Input layers. Blue Squares are Keras Concatenate layers. The Pink stretched ovals are Keras Dense layers. The one stretched red oval is the network's Output layer. It is presumed that there is a batch normaliation layer between each Concatenate layer and the Dense layer it feeds into.)
 
 ![assets/Brain-lookalike1.png](assets/Brain-lookalike1.png)
 
-... or like this:
+... or what if we made one like this:
 
 ![assets/Brain-lookalike2.png](assets/Brain-lookalike2.png)
 
@@ -41,7 +45,6 @@ What if we made a single-layer perceptron that looks like this:
 ![assets/Neuron-lookalike1.png](assets/Neuron-lookalike1.png)
 
 ## Use example: Try it for yourself:
-clone the repo
 
 shell:
 
