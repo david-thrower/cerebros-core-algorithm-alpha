@@ -75,6 +75,6 @@ Here are the steps to the process:
   7.3 Randomly select a number of units from level_prototype where unit is > the the current unit's unit id and the connection doesn't violate the max_consecutive_lateral_connections setting. If there has been > gate_after_n_lateral_connections, then apply the gating function and restart the count for this rule. There is nothing to validate here. If this is set up to only allow right OR left connections, then this can't create a disjointed graph or contradiction. Now all connectivities are planned.
 10. Materialize Dense layers. **(This is a top down operation starting with InputLevel and proceeding to the last hidden layer in the network)**
 11. Create output layer.
-12.Compile model.
+12. Compile model.
 13. Fit the model, save the oracles, and save the model as a saved Keras model.
 14. Iterate through the results and find best the model ad metrics.  
