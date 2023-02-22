@@ -20,7 +20,7 @@ The current stable API contains the following modules intended to interact with 
 
   1.2. cerebros.neuralnetworkfuture
     1. cerebros.neuralnetworkfuture.neural_network_future
-      1. cerebros.neuralnetworkfuture.neural_network_future.NeuralNetworkFuture
+       1. cerebros.neuralnetworkfuture.neural_network_future.NeuralNetworkFuture
   1.3. cerebros.levels
     1. cerebros.levels.levels
       1. cerebros.levels.levels.Level
