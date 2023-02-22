@@ -12,11 +12,11 @@ The current stable API contains the following modules intended to interact with 
 
         ![simplecerebrosrandomsearch/simple_cerebros_random_search.md](simplecerebrosrandomsearch/simple_cerebros_random_search.md)
 
-       1. cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search.SimpleCerebrosRandomSearch
+         1. cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search.SimpleCerebrosRandomSearch
 
-          This is the main API for users wanting to use Cerebros AutoML.
+            This is the main API for users wanting to use Cerebros AutoML.
 
-          ![simplecerebrosrandomsearch/simple_cerebros_random_search.md#SimpleCerebrosRandomSearch](simplecerebrosrandomsearch/simple_cerebros_random_search.md#SimpleCerebrosRandomSearch)
+            ![simplecerebrosrandomsearch/simple_cerebros_random_search.md#SimpleCerebrosRandomSearch](simplecerebrosrandomsearch/simple_cerebros_random_search.md#SimpleCerebrosRandomSearch)
   1.2. cerebros.neuralnetworkfuture
     1. cerebros.neuralnetworkfuture.neural_network_future
        1. cerebros.neuralnetworkfuture.neural_network_future.NeuralNetworkFuture
