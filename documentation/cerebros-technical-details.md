@@ -76,5 +76,7 @@ Here are the steps to the process:
 10. Materialize Dense layers. **(This is a top down operation starting with InputLevel and proceeding to the last hidden layer in the network)**
 11. Create output layer.
 12. Compile model.
-13. Fit the model, save the oracles, and save the model as a saved Keras model.
-14. Iterate through the results and find best the model ad metrics.  
+13. Fit the model (train the model), save the oracles, and save the model as a saved Keras model.
+14. Iteratively repeat this process on a random search of the selected ranges of these parameters and traverse the results for the best the model.
+15. Repeat this over a larger search space, using a Bayesian or evolutionary tuner to zero in on the optimal sub-search space.
+16. Select the best model found.
