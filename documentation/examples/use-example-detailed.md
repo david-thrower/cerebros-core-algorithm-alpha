@@ -1,15 +1,14 @@
 
 
-shell:
+From a shell on a suitable Linux machine (tested on Ubuntu 22.04):
 
 Clone the repo
+
 `git clone https://github.com/david-thrower/cerebros-core-algorithm-alpha.git`
 
-cd into it
-`cd cerebros-core-algorithm-alpha`
+cd into it: `cd cerebros-core-algorithm-alpha`
 
-install all required packages
-`pip3 install -r requirements.tx`
+install all required packages: `pip3 install -r requirements.txt`
 
 Run the Ames housing data example:
 
