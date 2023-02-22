@@ -37,7 +37,7 @@ Level:
 Unit:
   - A data structure which is a future for a single Dense layer. A Level has many Units, and a Unit belongs to a Level.
 
-![assets/Cerebros.png](assets/Cerebros.png)
+![documentation-assets/Cerebros.png](documentation-assets/Cerebros.png)
 
 Here are the steps to the process:
 
