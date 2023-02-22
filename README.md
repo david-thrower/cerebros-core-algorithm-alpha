@@ -74,32 +74,17 @@ python3 regression-example-ames-no-preproc.py
 Best result this trial was: 169.04592895507812
 Type of best result: <class 'float'>
 Best model name: 2023_01_12_23_42_cerebros_auto_ml_test_meta_0/models/tr_0000000000000006_subtrial_0000000000000000
-Best model: (May need to re-initialize weights, and retrain with early stopping callback)
-Model: "NeuralNetworkFuture_0000000000000nan_tr_6_nn_materialized"
+...
 
 ```
 
 ## Summary of Results
 
-- Ames housing data set, not pre-processed or scaled:
+- Ames housing data set, not pre-processed or scaled, non-numerical columns dropped:
 - House sell price predictions, val_rmse $169.04592895507812.
 - The mean sale price in the data was $180,796.06.
-- Val set RMSE was 0.0935% the mean sale price. Yes, you are reading it right. Less than 0.1% off on average.
-- There was no pre-trained base model. The data in [ames.csv](ames.csv) is the only data any of the model's weights has ever seen.
-
-
-Run the Neural Architecture Search and get results back.
-```python3
-result = cerebros.run_random_search()
-
-print("Best model: (May need to re-initialize weights, and retrain with early stopping callback)")
-best_model_found = cerebros.get_best_model()
-print(best_model_found.summary())
-
-print("result extracted from cerebros")
-print(f"Final result was (val_root_mean_squared_error): {result}")
-
-```
+- Val set RMSE was 0.0935% of the mean sale price. In other words, on average, the model predicted the sale price accurate to less than 0.1% of the actual sale price. Yes, you are reading it right. Less than 1/10 of a percent off on average.
+- There was no pre-trained base model used. The data in [ames.csv](ames.csv) which was selected for training is the only data any of the model's weights have ever seen.
 
 For further details, see ![documentation/examples/use-example-detailed.md](documentation/examples/use-example-detailed.md)
 
