@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "82-bug-workflows-appear-to-time-out-or-memory-leak" ]
 
 permissions:
   contents: read
@@ -42,5 +42,7 @@ jobs:
       run: python3 regression-example-ames-no-preproc.py
     - name: Test text classifier - random search - ham-spam
       run: python3 text-class-ham-or-spam.py
+      timeout-minutes: 60
     - name: Test image classifier - small subset of CIFAR10
+      timeout-minutes: 60
       run: python3 cifar10-example.py
