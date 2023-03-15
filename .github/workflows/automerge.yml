@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "89-add-a-training-template-with-an-efficientnet-embedding" ]
 
 permissions:
   contents: read
@@ -46,3 +46,6 @@ jobs:
     - name: Test image classifier - small subset of CIFAR10
       timeout-minutes: 60
       run: python3 cifar10-example.py
+    - name: Test image classifier EfficientNetv2S - small subset of CIFAR10
+      timeout-minutes: 90
+      run: python3 cifar-10-efficientnetv2s.py
