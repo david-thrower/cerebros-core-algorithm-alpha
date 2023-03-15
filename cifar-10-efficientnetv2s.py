@@ -15,7 +15,7 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
 from ast import literal_eval
 
 # Cerebros hyperparameters
-activation = relu
+activation = "relu"
 predecessor_level_connection_affinity_factor_first = 1.78444
 predecessor_level_connection_affinity_factor_main = 0.23595
 max_consecutive_lateral_connections = 2
@@ -191,3 +191,4 @@ print(f"test set results: {test_results}")
 # test_labels = [selected_y_test_ohe]
 
 # Test the best model:
+
