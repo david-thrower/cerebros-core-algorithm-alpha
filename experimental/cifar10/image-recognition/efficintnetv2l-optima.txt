@@ -1,0 +1,19 @@
+
+Performance:
+
+val-top-1-categorical-accuracy: 0.91657
+
+Optima:
+
+activation: relu
+predecessor_level_connection_affinity_factor_first: 1.19289
+predecessor_level_connection_affinity_factor_main: 46.039
+max_consecutive_lateral_connections: 11
+p_lateral_connection: 24.7868
+num_lateral_connection_tries_per_unit: 12
+learning_rate: 2.30375e-5
+epochs: 5
+batch_size: 21
+maximum_levels: 7
+maximum_units_per_level: 10
+maximum_neurons_per_unit: 5
