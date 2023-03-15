@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "89-add-a-training-template-with-an-efficientnet-embedding" ]
+    branches: [ "main", ]
 
 permissions:
   contents: read
