@@ -2,13 +2,13 @@
 
 ![assets/0-cerebros-logo.png](assets/0-cerebros-logo.png)
 
-The Cerebros package is an ultra-precise Neural Architecture Search (NAS) / AutoML that is intended to much more closely mimic biological neurons than conventional Multi Layer Perceptron based neural network architecture search strategies.
+The Cerebros package is a type of Neural Architecture Search (NAS) and AutoML that is designed to more closely resemble biological neurons than traditional neural network architecture search methods that are based on Multi Layer Perceptron. Its goal is to achieve ultra-precise results through this unique approach.
 
 ## Cerebros Community Edition and Cerebros Enterprise
 
-The Cerebros community edition provides an open-source minimum viable single parameter set NAS and also also provides an example manifest for an exhaustive Neural Architecture Search to run on Kubeflow/Katib. This is licensed for free use provided that the use is consistent with the ethical use provisions in the license described at the bottom of this page. You can easily reproduce this with the Jupyter notebook in the directory `/kubeflow-pipeline`, using the Kale Jupyter notebook extension. For a robust managed neural architecture search experience hosted on Google Cloud Platform and supported by our SLA, we recommend Cerebros Enterprise, our commercial version. Soon you will be able to sign up and immediately start using it at `https://www.cerebros.one`. In the meantime, we can set up your own Cerbros managed neural architecture search pipeline for you with a one business day turnaround. We offer consulting, demos, full service machine learning service and can provision you with your own full neural architecture search pipeline complete with automated Bayesian hyperparameter search. Contact David Thrower:`david@cerebros.one` or call us at (US country code 1) `(650) 789-4375`. Additionally, we can complete machine learning tasks for your organization. Give us a call.
+The Cerebros community edition offers an open-source minimum viable single parameter set NAS, along with an example manifest for an exhaustive Neural Architecture Search on Kubeflow/Katib. It can be used for free, as long as the user adheres to the ethical use provisions in the license found at the bottom of the page. To reproduce this, simply use the Jupyter notebook located in the `/kubeflow-pipeline` directory, along with the Kale Jupyter notebook extension.
 
-
+For a more robust, managed AutoML experience that is supported by our SLA, we recommend our commercial version, Cerebros Enterprise. Soon, you will be able to sign up and immediately start using it at `https://www.cerebros.one`. In the meantime, we can set up your own Cerebros managed neural architecture search pipeline for you within one business day. We offer consulting, demos, and can even complete your machine learning project for you. To learn more, contact David Thrower at `david@cerebros.one` or call us at (US country code 1) `(650) 789-4375`.
 
 ## In summary what is it and what is different:
 
