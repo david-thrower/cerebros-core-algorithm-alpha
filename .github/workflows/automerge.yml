@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", ]
+    branches: [ "main", "80-add-init-file-to-package-cerebros" ]
 
 permissions:
   contents: read
