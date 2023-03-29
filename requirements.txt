@@ -1,11 +1,11 @@
 jax==0.4.1
 jaxlib==0.4.1
 pendulum==2.1.2
-tensorflow==2.11.0
-numpy==1.24.0
+tensorflow==2.12.0
+numpy==1.23.5
 pandas==1.5.2
 pyvis==0.3.1
 plotly==5.11.0
 matplotlib==3.6.2
-tensorflow-text==2.11.0
+tensorflow-text==2.12.0
 imageio==2.25.0
