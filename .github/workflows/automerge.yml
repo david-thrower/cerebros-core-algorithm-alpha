@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "100-test-with-pandas-2-0-x" ]
 
 permissions:
   contents: read
