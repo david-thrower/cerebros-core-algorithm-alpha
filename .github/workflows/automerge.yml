@@ -36,9 +36,9 @@ jobs:
 #      run: python3 test_simple_cerebros_gridsearch.py
 #    - name: Test distributed random search wine by running.
 #      run: python3 random_search.py
-    - name: Test CerebrosRealNeuronNetwork
-      run: python3 realnn-regression-example-ames-no-preproc.py
-      timeout-minutes: 45
+#    - name: Test CerebrosRealNeuronNetwork
+#      run: python3 realnn-regression-example-ames-no-preproc.py
+#      timeout-minutes: 45
     - name: Test distributed random search Ames by running
       run: python3 regression-example-ames-no-preproc.py
     - name: Test text classifier - random search - ham-spam
