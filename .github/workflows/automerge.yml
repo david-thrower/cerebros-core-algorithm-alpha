@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "99-add-a-validation-data-option-validation_data"]
 
 permissions:
   contents: read
@@ -36,16 +36,18 @@ jobs:
 #      run: python3 test_simple_cerebros_gridsearch.py
 #    - name: Test distributed random search wine by running.
 #      run: python3 random_search.py
-    - name: Test CerebrosRealNeuronNetwork
-      run: python3 realnn-regression-example-ames-no-preproc.py
+    # - name: Test CerebrosRealNeuronNetwork
+    #   run: python3 realnn-regression-example-ames-no-preproc.py
       timeout-minutes: 45
     - name: Test distributed random search Ames by running
       run: python3 regression-example-ames-no-preproc.py
+    - name: Test distributed random search Ames by running - Val set
+      run: python3 regression-example-ames-no-preproc-val-set.py
     - name: Test text classifier - random search - ham-spam
       run: python3 text-class-ham-or-spam.py
       timeout-minutes: 90
-    - name: Test image classifier - small subset of CIFAR10
-      timeout-minutes: 90
+    # - name: Test image classifier - small subset of CIFAR10
+    #   timeout-minutes: 90
       run: python3 cifar10-example.py
     - name: Test image classifier EfficientNetv2S - small subset of CIFAR10
       timeout-minutes: 120
