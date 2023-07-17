@@ -115,7 +115,7 @@ train_df, train_labels_pd, val_df, val_labels_pd =\
         df=data_numeric,  # Pandas dataframe
         labels=label,  # Pandas series
         test_size=0.35,
-        hash_column="*"):
+        hash_column="*")
 
 
 train_data_np = train_df.values
