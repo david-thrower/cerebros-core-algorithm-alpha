@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "99-add-a-validation-data-option-validation_data"]
+    branches: [ "main", "99-add-a-validation-data-option-validation_data" ]
 
 permissions:
   contents: read
