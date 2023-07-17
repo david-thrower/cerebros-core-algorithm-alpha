@@ -112,10 +112,10 @@ label = raw_data.pop('price')
 
 train_df, train_labels_pd, val_df, val_labels_pd =\
     hash_based_split(
-        data_numeric,  # Pandas dataframe
-        label,  # Pandas series
-        test_size: float = 0.35,
-        hash_column: str = "*"):
+        df=data_numeric,  # Pandas dataframe
+        labels=label,  # Pandas series
+        test_size=0.35,
+        hash_column="*"):
 
 
 train_data_np = train_df.values
