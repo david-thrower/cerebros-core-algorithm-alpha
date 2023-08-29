@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "99-add-a-validation-data-option-validation_data" ]
+    branches: [ "main", "100-test-with-pandas-2-0-x-1-post-updates" ]
 
 permissions:
   contents: read
