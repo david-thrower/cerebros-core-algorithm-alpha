@@ -258,6 +258,12 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                                  will be multiplied by p_lateral_connection where x is the number
                                  of subsequent connections after the first
                 num_lateral_connection_tries_per_unit: int: defaults to 1,
+                self.chart_network_graph: bool: default: False,
+                                 Whether or not Cerebros will create visualizations of the neural
+                                 network graphs. When recursively running Cerebros for hyperparameter
+                                 tuning, we recommned the default of False. When running a single, easily repeatable
+                                 training task that will not run for long, or when debugging a failed run with an error
+                                 in the network graph, it may provide useful information.   
                  *args,
                  **kwargs
 
@@ -308,6 +314,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                  meta_trial_number=0,
                  base_models=[''],
                  train_data_dtype=tf.float32,
+                 chart_network_graph: bool=False,
                  *args,
                  **kwargs):
 
@@ -367,6 +374,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.base_models = base_models
         self.best_model_path = ""
         self.train_data_dtype = train_data_dtype
+        self.chart_network_graph = chart_network_graph
         # Can be varied throughout the serch session;
         # must be controlled internally
         DenseAutoMlStructuralComponent.__init__(
@@ -475,7 +483,8 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         nnf.compile_neural_network()
         neural_network = nnf.materialized_neural_network
         print(nnf.materialized_neural_network.summary())
-        nnf.get_graph()
+        if self.chart_network_graph:
+            nnf.get_graph()
 
         history = neural_network.fit(x=self.training_data,
                                      y=self.labels,
