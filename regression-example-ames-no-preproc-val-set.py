@@ -5,11 +5,13 @@ from cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search\
     import SimpleCerebrosRandomSearch
 import pendulum
 import pandas as pd
+import xgboost as xgb
 import tensorflow as tf
 from cerebros.units.units import DenseUnit
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 from ast import literal_eval
+
 
 NUMBER_OF_TRAILS_PER_BATCH = 2
 NUMBER_OF_BATCHES_OF_TRIALS = 2
