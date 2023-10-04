@@ -1,4 +1,5 @@
 
+import hashlib
 import numpy as np
 # from multiprocessing import Pool  # , Process
 from cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search\
