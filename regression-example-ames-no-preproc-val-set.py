@@ -129,7 +129,8 @@ training_x = [tensor_x]
 
 INPUT_SHAPES = [training_x[i].shape[1] for i in np.arange(len(training_x))]
 
-train_labels = [train_labels_pd.values]
+train_label_np = train_labels_pd.values 
+train_labels = [train_label_np]
 print(f"Shape of train labels: {train_labels_pd.shape}")
 
 OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
@@ -137,11 +138,12 @@ OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
 ## Val set:
 
 print(f"Shape of val data: {val_df.shape}")
+val_df_np = val_df.values
 val_tensor_x = tf.constant(val_df.values)
 val_x = [val_tensor_x]
 
-
-val_labels = [val_labels_pd.values]
+val_labels_np = val_labels_pd.values
+val_labels = [val_labels_np]
 print(f"Shape of val labels: {val_labels_pd.shape}")
 
 # Params for a training function (Approximately the oprma
@@ -210,9 +212,23 @@ cerebros =\
         meta_trial_number=meta_trial_number)
 result = cerebros.run_random_search()
 
+
+
+xg_reg = xgb.XGBRegressor(objective='reg:squarederror', seed=123, n_estimators=10)
+
+# Fit the regressor to the training set
+xg_reg.fit(tensor_x, train_label_np)
+
+# Predict the labels of the test set: preds
+xgb_preds = xg_reg.predict(val_df_np)
+
+# compute the rmse: rmse
+xgb_rmse = np.sqrt(mean_squared_error(val_labels_np, xgb_preds))
+print("XGBoost RMSE: %f" % (xgb_rmse))
+
 print("Best model: (May need to re-initialize weights, and retrain with early stopping callback)")
 best_model_found = cerebros.get_best_model()
 print(best_model_found.summary())
 
 print("result extracted from cerebros")
-print(f"Final result was (val_root_mean_squared_error): {result}")
+print(f"Cerebros final result was (val_root_mean_squared_error): {result}")
