@@ -37,16 +37,23 @@ def hash_a_row(row):
     it is in train, otherwisw it goes to test.)"""
     str_cells = [str(cell) for cell in row]
     cat_cells = "".join(str_cells)
-    signed_hash = hash(cat_cells)
+    hsh = hashlib.sha3_512(cat_cells.encode()).hexdigest()
+    signed_hash = int(hsh, 16)
     unsigned_hash = abs(signed_hash)
+
+    # signed_hash = hash(cat_cells)
+    # unsigned_hash = abs(signed_hash)
     print(f"unsigned_hash is: {unsigned_hash}")
+    
     return unsigned_hash  # Unsigned always positive hash...
 
 
 def hash_based_split(df,  # Pandas dataframe
                      labels,  # Pandas series
                      test_size: float = 0.1,
-                     hash_column: str = "*"):
+                     hash_column: str = "*",
+                     seed: int = 8675309,
+                     time_series: bool = False):
     """
     Split a pandas dataframe to train and test splits using hashing and
     modulus division. This ensures that duplicate rows always fall on the same
@@ -54,57 +61,95 @@ def hash_based_split(df,  # Pandas dataframe
 
     Args:
     - df: pandas dataframe to be split
+    - labels: pandas series containing the labels/targets for the data
     - test_size: float between 0 and 1 representing the proportion of data to
       be used in the test split
     - hash_column: string representing the name of the column to be used for
-      hashing. By default, all rows will be used '*' to ensure only a given
-      column is unique, enter as a string the name of the string.
+      hashing. By default, all rows will be used ('*') to ensure that only a
+      given column is unique. If you want to use a specific column for
+      hashing, enter the name of that column as a string. If set to "*****",
+      it will use regular
+      random selection to split the data frames.
+    - seed: integer representing the random seed for reproducibility
+    - time_series: boolean indicating whether the data is time series data.
+      If True, the split will be performed in a time-aware manner.
 
     Returns:
     - train_df: pandas dataframe containing the training data
+    - train_labels: pandas series containing the labels/targets for
+      the training data
     - test_df: pandas dataframe containing the test data
+    - test_labels: pandas series containing the labels/targets for the
+    test data
     """
 
-    if not (test_size > 0 and test_size < 1):
-        raise ValueError("Test and val splits must be in range (0,1)")
+    if hash_column != "*****":
 
-    if hash_column == "*":
-        # Make a concat all.
-        hash_values = df.apply(hash_a_row,
-                               axis=1)
-    elif isinstance(hash_column, list):
-        hash_values = df[hash_column].apply(hash_a_row,
-                                            axis=1)
-    # Compute the hash values for the hash column
+        if not (test_size > 0 and test_size < 1):
+            raise ValueError("Test and val splits must be in range (0,1)")
+
+        if hash_column == "*":
+            # Make a concat all.
+            hash_values = df.apply(hash_a_row,
+                                   axis=1)
+        elif isinstance(hash_column, list):
+            hash_values = df[hash_column].apply(hash_a_row,
+                                                axis=1)
+        # Compute the hash values for the hash column
+        else:
+            hash_values = df[hash_column].apply(hash)
+
+        # Calculate the cutoff hash value for the test split
+        # hash_cutoff = hash_values.max() * test_size
+        # Split the data based on the hash value
+        # (hash_values % 100) <= 100 * test_size
+        train_idx = (hash_values % 100) >= 100 * test_size
+
+        # train_idx = hash_values % hash_cutoff
+        train_df = df[train_idx]
+        test_idx = ~ train_idx
+
+        # test_idx = hash_values % cutoff_hash == 0
+        test_df = df[test_idx]
+        if labels.shape[1] == 1:
+            train_labels = labels[train_idx]
+            test_labels = labels[test_idx]
+        elif labels.shape[1] > 1:
+            train_labels = labels[train_idx, :]
+            test_labels = labels[test_idx, :]
+        else:
+            raise ValueError("It appears the labels have "
+                             f"{labels.shape} axes. "
+                             "That is not supported yet.")
     else:
-        hash_values = df[hash_column].apply(hash)
+        shuffle = True
+        if time_series:
+            shuffle = False
 
-    # Calculate the cutoff hash value for the test split
-    # hash_cutoff = hash_values.max() * test_size
-    # Split the data based on the hash value
-    # (hash_values % 100) <= 100 * test_size
-    train_idx = (hash_values % 100) >= 100 * test_size
+        train_df, test_df, train_labels, test_labels =\
+            train_test_split(df,
+                             labels,
+                             test_size=test_size,
+                             random_state=seed,
+                             shuffle=shuffle)
 
-    #train_idx = hash_values % hash_cutoff
-    train_df = df[train_idx]
-    test_idx = ~ train_idx
+        # idx = copy(df.index.values)
+        # np.random.shuffle(idx)
+        # cutoff = int(
+        #     np.ceil(
+        #         float(1 - test_size) * int(idx.shape[0])))
 
-    # test_idx = hash_values % cutoff_hash == 0
-    test_df = df[test_idx]
-    if len(labels.shape) == 1:
-        train_labels = labels[train_idx]
-        test_labels = labels[test_idx]
-    elif len(labels.shape) > 1:
-        train_labels = labels[train_idx, :]
-        test_labels = labels[test_idx, :]
-    else:
-        raise ValueError("It appears the labels have "
-                         f"{labels.shape} axes. "
-                         "That is not supported yet.")
+        # train_idx = idx[:cutoff]
+        # train_df = df.loc[train_idx]
+        # train_labels = labels.loc[train_idx]
+
+        # test_idx = idx[cutoff:]
+        # test_df = df.loc[test_idx]
+        # test_labels = labels.loc[test_idx]
+
     return train_df, train_labels, test_df, test_labels
 
 
-# white = pd.read_csv('wine_data.csv')
 
 raw_data = pd.read_csv('ames.csv')
 needed_cols = [
