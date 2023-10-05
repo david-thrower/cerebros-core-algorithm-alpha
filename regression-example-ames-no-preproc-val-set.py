@@ -191,20 +191,26 @@ train_df, train_labels_pd, val_df, val_labels_pd =\
 
 
 train_data_np = train_df.values
-print(f"Shape of train data: {train_data_np.shape}")
+print(f"Shape of train data (pd): {train_df.shape}")
+print(f"Shape of train data (np): {train_data_np.shape}")
+
 
 tensor_x =\
     tf.constant(train_data_np)
 
+print(f"Shape of train data (tensor): {tensor_x.shape}")
 
 training_x = [tensor_x]
 
 INPUT_SHAPES = [training_x[i].shape[1] for i in np.arange(len(training_x))]
 
-# train_label_np = train_labels_pd.values 
+# train_label_np = train_labels_pd.values
 train_label_np = np.ravel(train_labels_pd.values)
 train_labels = [tf.constant(train_label_np)]
-print(f"Shape of train labels: {train_labels_pd.shape}")
+
+print(f"Shape of train labels (pd): {train_labels_pd.shape}")
+print(f"Shape of train labels (np): {train_label_np.shape}")
+
 
 OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
 
@@ -214,14 +220,20 @@ OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
 #     col for col in val_df.columns if raw_data[col].dtype != 'object']
 # val_df = val_df[needed_cols].fillna(0).astype(float)
 
-print(f"Shape of val data: {val_df.shape}")
 val_df_np = val_df.values
 val_tensor_x = tf.constant(val_df_np)
 val_x = [val_tensor_x]
 
+print(f"Shape of val data (pd): {val_df.shape}")
+print(f"Shape of val data (np): {val_df_np.shape}")
+print(f"Shape of val data (tensor): {val_tensor_x.shape}")
+
 val_labels_np = np.ravel(val_labels_pd.values)
-val_labels = [tf.constant(val_labels_np)]
-print(f"Shape of val labels: {val_labels_pd.shape}")
+val_labels_tensor = tf.constant(val_labels_np) 
+val_labels = [val_labels_tensor]
+print(f"Shape of val labels (pd): {val_labels_pd.shape}")
+print(f"Shape of val labels (np): {val_labels_np.shape}")
+print(f"Shape of val labels (tensor): {val_labels_tensor.shape}")
 
 # Params for a training function (Approximately the oprma
 # discovered in a bayesian tuning study done on Katib)
