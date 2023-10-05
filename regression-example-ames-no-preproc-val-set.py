@@ -155,24 +155,30 @@ def hash_based_split(df,  # Pandas dataframe
 
 raw_data = pd.read_csv('ames.csv')
 
+needed_cols = [
+    col for col in train_df.columns if raw_data[col].dtype != 'object']
+selected_data = train_df[needed_cols].fillna(0).astype(float)
 
-label = raw_data[['price']]
-_ = raw_data.pop('price')
 
-_ = raw_data.pop('Order')
-_ = raw_data.pop('PID')
+label = selected_data[['price']]
+_ = selected_data.pop('price')
+
+_ = selected_data.pop('Order')
+_ = selected_data.pop('PID')
+
+
 
 train_df, train_labels_pd, val_df, val_labels_pd =\
-    hash_based_split(raw_data,
+    hash_based_split(selected_data,
                      label,
                      test_size=0.35,
                      hash_column="*",
                      seed=8675309, # Pass param to this page
                      time_series=False)
 
-needed_cols = [
-    col for col in train_df.columns if raw_data[col].dtype != 'object']
-train_df = train_df[needed_cols].fillna(0).astype(float)
+# needed_cols = [
+#     col for col in train_df.columns if raw_data[col].dtype != 'object']
+# train_df = train_df[needed_cols].fillna(0).astype(float)
 
 # train_df, train_labels_pd, val_df, val_labels_pd =\
 #     hash_based_split(
@@ -202,9 +208,9 @@ OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
 
 ## Val set:
 
-needed_cols = [
-    col for col in val_df.columns if raw_data[col].dtype != 'object']
-val_df = val_df[needed_cols].fillna(0).astype(float)
+# needed_cols = [
+#     col for col in val_df.columns if raw_data[col].dtype != 'object']
+# val_df = val_df[needed_cols].fillna(0).astype(float)
 
 print(f"Shape of val data: {val_df.shape}")
 val_df_np = val_df.values
