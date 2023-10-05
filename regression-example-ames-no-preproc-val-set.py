@@ -156,8 +156,10 @@ def hash_based_split(df,  # Pandas dataframe
 raw_data = pd.read_csv('ames.csv')
 
 needed_cols = [
-    col for col in train_df.columns if raw_data[col].dtype != 'object']
-selected_data = train_df[needed_cols].fillna(0).astype(float)
+    col for col 
+    in raw_data.columns 
+    if raw_data[col].dtype != 'object']
+selected_data = raw_data[needed_cols].fillna(0).astype(float)
 
 
 label = selected_data[['price']]
