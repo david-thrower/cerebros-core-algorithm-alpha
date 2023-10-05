@@ -183,7 +183,7 @@ train_data_np = train_df.values
 print(f"Shape of train data: {train_data_np.shape}")
 
 tensor_x =\
-    tf.constant(train_df.values)
+    tf.constant(train_data_np)
 
 
 training_x = [tensor_x]
@@ -191,7 +191,7 @@ training_x = [tensor_x]
 INPUT_SHAPES = [training_x[i].shape[1] for i in np.arange(len(training_x))]
 
 train_label_np = train_labels_pd.values 
-train_labels = [train_label_np]
+train_labels = [tf.constant(train_label_np)]
 print(f"Shape of train labels: {train_labels_pd.shape}")
 
 OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
@@ -204,11 +204,11 @@ val_df = val_df[needed_cols].fillna(0).astype(float)
 
 print(f"Shape of val data: {val_df.shape}")
 val_df_np = val_df.values
-val_tensor_x = tf.constant(val_df.values)
+val_tensor_x = tf.constant(val_df_np)
 val_x = [val_tensor_x]
 
 val_labels_np = val_labels_pd.values
-val_labels = [val_labels_np]
+val_labels = [tf.constant(val_labels_np)]
 print(f"Shape of val labels: {val_labels_pd.shape}")
 
 # Params for a training function (Approximately the oprma
@@ -282,7 +282,7 @@ result = cerebros.run_random_search()
 xg_reg = xgb.XGBRegressor(objective='reg:squarederror', seed=123, n_estimators=10)
 
 # Fit the regressor to the training set
-xg_reg.fit(tensor_x, train_label_np)
+xg_reg.fit(train_data_np, train_label_np)
 
 # Predict the labels of the test set: preds
 xgb_preds = xg_reg.predict(val_df_np)
