@@ -159,6 +159,9 @@ raw_data = pd.read_csv('ames.csv')
 label = raw_data[['price']]
 _ = raw_data.pop('price')
 
+_ = raw_data.pop('Order')
+_ = raw_data.pop('PID')
+
 train_df, train_labels_pd, val_df, val_labels_pd =\
     hash_based_split(raw_data,
                      label,
