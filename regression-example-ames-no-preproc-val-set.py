@@ -205,7 +205,7 @@ training_x = [tensor_x]
 INPUT_SHAPES = [training_x[i].shape[1] for i in np.arange(len(training_x))]
 
 # train_label_np = train_labels_pd.values
-train_label_np = np.ravel(train_labels_pd.values) # train_labels_pd.values
+train_label_np = train_labels_pd.values # np.ravel(train_labels_pd.values)
 train_labels = [tf.constant(train_label_np)]
 
 print(f"Shape of train labels (pd): {train_labels_pd.shape}")
@@ -228,7 +228,7 @@ print(f"Shape of val data (pd): {val_df.shape}")
 print(f"Shape of val data (np): {val_df_np.shape}")
 print(f"Shape of val data (tensor): {val_tensor_x.shape}")
 
-val_labels_np = np.ravel(val_labels_pd.values) # val_labels_pd.values
+val_labels_np = val_labels_pd.values
 val_labels_tensor = tf.constant(val_labels_np) 
 val_labels = [val_labels_tensor]
 print(f"Shape of val labels (pd): {val_labels_pd.shape}")
