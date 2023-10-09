@@ -166,7 +166,7 @@ label = selected_data[['price']]
 _ = selected_data.pop('price')
 
 _ = selected_data.pop('Order')
-_ = selected_data.pop('PID')
+# _ = selected_data.pop('PID')
 
 
 
