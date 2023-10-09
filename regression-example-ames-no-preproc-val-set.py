@@ -260,7 +260,7 @@ cerebros =\
         output_shapes=OUTPUT_SHAPES,
         training_data=training_x,
         labels=train_labels,
-        validation_split=0.0,
+        validation_split=0.35,
         direction='minimize',
         metric_to_rank_by='val_root_mean_squared_error',
         minimum_levels=1,
@@ -269,7 +269,7 @@ cerebros =\
         maximum_units_per_level=maximum_units_per_level,
         minimum_neurons_per_unit=1,
         maximum_neurons_per_unit=maximum_neurons_per_unit,
-        validation_data=(val_x, val_labels),
+        # validation_data=(val_x, val_labels),
         activation=activation,
         final_activation=None,
         number_of_architecture_moities_to_try=7,
@@ -302,7 +302,6 @@ cerebros =\
 result = cerebros.run_random_search()
 
 
-
 xg_reg = xgb.XGBRegressor(objective='reg:squarederror', seed=123, n_estimators=10)
 
 # Fit the regressor to the training set
@@ -315,9 +314,14 @@ xgb_preds = xg_reg.predict(val_df_np)
 xgb_rmse = np.sqrt(mean_squared_error(val_labels_np, xgb_preds))
 print("XGBoost RMSE: %f" % (xgb_rmse))
 
-print("Best model: (May need to re-initialize weights, and retrain with early stopping callback)")
 best_model_found = cerebros.get_best_model()
+print("Best model: (May need to re-initialize weights, and retrain with early stopping callback)")
 print(best_model_found.summary())
+
 
 print("result extracted from cerebros")
 print(f"Cerebros final result was (val_root_mean_squared_error): {result}")
+
+
+final_val_rmse_0 = validation_data=best_model_found.evaluate(val_x, val_labels)
+print(f"final val set performance: {final_val_rmse_0}")
