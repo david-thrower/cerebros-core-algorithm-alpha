@@ -176,7 +176,7 @@ train_df, train_labels_pd, val_df, val_labels_pd =\
                      test_size=0.35,
                      hash_column="*****",
                      seed=8675309, # Pass param to this page
-                     time_series=False)
+                     time_series=True)
 
 # needed_cols = [
 #     col for col in train_df.columns if raw_data[col].dtype != 'object']
