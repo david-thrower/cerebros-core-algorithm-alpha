@@ -174,7 +174,7 @@ train_df, train_labels_pd, val_df, val_labels_pd =\
     hash_based_split(selected_data,
                      label,
                      test_size=0.35,
-                     hash_column="*",
+                     hash_column="*****",
                      seed=8675309, # Pass param to this page
                      time_series=False)
 
