@@ -1,8 +1,5 @@
 # Initializing
 
-import sys
-sys.path.insert(0, '../..')
-
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from tensorflow.keras.datasets import cifar10, cifar100
