@@ -81,7 +81,9 @@ enet_mod.evaluate(X_test, y_test_cat)
 def resize(x):
     return tf.image.resize(x,size=(384,384),method='bilinear')
 
-INPUT_SHAPES  = [(32,32,3)]
+input_shape = (32,32,3)
+
+INPUT_SHAPES  = [input_shape]
 OUTPUT_SHAPES = [100]
 
 # Use some 15k random samples from Cifar-100 to speed up the process
