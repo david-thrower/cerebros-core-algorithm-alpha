@@ -6,12 +6,6 @@
 # the classical Lawrence algorithm for semiprime factorization
 #
 
-import warnings
-warnings.filterwarnings("ignore")
-
-import sys
-sys.path.insert(0, '../..')
-
 import numpy as np
 import gmpy2
 from gmpy2 import mpz, mpq, mpfr
