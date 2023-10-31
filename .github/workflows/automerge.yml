@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "109-spelling-errors-in-license" ]
+    branches: [ "main", "120-add-use-examples-efficientnet-fine-tuning-on-cifar-100" ]
 
 permissions:
   contents: read
