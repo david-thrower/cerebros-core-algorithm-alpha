@@ -49,6 +49,9 @@ jobs:
     # - name: Test image classifier - small subset of CIFAR10
     #   timeout-minutes: 90
     #  run: python3 cifar10-example.py
-    - name: Test image classifier EfficientNetv2S - small subset of CIFAR10
+    # - name: Test image classifier EfficientNetv2S - small subset of CIFAR10
+    #   timeout-minutes: 240
+    #   run: python3 cifar-10-efficientnetv2s.py
+    - name: Test image classifier EfficientNetv2S - PEFT CIFAR100
       timeout-minutes: 240
-      run: python3 cifar-10-efficientnetv2s.py
+      run: python3 cifar_100_EfficientNet.py
