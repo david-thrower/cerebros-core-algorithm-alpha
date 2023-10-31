@@ -16,6 +16,9 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 from ast import literal_eval
 
+"""
+# Trying to retrain EfficientNet from scratch for comparison ...
+
 # Download EfficientNet (v.2, small model) with Imagenet weights (1000 classes)
 
 enet = tf.keras.applications.efficientnet_v2.EfficientNetV2S(
@@ -67,10 +70,18 @@ enet_mod.compile(optimizer='adam',
 enet_mod.fit(X_train, y_train_cat)
 
 enet_mod.evaluate(X_test, y_test_cat)
+""";
 
-# Try the same with adding a Cerebros "add-on" network
+# Trying the same with adding a Cerebros "add-on" network
 
-INPUT_SHAPES  = [input_shape]
+(X_train, y_train), (X_test, y_test) = cifar100.load_data()
+
+# Lambda layer for preprocessing
+
+def resize(x):
+    return tf.image.resize(x,size=(384,384),method='bilinear')
+
+INPUT_SHAPES  = [(32,32,3)]
 OUTPUT_SHAPES = [100]
 
 # Use some 15k random samples from Cifar-100 to speed up the process
