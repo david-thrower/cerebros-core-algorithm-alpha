@@ -61,9 +61,9 @@ def subsample_train(X_train, y_train, num_samples):
     #
     return X_sub[ind], y_sub[ind]
 
-# We take only 50 samples in each category
+# We take only 20 samples in each category
 
-num_samples = 50
+num_samples  = 20
 X_sub, y_sub = subsample_train(X_train, y_train, num_samples)
 
 # Preparing tensors for the training set and labels
