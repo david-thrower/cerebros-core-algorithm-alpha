@@ -1,4 +1,9 @@
-# Initializing
+"""
+EfficientNet PEFT on CIFAR-100 with Cerebros
+"""
+
+import sys
+sys.path.insert(0, '../..')
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
@@ -16,85 +21,61 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 from ast import literal_eval
 
-"""
-# Trying to retrain EfficientNet from scratch for comparison ...
+# PEFT with Cerebros
 
-# Download EfficientNet (v.2, small model) with Imagenet weights (1000 classes)
-
-enet = tf.keras.applications.efficientnet_v2.EfficientNetV2S(
-    include_top=True,
-    weights='imagenet',
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation='softmax',
-    include_preprocessing=True
-)
-
-enet.summary()
-
-# Make all layers untrainable except for the very last convolutional layer
-
-for layer in enet.layers:
-    layer.trainable = False
-enet.layers[-6].trainable  = True
-
-# Cifar-100 testing
+# Download Cifar-100 data
 
 (X_train, y_train), (X_test, y_test) = cifar100.load_data()
 
-y_train_cat = to_categorical(y_train, 1000)
-y_test_cat = to_categorical(y_test, 1000)
+# Input and output shapes: Cifar-100 has 32x32 images with 3 channels (RGB). The output is 100 categorical probabilities.
 
-# Lambda layer for preprocessing
-
-def resize(x):
-    return tf.image.resize(x,size=(384,384),method='bilinear')
-
-# Modify the model
-
-input_shape = (32,32,3)
-
-input_layer = Input(shape=input_shape)
-prep = Lambda(resize)(input_layer)
-out = enet(prep)
-enet_mod = Model(inputs=input_layer, outputs=out)
-
-enet_mod.compile(optimizer='adam',
-                 loss=tf.keras.losses.CategoricalCrossentropy(),
-                 metrics=[tf.keras.metrics.TopKCategoricalAccuracy(k=1, name='top_1_categorical_accuracy')])
-
-# Try to fit it on Cifar-100 data and then evaluate (this will be efficient enough if trained on the complete dataset ...)
-
-enet_mod.fit(X_train, y_train_cat)
-
-enet_mod.evaluate(X_test, y_test_cat)
-""";
-
-# Trying the same with adding a Cerebros "add-on" network
-
-(X_train, y_train), (X_test, y_test) = cifar100.load_data()
-
-# Lambda layer for preprocessing
-
-def resize(x):
-    return tf.image.resize(x,size=(384,384),method='bilinear')
-
-input_shape = (32,32,3)
-
+input_shape   = (32,32,3)
 INPUT_SHAPES  = [input_shape]
 OUTPUT_SHAPES = [100]
 
-# Use some 15k random samples from Cifar-100 to speed up the process
+# Subsampling a small balanced set of samples (with of without shuffling) from the train dataset and train labels
 
-num_samples = 15_000
-rng = np.random.default_rng()
-ind = rng.permutation(X_train.shape[0])[:num_samples]
+def subsample_train(X_train, y_train, num_samples):
+    #
+    X_sub = []
+    y_sub = []
+    #
+    assert 1 <= num_samples <= 500
+    #
+    for cat in range(100):
+        #
+        ind, _ = np.where(y_train==cat)
+        #
+        X_cat = X_train[ind]
+        X_cat = X_cat[:num_samples]
+        y_cat = y_train[ind]
+        y_cat = y_cat[:num_samples]
+        #
+        X_sub += [X_cat]
+        y_sub += [y_cat]
+    #
+    X_sub = np.vstack(X_sub)
+    y_sub = np.vstack(y_sub)
+    #
+    assert X_sub.shape[0] == y_sub.shape[0]
+    #
+    ind = np.arange(X_sub.shape[0])
+    np.random.shuffle(ind)
+    #
+    return X_sub[ind], y_sub[ind]
 
-training_x   = [tf.constant(X_train[ind,:,:,:])]
-y_train_cat  = to_categorical(y_train[ind], 100)
+# We take only 50 samples in each category
+
+num_samples = 50
+X_sub, y_sub = subsample_train(X_train, y_train, num_samples)
+
+# Preparing tensors for the training set and labels
+
+training_x   = [tf.constant(X_sub)]
+y_train_cat  = to_categorical(y_sub, 100)
 train_labels = [tf.constant(y_train_cat)]
+
+# Donwloading EfficientNet (v.2, small)
 
 enet = tf.keras.applications.efficientnet_v2.EfficientNetV2S(
     include_top=True,
@@ -106,10 +87,19 @@ enet = tf.keras.applications.efficientnet_v2.EfficientNetV2S(
     classifier_activation='softmax',
     include_preprocessing=True
 )
+
+# Resizing images to meet EfficientNet's input shape
+
+def resize(x):
+    return tf.image.resize(x,size=(384,384),method='bilinear')
+
+# Make only the last convolutional layer trainable
 
 for layer in enet.layers:
     layer.trainable = False
 enet.layers[-6].trainable = True
+
+# Preparing the base model for Cerebros search
 
 enet_io = Model(inputs=enet.layers[0].input,
                 outputs=enet.layers[-3].output)
@@ -118,6 +108,8 @@ input_layer = Input(shape=input_shape)
 prep = Lambda(resize)(input_layer)
 out = Flatten()(enet_io(prep))
 base_mod = Model(inputs=input_layer, outputs=out)
+
+# Cerebros configurables
 
 activation = 'swish'
 predecessor_level_connection_affinity_factor_first = 2.0
@@ -133,6 +125,7 @@ maximum_units_per_level = 7  # [2,10]
 maximum_neurons_per_unit = 4  # [2,20]
 
 # Final training task
+
 TIME = pendulum.now(tz='America/New_York').__str__()[:16]\
     .replace('T', '_')\
     .replace(':', '_')\
@@ -187,8 +180,8 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     meta_trial_number=meta_trial_number,
     base_models=[base_mod])
 
-# Commented out IPython magic to ensure Python compatibility.
-# %%time
+# Search and save the best model
+
 result = cerebros_automl.run_random_search()
 
 print(f'Best accuracy achieved is {result}')
@@ -197,6 +190,9 @@ print(f'top-1 categorical accuracy')
 # Evaluating the best model found
 
 best_model_found = cerebros_automl.get_best_model()
+
+# because of the resizing Lambda layer, needs safe_mode=False in some environments
+#best_model_found = tf.keras.models.load_model(cerebros_automl.best_model_path, safe_mode=False)
 
 #
 eval_loss = tf.keras.losses.CategoricalCrossentropy()
