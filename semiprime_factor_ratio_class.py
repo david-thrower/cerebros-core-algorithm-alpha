@@ -115,7 +115,7 @@ print(f"Best model found: {total_params} total parameters ({trainable_params} tr
 
 print(f"Best accuracy is ({cerebros_automl.metric_to_rank_by}): {result}")
 
-best_model_found.compile()
+# best_model_found.compile()
 best_model_found.summary()
 
 y_pred = best_model_found.predict(X_test)
