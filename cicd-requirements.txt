@@ -1,0 +1,2 @@
+tensorflow-datasets==4.9.3
+gmpy2==2.1.5

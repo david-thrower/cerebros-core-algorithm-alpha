@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "109-spelling-errors-in-license" ]
+    branches: [ "main", "115-add-use-examples-regnet-fine-tuning-on-cifar-10" ]
 
 permissions:
   contents: read
@@ -24,6 +24,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip3 install -r cicd-requirements.txt
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -38,17 +39,20 @@ jobs:
 #      run: python3 random_search.py
     # - name: Test CerebrosRealNeuronNetwork
     #   run: python3 realnn-regression-example-ames-no-preproc.py
-      timeout-minutes: 45
-    - name: Test distributed random search Ames by running
-      run: python3 regression-example-ames-no-preproc.py
-    - name: Test distributed random search Ames by running - Val set
-      run: python3 regression-example-ames-no-preproc-val-set.py
-    - name: Test text classifier - random search - ham-spam
-      run: python3 text-class-ham-or-spam.py
-      timeout-minutes: 90
-    # - name: Test image classifier - small subset of CIFAR10
+    #   timeout-minutes: 45
+    # - name: Test distributed random search Ames by running
+    #   run: python3 regression-example-ames-no-preproc.py
+    # - name: Test distributed random search Ames by running - Val set
+    #   run: python3 regression-example-ames-no-preproc-val-set.py
+    # - name: Test text classifier - random search - ham-spam
+    #   run: python3 text-class-ham-or-spam.py
     #   timeout-minutes: 90
-    #  run: python3 cifar10-example.py
-    - name: Test image classifier EfficientNetv2S - small subset of CIFAR10
+    # # - name: Test image classifier - small subset of CIFAR10
+    # #   timeout-minutes: 90
+    # #  run: python3 cifar10-example.py
+    # - name: Test image classifier EfficientNetv2S - small subset of CIFAR10
+    #   timeout-minutes: 240
+    #   run: python3 cifar-10-efficientnetv2s.py
+    - name: Test image classifier RegNet
       timeout-minutes: 240
-      run: python3 cifar-10-efficientnetv2s.py
+      run: python3 cifar_10_RegNet.py
