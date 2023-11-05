@@ -191,7 +191,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     p_lateral_connection_decay=zero_95_exp_decay,
     num_lateral_connection_tries_per_unit=num_lateral_connection_tries_per_unit,
     learning_rate=learning_rate,
-    loss=tf.keras.losses.BinaryCrossentropy(),
+    loss=tf.keras.losses.CategoricalHinge(),
     metrics=[tf.keras.metrics.BinaryAccuracy(),
              tf.keras.metrics.Precision(),
              tf.keras.metrics.Recall()],
@@ -217,25 +217,5 @@ best_model_found =\
 tf.keras.models.load_model(cerebros_automl.best_model_path,\
 custom_objects={'GPT2Layer': GPT2Layer(max_seq_length)})
 
-best_model_found.evaluate(X_test, y_test)
-
-"""### Training the best model on a larger dataset, and testing again"""
-
-# Train / test split : we give 65% of the data for training,
-# now that we have found the best model
-X_train, X_test, y_train, y_test = \
-train_test_split(X, y, test_size=0.35, shuffle=False)
-
-optimizer = Adam(learning_rate=0.0005)
-#loss=tf.keras.losses.BinaryCrossentropy()
-loss = tf.keras.losses.CategoricalHinge()
-metrics=[tf.keras.metrics.BinaryAccuracy(),
-         tf.keras.metrics.Precision(),
-         tf.keras.metrics.Recall()]
-best_model_found.compile(optimizer=optimizer,
-                         loss=loss,
-                         metrics=metrics)
-
-best_model_found.fit(X_train, y_train, validation_split=0.35, epochs=3)
-
+print('Evaluating on the test dataset')
 best_model_found.evaluate(X_test, y_test)
