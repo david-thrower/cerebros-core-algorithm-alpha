@@ -11,13 +11,6 @@ Original file is located at
 Initialization
 """
 
-# Commented out IPython magic to ensure Python compatibility.
-# %cd drive/MyDrive/Colab\ Notebooks/cerebros-core-algorithm-alpha
-
-!pip install -r requirements.txt
-
-!pip install -q --upgrade keras-nlp
-
 import tensorflow as tf
 import tensorflow_text
 from keras_nlp.models import GPT2Tokenizer, GPT2Preprocessor, GPT2Backbone
@@ -210,9 +203,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     base_models=[base_model],
     train_data_dtype=tf.string)
 
-# Commented out IPython magic to ensure Python compatibility.
-# %%time
-# result = cerebros_automl.run_random_search()
+result = cerebros_automl.run_random_search()
 
 print(f'Best accuracy achieved is {result}')
 print(f'binary accuracy')
