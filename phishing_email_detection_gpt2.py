@@ -58,9 +58,9 @@ y = df["Binary Label"].to_numpy()
 #
 X, y = shuffle(X, y)
 
-# Train / test split : we give 65% of the data for *testing*
+# Train / test split : we give 85% of the data for *testing*
 X_train, X_test, y_train, y_test = \
-train_test_split(X, y, test_size=0.65, shuffle=False)
+train_test_split(X, y, test_size=0.85, shuffle=False)
 
 #
 # Tensors for training data and labels
