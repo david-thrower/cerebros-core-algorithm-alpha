@@ -133,18 +133,18 @@ base_model.summary()
 #
 # Cerebros configurables
 #
-activation = 'swish'
-predecessor_level_connection_affinity_factor_first = 2.0
-predecessor_level_connection_affinity_factor_main = 0.97
-max_consecutive_lateral_connections = 5
-p_lateral_connection = 0.97
-num_lateral_connection_tries_per_unit = 2
-learning_rate = 0.001
+activation = 'gelu'
+predecessor_level_connection_affinity_factor_first = 49.9999
+predecessor_level_connection_affinity_factor_main = 0.31456
+max_consecutive_lateral_connections = 22
+p_lateral_connection = 0.39256
+num_lateral_connection_tries_per_unit = 10
+learning_rate = 0.0000511065
 epochs = 6  # [1, 100]
-batch_size = 32
-maximum_levels = 5  # [3,7]
-maximum_units_per_level = 7  # [2,10]
-maximum_neurons_per_unit = 6  # [2,20]
+batch_size = 13
+maximum_levels = 4  # [3,7]
+maximum_units_per_level = 8  # [2,10]
+maximum_neurons_per_unit = 5  # [2,20]
 
 #
 # Logging
