@@ -37,9 +37,9 @@ jobs:
 #      run: python3 test_simple_cerebros_gridsearch.py
 #    - name: Test distributed random search wine by running.
 #      run: python3 random_search.py
-    - name: Test image classifier EfficientNetv2S - PEFT CIFAR100
+    - name: Test image classifier EfficientNetv2S - CIFAR100
       run: python3 cifar_100_EfficientNet.py
-      timeout-minutes: 250
+      timeout-minutes: 310
 #    - name: Test CerebrosRealNeuronNetwork
 #      run: python3 realnn-regression-example-ames-no-preproc.py
 #      timeout-minutes: 45
@@ -54,5 +54,5 @@ jobs:
       timeout-minutes: 90
       run: python3 cifar10-example.py
     - name: Phishing email detection with GPT2 embedding
-      timeout-minutes: 120
+      timeout-minutes: 180
       run: python3 phishing_email_detection_gpt2.py
