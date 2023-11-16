@@ -331,9 +331,20 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
 
         self.materialized_neural_network.compile(
             loss=self.loss,
-            metrics=self.metrics,
-            optimizer=tf.keras.optimizers.Adam(
-                    learning_rate=self.learning_rate),
+            metrics=self.metrics,           
+            optimizer= tf.keras.optimizers.Lion(
+            learning_rate=self.learning_rate,
+            beta_1=0.9,
+            beta_2=0.99,
+            weight_decay=None,
+            clipnorm=None,
+            clipvalue=None,
+            global_clipnorm=None,
+            use_ema=False,
+            ema_momentum=0.99,
+            ema_overwrite_frequency=None,
+            jit_compile=jit_compile,
+            name='Lion'),
             jit_compile=jit_compile)
 
     def util_parse_connectivity_csv(self):
