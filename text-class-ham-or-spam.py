@@ -62,6 +62,7 @@ preprocessor =\
         "https://kaggle.com/models/tensorflow/"
         "bert/frameworks/TensorFlow2/"
         "variations/en-uncased-preprocess/versions/3")
+encoder_inputs = preprocessor(text_input)
 encoder =\
     hub.KerasLayer(
         "https://www.kaggle.com/models/tensorflow/"
