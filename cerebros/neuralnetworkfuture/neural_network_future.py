@@ -56,6 +56,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
              metrics=[tf.keras.metrics.RootMeanSquaredError()],
              model_graph_file='test_model_graph.html',
              train_data_dtype=tf.float32,
+             jit_compile=True,
              *args,
              **kwargs):
         print(level_number)
@@ -76,6 +77,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
         self.compiled_materialized_neural_network = []
         self.model_graph_file = model_graph_file
         self.train_data_dtype = train_data_dtype
+        self.jit_compile = jit_compile
 
         # super().__init__(self,
         #                 *args,
@@ -325,9 +327,9 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
 
     def compile_neural_network(self):
         if self.base_models == ['']:
-            jit_compile = True
+            jit_compile = self.jit_compile
         else:
-            jit_compile = False
+            jit_compile = self.jit_compile
 
         self.materialized_neural_network.compile(
             loss=self.loss,
@@ -343,9 +345,9 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
             use_ema=False,
             ema_momentum=0.99,
             ema_overwrite_frequency=None,
-            jit_compile=jit_compile,
+            jit_compile=self.jit_compile,
             name='Lion'),
-            jit_compile=jit_compile)
+            jit_compile=self.jit_compile)
 
     def util_parse_connectivity_csv(self):
 
@@ -759,7 +761,7 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
             metrics=self.metrics,
             optimizer=tf.keras.optimizers.Adam(
                     learning_rate=self.learning_rate),
-            jit_compile=True)
+            jit_compile=self.jit_compile)
 
     def util_parse_connectivity_csv(self):
 
