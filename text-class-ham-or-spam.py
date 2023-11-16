@@ -148,6 +148,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     batch_size=batch_size,
     meta_trial_number=meta_trial_number,
     base_models=[embedding_model],
-    train_data_dtype=tf.string)
+    train_data_dtype=tf.string,
+    jit_compile=False)
 val_binary_accuracy = cerebros_automl.run_random_search()
 print(val_binary_accuracy)
