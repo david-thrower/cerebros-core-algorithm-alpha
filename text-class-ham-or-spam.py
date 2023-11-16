@@ -67,8 +67,7 @@ encoder =\
     hub.KerasLayer(
         "https://www.kaggle.com/models/tensorflow/"
         "bert/frameworks/TensorFlow2/variations/"
-        "bert-en-uncased-l-10-h-768-a-12/versions/2",
-        trainable=True)
+        "bert-en-uncased-l-10-h-768-a-12/versions/2")
 outputs = encoder(encoder_inputs)
 pooled_output = outputs["pooled_output"]      # [batch_size, 768].
 sequence_output = outputs["sequence_output"]  # [batch_size, seq_length, 768].
