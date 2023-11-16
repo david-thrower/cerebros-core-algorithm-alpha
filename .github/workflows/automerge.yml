@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "125-add-use-cases-gpt2-encoder-for-phishing-email-detection" ]
+    branches: [ "main", "88-add-new-sota-optimizers-to-cerebros" ]
 
 permissions:
   contents: read
