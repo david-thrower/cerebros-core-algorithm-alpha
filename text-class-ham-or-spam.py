@@ -46,12 +46,28 @@ maximum_neurons_per_unit = 5  # [2,20]
 
 # Build BERT base model
 text_input = tf.keras.layers.Input(shape=(), dtype=tf.string)
-preprocessor = hub.KerasLayer(
-    "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3")
-encoder_inputs = preprocessor(text_input)
-encoder = hub.KerasLayer(
-    "https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/4",
-    trainable=True)
+
+
+# Old:
+# preprocessor = hub.KerasLayer(
+#     "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3")
+# encoder_inputs = preprocessor(text_input)
+# encoder = hub.KerasLayer(
+#     "https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/4",
+#     trainable=True)
+
+# New:
+preprocessor =\
+    hub.KerasLayer(
+        "https://kaggle.com/models/tensorflow/"
+        "bert/frameworks/TensorFlow2/"
+        "variations/en-uncased-preprocess/versions/3")
+encoder =\
+    hub.KerasLayer(
+        "https://www.kaggle.com/models/tensorflow/"
+        "bert/frameworks/TensorFlow2/variations/"
+        "bert-en-uncased-l-10-h-768-a-12/versions/2",
+        trainable=True)
 outputs = encoder(encoder_inputs)
 pooled_output = outputs["pooled_output"]      # [batch_size, 768].
 sequence_output = outputs["sequence_output"]  # [batch_size, seq_length, 768].
