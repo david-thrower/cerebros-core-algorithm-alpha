@@ -89,10 +89,10 @@ class GPT2Layer(tf.keras.layers.Layer):
         #
         # Set whether the GPT2 model's layers are trainable
         #self.encoder.trainable = False
-        for layer in self.encoder.layers:
-            layer.trainable = False
+        # for layer in self.encoder.layers:
+        #     layer.trainable = False
         #
-        self.encoder.layers[-2].trainable = True
+        # self.encoder.layers[-2].trainable = True
         #
         # Set the maximum sequence length for tokenization
         self.max_seq_length = max_seq_length
