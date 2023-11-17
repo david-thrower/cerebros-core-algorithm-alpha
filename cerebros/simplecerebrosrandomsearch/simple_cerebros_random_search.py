@@ -258,12 +258,13 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                                  will be multiplied by p_lateral_connection where x is the number
                                  of subsequent connections after the first
                 num_lateral_connection_tries_per_unit: int: defaults to 1,
-                self.chart_network_graph: bool: default: False,
+                chart_network_graph: bool: default: False,
                                  Whether or not Cerebros will create visualizations of the neural
                                  network graphs. When recursively running Cerebros for hyperparameter
                                  tuning, we recommned the default of False. When running a single, easily repeatable
                                  training task that will not run for long, or when debugging a failed run with an error
                                  in the network graph, it may provide useful information.   
+                jit_compile: bool=True: Whether to jit compile for XLA.
                  *args,
                  **kwargs
 
@@ -315,6 +316,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                  base_models=[''],
                  train_data_dtype=tf.float32,
                  chart_network_graph: bool=False,
+                 jit_compile: bool=True,
                  *args,
                  **kwargs):
 
@@ -375,6 +377,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.best_model_path = ""
         self.train_data_dtype = train_data_dtype
         self.chart_network_graph = chart_network_graph
+        self.jit_compile = jit_compile
         # Can be varied throughout the serch session;
         # must be controlled internally
         DenseAutoMlStructuralComponent.__init__(
@@ -477,7 +480,8 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
             loss=self.loss,
             metrics=self.metrics,
             model_graph_file=model_graph_file,
-            train_data_dtype=self.train_data_dtype
+            train_data_dtype=self.train_data_dtype,
+            jit_compile=self.jit_compile
             )
         nnf.materialize()
         nnf.compile_neural_network()
@@ -493,7 +497,8 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                                      # callbacks=[early_stopping,
                                      #            tensor_board],
                                      validation_split=self.validation_split,
-                                     validation_data=self.validation_data)
+                                     validation_data=self.validation_data,
+                                     jit_compile=self.jit_compile)
         oracle_0 = pd.DataFrame(history.history)
 
         model_architectures_folder = f"{self.project_name}/model_architectures"
