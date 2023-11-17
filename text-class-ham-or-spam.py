@@ -50,7 +50,8 @@ text_input = tf.keras.layers.Input(shape=(), dtype=tf.string)
 
 # Old:
 preprocessor = hub.KerasLayer(
-    "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3")
+    "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+    trainable=True)
 encoder_inputs = preprocessor(text_input)
 encoder = hub.KerasLayer(
     "https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/4",
