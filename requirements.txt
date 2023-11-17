@@ -1,5 +1,5 @@
-jax==0.4.1
-jaxlib==0.4.1
+jax==0.4.20
+jaxlib==0.4.20
 pendulum==2.1.2
 tensorflow==2.15.0
 numpy==1.23.5
