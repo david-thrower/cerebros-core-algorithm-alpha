@@ -481,8 +481,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
             metrics=self.metrics,
             model_graph_file=model_graph_file,
             train_data_dtype=self.train_data_dtype,
-            jit_compile=self.jit_compile
-            )
+            jit_compile=self.jit_compile)
         nnf.materialize()
         nnf.compile_neural_network()
         neural_network = nnf.materialized_neural_network
@@ -497,8 +496,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                                      # callbacks=[early_stopping,
                                      #            tensor_board],
                                      validation_split=self.validation_split,
-                                     validation_data=self.validation_data,
-                                     jit_compile=self.jit_compile)
+                                     validation_data=self.validation_data)
         oracle_0 = pd.DataFrame(history.history)
 
         model_architectures_folder = f"{self.project_name}/model_architectures"
