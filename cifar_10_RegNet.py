@@ -53,20 +53,20 @@ def resize(x):
 
 input_shape = (32,32,3)
 
-input_layer = Input(shape=input_shape)
-prep = Lambda(resize)(input_layer)
-out = regnet(prep)
-regnet_mod = Model(inputs=input_layer, outputs=out)
+# input_layer = Input(shape=input_shape)
+# prep = Lambda(resize)(input_layer)
+# out = regnet(prep)
+# regnet_mod = Model(inputs=input_layer, outputs=out)
 
-regnet_mod.compile(optimizer='adam',
-                   loss=tf.keras.losses.CategoricalCrossentropy(),
-                   metrics=[tf.keras.metrics.TopKCategoricalAccuracy(k=1, name='top_1_categorical_accuracy')])
+# regnet_mod.compile(optimizer='adam',
+#                    loss=tf.keras.losses.CategoricalCrossentropy(),
+#                    metrics=[tf.keras.metrics.TopKCategoricalAccuracy(k=1, name='top_1_categorical_accuracy')])
 
-# Try to fit it on Cifar-10 data and then evaluate (there is no hope this is gonna work ...)
+# # Try to fit it on Cifar-10 data and then evaluate (there is no hope this is gonna work ...)
 
-regnet_mod.fit(X_train, y_train_cat)
+# regnet_mod.fit(X_train, y_train_cat)
 
-regnet_mod.evaluate(X_test, y_test_cat)
+# regnet_mod.evaluate(X_test, y_test_cat)
 
 # Try the same with adding a Cerebros "add-on" network
 
