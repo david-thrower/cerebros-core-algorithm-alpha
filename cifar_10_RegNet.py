@@ -41,8 +41,8 @@ regnet.layers[-6].trainable  = True
 
 (X_train, y_train), (X_test, y_test) = cifar10.load_data()
 
-y_train_cat = to_categorical(y_train, 1000)
-y_test_cat = to_categorical(y_test, 1000)
+y_train_cat = to_categorical(y_train, 10)
+y_test_cat = to_categorical(y_test, 10)
 
 # Lambda layer for preprocessing
 
@@ -75,7 +75,7 @@ OUTPUT_SHAPES = [10]
 
 # Use 10k-15k random samples from Cifar-10 to speed up the process
 
-num_samples = 15_000
+num_samples = 5_000
 rng = np.random.default_rng()
 ind = rng.permutation(X_train.shape[0])[:num_samples]
 
@@ -106,18 +106,35 @@ prep = Lambda(resize)(input_layer)
 out = Flatten()(regnet_io(prep))
 base_mod = Model(inputs=input_layer, outputs=out)
 
-activation = 'relu'
-predecessor_level_connection_affinity_factor_first = 2.0
-predecessor_level_connection_affinity_factor_main = 0.97
-max_consecutive_lateral_connections = 5
-p_lateral_connection = 0.97
-num_lateral_connection_tries_per_unit = 2
-learning_rate = 0.001
-epochs = 10  # [1, 100]
-batch_size = 20
-maximum_levels = 4  # [3,7]
-maximum_units_per_level = 7  # [2,10]
-maximum_neurons_per_unit = 4  # [2,20]
+# activation = 'relu'
+# predecessor_level_connection_affinity_factor_first = 2.0
+# predecessor_level_connection_affinity_factor_main = 0.97
+# max_consecutive_lateral_connections = 5
+# p_lateral_connection = 0.97
+# num_lateral_connection_tries_per_unit = 2
+# learning_rate = 0.001
+# epochs = 10  # [1, 100]
+# batch_size = 20
+# maximum_levels = 4  # [3,7]
+# maximum_units_per_level = 7  # [2,10]
+# maximum_neurons_per_unit = 4  # [2,20]
+
+# New
+
+
+activation = 'elu'
+predecessor_level_connection_affinity_factor_first = 40
+predecessor_level_connection_affinity_factor_main = 65
+max_consecutive_lateral_connections = 2
+p_lateral_connection = 0.22299
+num_lateral_connection_tries_per_unit = 1
+learning_rate = 0.000129686
+epochs = 7  # [1, 100]
+batch_size = 27
+maximum_levels = 8  # [3,7]
+maximum_units_per_level = 10  # [2,10]
+maximum_neurons_per_unit = 2  # [2,20]
+
 
 # Final training task
 TIME = pendulum.now(tz='America/New_York').__str__()[:16]\
