@@ -326,10 +326,11 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
                                name=f"{self.name}_nn_materialized")
 
     def compile_neural_network(self):
-        if self.base_models == ['']:
-            jit_compile = self.jit_compile
-        else:
-            jit_compile = self.jit_compile
+        
+        # if self.base_models == ['']:
+        #     jit_compile = self.jit_compile
+        # else:
+        #     jit_compile = self.jit_compile
 
         self.materialized_neural_network.compile(
             loss=self.loss,
