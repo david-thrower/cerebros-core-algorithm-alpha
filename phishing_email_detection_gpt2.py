@@ -201,7 +201,8 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     batch_size=batch_size,
     meta_trial_number=meta_trial_number,
     base_models=[base_model],
-    train_data_dtype=tf.string)
+    train_data_dtype=tf.string,
+    jit_compile=False)
 
 result = cerebros_automl.run_random_search()
 
