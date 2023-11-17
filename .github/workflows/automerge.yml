@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "88-add-new-sota-optimizers-to-cerebros" ]
+    branches: [ "main", "130-try-adam-w-optimizer" ]
 
 permissions:
   contents: read
