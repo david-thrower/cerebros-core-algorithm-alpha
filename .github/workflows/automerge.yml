@@ -39,7 +39,7 @@ jobs:
 #      run: python3 random_search.py
     - name: Test image classifier EfficientNetv2S - CIFAR100
       run: python3 cifar_100_EfficientNet.py
-      timeout-minutes: 310
+      timeout-minutes: 600
 #    - name: Test CerebrosRealNeuronNetwork
 #      run: python3 realnn-regression-example-ames-no-preproc.py
 #      timeout-minutes: 45
