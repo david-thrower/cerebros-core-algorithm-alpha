@@ -131,6 +131,9 @@ embedded =\
         output_dim=10, 
         input_length=96, 
         mask_zero=True)(gpt2_layer)
+print("LAYER INFO")
+print(embedded)
+
 flatened = tf.keras.layers.Flatten()(embedded)
 
 
