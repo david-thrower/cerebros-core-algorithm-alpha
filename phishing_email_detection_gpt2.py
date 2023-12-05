@@ -124,11 +124,12 @@ max_seq_length = 96
 # Base model
 input_layer = Input(shape=(), dtype=tf.string)
 gpt2_layer = GPT2Layer(max_seq_length)(input_layer)
+embeded = tf.keras.layers.Embeding()
 #output = Flatten()(gpt2_layer)
 base_model = Model(inputs=input_layer, outputs=gpt2_layer)
 base_model.summary()
 
-test = tf.constant(["test", "test 2"])
+test = tf.constant(["This is a test", "This test will create confusion 2."])
 embeded_text = base_model(test)
 raise ValueError(embeded_text)
 
