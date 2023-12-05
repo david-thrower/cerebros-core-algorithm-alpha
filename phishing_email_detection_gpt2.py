@@ -124,13 +124,13 @@ max_seq_length = 96
 # Base model
 input_layer = Input(shape=(), dtype=tf.string)
 gpt2_layer = GPT2Layer(max_seq_length)(input_layer)
+
 embedded =\
     tf.keras.layers.Embedding(
         input_dim=96, 
         output_dim=10, 
         input_length=96, 
-        mask_zero=True)(
-            gpt2_layer["token_ids"])
+        mask_zero=True)(gpt2_layer)
 flatened = tf.keras.layers.Flatten()(embedded)
 
 
