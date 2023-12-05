@@ -128,6 +128,10 @@ gpt2_layer = GPT2Layer(max_seq_length)(input_layer)
 base_model = Model(inputs=input_layer, outputs=gpt2_layer)
 base_model.summary()
 
+test = tf.constant(["test", "test 2"])
+embeded_text = base_model(test)
+raise ValueError(embeded_text)
+
 """### Cerebros search for the best model"""
 
 #
