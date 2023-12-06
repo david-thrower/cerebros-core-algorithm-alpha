@@ -143,11 +143,9 @@ tokenized_embedded_model=\
         inputs=inp,
         outputs=flattened)
 
-print(VOCABULARY_SIZE)
+print(f"VOCABULARY_SIZE: {VOCABULARY_SIZE}")
 
 
-
-# raise ValueError(embeded_text)
 
 """### Cerebros search for the best model"""
 
