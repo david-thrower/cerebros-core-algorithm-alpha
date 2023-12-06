@@ -133,7 +133,7 @@ tokens = gp2(inp)
 embedded =\
     tf.keras.layers.Embedding(
         input_dim=VOCABULARY_SIZE,
-        output_dim=10,
+        output_dim=4,
         input_length=96,
         mask_zero=True)(tokens)
 flattened = tf.keras.layers.Flatten()(embedded)
