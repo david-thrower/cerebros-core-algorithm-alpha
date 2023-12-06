@@ -82,7 +82,7 @@ class GPT2Layer(tf.keras.layers.Layer):
         super(GPT2Layer, self).__init__(**kwargs)
         #
         # Load the GPT2 tokenizer, preprocessor and model
-        self.tokenizer = GPT2Tokenizer.from_preset("gpt2_base_en")
+        self.tokenizer = GPT2Tokenizer.from_preset("gpt2_extra_large_en") # "gpt2_base_en"
         self.preprocessor = GPT2Preprocessor(self.tokenizer,
                                              sequence_length=max_seq_length)
         # self.encoder   = GPT2Backbone.from_preset("gpt2_base_en")
@@ -164,7 +164,7 @@ p_lateral_connection = 0.39256
 num_lateral_connection_tries_per_unit = 10
 learning_rate = 0.0000511065 # original 0.0000511065
 epochs = 15  # [1, 100]
-batch_size = 15 # Original 20
+batch_size = 20 # Original 20
 maximum_levels = 4  # [3,7]
 maximum_units_per_level = 8  # [2,10]
 maximum_neurons_per_unit = 5  # [2,20]
