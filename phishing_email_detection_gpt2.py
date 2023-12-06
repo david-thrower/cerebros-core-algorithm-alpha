@@ -73,7 +73,7 @@ train_labels = [tf.constant(y_train)]
 INPUT_SHAPES  = [()]
 OUTPUT_SHAPES = [1]
 
-"""### A custom GPT2 encoder layer for text embedding"""
+"""### A custom GPT2 encoder layer for text tokenization"""
 
 class GPT2Layer(tf.keras.layers.Layer):
 
@@ -85,14 +85,14 @@ class GPT2Layer(tf.keras.layers.Layer):
         self.tokenizer = GPT2Tokenizer.from_preset("gpt2_base_en")
         self.preprocessor = GPT2Preprocessor(self.tokenizer,
                                              sequence_length=max_seq_length)
-        self.encoder   = GPT2Backbone.from_preset("gpt2_base_en")
+        # self.encoder   = GPT2Backbone.from_preset("gpt2_base_en")
         #
         # Set whether the GPT2 model's layers are trainable
-        #self.encoder.trainable = False
-        for layer in self.encoder.layers:
-            layer.trainable = False
+        # self.encoder.trainable = False
+        # for layer in self.encoder.layers:
+        #     layer.trainable = False
         #
-        self.encoder.layers[-2].trainable = True
+        # self.encoder.layers[-2].trainable = True
         #
         # Set the maximum sequence length for tokenization
         self.max_seq_length = max_seq_length
@@ -104,7 +104,7 @@ class GPT2Layer(tf.keras.layers.Layer):
         # embedding  = self.encoder(prep)
         # avg_pool = tf.reduce_mean(embedding, axis=1)
         #
-        return prep
+        return prep['token_ids']
 
     def get_config(self):
         #
@@ -119,32 +119,33 @@ class GPT2Layer(tf.keras.layers.Layer):
         return cls(max_seq_length=config['max_seq_length'])
 
 # GPT2 configurables
+
 max_seq_length = 96
 
-# Base model
-input_layer = Input(shape=(), dtype=tf.string)
-gpt2_layer = GPT2Layer(max_seq_length)(input_layer)
+print()
+
+inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
+gp2 = GPT2Layer(max_seq_length=max_seq_length)
+VOCABULARY_SIZE = gp2.tokenizer.vocabulary_size()
+tokens = gp2(inp)
+
 
 embedded =\
     tf.keras.layers.Embedding(
-        input_dim=96, 
-        output_dim=10, 
-        input_length=96, 
-        mask_zero=True)(gpt2_layer)
-print("LAYER INFO")
-print(embedded)
+        input_dim=VOCABULARY_SIZE,
+        output_dim=10,
+        input_length=96,
+        mask_zero=True)(tokens)
+flattened = tf.keras.layers.Flatten()(embedded)
 
-flatened = tf.keras.layers.Flatten()(embedded)
+tokenized_embedded_model=\
+    tf.keras.Model(
+        inputs=inp,
+        outputs=flattened)
+
+print(VOCABULARY_SIZE)
 
 
-#output = Flatten()(gpt2_layer)
-base_model = Model(inputs=input_layer, outputs=flatened)
-
-
-base_model.summary()
-
-test = tf.constant(["This is a test", "This test will create confusion 2."])
-encoded_text = base_model(test)
 
 # raise ValueError(embeded_text)
 
@@ -220,7 +221,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     model_graphs='model_graphs',
     batch_size=batch_size,
     meta_trial_number=meta_trial_number,
-    base_models=[base_model],
+    base_models=[tokenized_embedded_model],
     train_data_dtype=tf.string)
 
 result = cerebros_automl.run_random_search()
