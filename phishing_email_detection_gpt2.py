@@ -152,7 +152,11 @@ print(f"VOCABULARY_SIZE: {VOCABULARY_SIZE}")
 #
 # Cerebros configurables
 #
-activation = 'swish' # Original 'gelu'
+
+# Best so far: original params
+
+
+activation = 'gelu' # Swish: learning  rate may need to be reduced with batch size = 30
 predecessor_level_connection_affinity_factor_first = 49.9999
 predecessor_level_connection_affinity_factor_main = 0.31456
 max_consecutive_lateral_connections = 22
