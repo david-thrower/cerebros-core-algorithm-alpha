@@ -166,8 +166,8 @@ learning_rate = 0.0000511065 # original 0.0000511065
 epochs = 10  # [1, 100]
 batch_size = 20 # Original 20
 maximum_levels = 4  # [3,7]
-maximum_units_per_level = 8  # [2,10]
-maximum_neurons_per_unit = 5  # [2,20]
+maximum_units_per_level = 15  # [2,10]
+maximum_neurons_per_unit = 7  # [2,20]
 
 #
 # Logging
