@@ -120,9 +120,7 @@ class GPT2Layer(tf.keras.layers.Layer):
 
 # GPT2 configurables
 
-max_seq_length = 250
-
-print()
+max_seq_length = 1024
 
 inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
 gp2 = GPT2Layer(max_seq_length=max_seq_length)
@@ -156,7 +154,7 @@ print(f"VOCABULARY_SIZE: {VOCABULARY_SIZE}")
 # Best so far: original params
 
 
-activation = 'gelu' # Swish: learning  rate may need to be reduced with batch size = 30
+activation = 'gelu'
 predecessor_level_connection_affinity_factor_first = 49.9999
 predecessor_level_connection_affinity_factor_main = 0.31456
 max_consecutive_lateral_connections = 22
