@@ -165,8 +165,8 @@ num_lateral_connection_tries_per_unit = 10
 learning_rate = 0.0000511065 # original 0.0000511065
 epochs = 15  # [1, 100]
 batch_size = 20 # Original 20
-maximum_levels = 4  # [3,7]
-maximum_units_per_level = 8  # [2,10]
+maximum_levels = 3 # 4 was best  # [3,7]
+maximum_units_per_level = 7 # 8 was best
 maximum_neurons_per_unit = 5  # [2,20]
 
 #
