@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "131-test-text-llm-encodings-without-attention-layers-with-cerebros" ]
+    branches: [ "main", "133-runtime-optimization-of-validated-gpt-free-proof-of-concept" ]
 
 permissions:
   contents: read
