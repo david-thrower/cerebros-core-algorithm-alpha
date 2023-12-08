@@ -118,6 +118,20 @@ class GPT2Layer(tf.keras.layers.Layer):
         #
         return cls(max_seq_length=config['max_seq_length'])
 
+
+
+
+class CastToFloat32(tf.keras.layers.Layer):
+    def __init__(self, **kwargs):
+        super(CastToFloat32, self).__init__(**kwargs)
+
+    def call(self, inputs):
+        return tf.cast(inputs, tf.float32)
+
+    def get_config(self):
+        return super(CastToFloat32, self).get_config()
+
+
 # GPT2 configurables
 
 max_seq_length = 250
@@ -147,8 +161,9 @@ flattened = tf.keras.layers.Flatten()(embedded)
 # I think concatenating the embedded and 
 # un-embedded tokens may emulate a wide and deep model. 
 # Worth a try.
+float_tokens = CastToFloat32()(tokens)
 concatenated_inputs =\
-    tf.keras.layers.Concatenate(axis=1)([flattened, tokens])
+    tf.keras.layers.Concatenate(axis=1)([flattened, float_tokens])
 
 tokenized_embedded_model=\
     tf.keras.Model(
