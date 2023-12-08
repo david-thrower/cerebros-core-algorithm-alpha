@@ -120,7 +120,7 @@ class GPT2Layer(tf.keras.layers.Layer):
 
 # GPT2 configurables
 
-max_seq_length = 96
+max_seq_length = 250
 
 print()
 
@@ -133,8 +133,8 @@ tokens = gp2(inp)
 embedded =\
     tf.keras.layers.Embedding(
         input_dim=VOCABULARY_SIZE,
-        output_dim=14,
-        input_length=96,
+        output_dim=15,
+        input_length=max_seq_length,
         mask_zero=True)(tokens)
 flattened = tf.keras.layers.Flatten()(embedded)
 
@@ -165,7 +165,7 @@ num_lateral_connection_tries_per_unit = 10
 learning_rate = 0.000025 # 0.0000511065 # original 0.0000511065
 epochs = 10  # [1, 100]
 batch_size = 20 # Original 20
-maximum_levels = 5  # [3,7]
+maximum_levels = 4  # [3,7]
 maximum_units_per_level = 8  # [2,10]
 maximum_neurons_per_unit = 5  # [2,20]
 
