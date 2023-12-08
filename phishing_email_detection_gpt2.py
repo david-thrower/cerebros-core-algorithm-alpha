@@ -162,6 +162,7 @@ flattened = tf.keras.layers.Flatten()(embedded)
 # un-embedded tokens may emulate a wide and deep model. 
 # Worth a try.
 float_tokens = CastToFloat32()(tokens)
+norm_tokens = tf.keras.layers.BatchNormalization()(float_tokens)
 concatenated_inputs =\
     tf.keras.layers.Concatenate(axis=1)([flattened, float_tokens])
 
