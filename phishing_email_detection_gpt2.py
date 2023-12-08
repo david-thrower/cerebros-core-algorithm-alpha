@@ -156,7 +156,7 @@ print(f"VOCABULARY_SIZE: {VOCABULARY_SIZE}")
 # Best so far: original params
 
 
-activation = 'gelu' # Swish: learning  rate may need to be reduced with batch size = 30
+activation = 'swish' # Swish: learning  rate may need to be reduced with batch size = 30
 predecessor_level_connection_affinity_factor_first = 49.9999
 predecessor_level_connection_affinity_factor_main = 0.31456
 max_consecutive_lateral_connections = 22
@@ -165,9 +165,17 @@ num_lateral_connection_tries_per_unit = 10
 learning_rate = 0.0000511065 # original 0.0000511065
 epochs = 15  # [1, 100]
 batch_size = 20 # Original 20
-maximum_levels = 3 # 4 was best  # [3,7]
-maximum_units_per_level = 7 # 8 was best
+
+minimum_levels = 2
+maximum_levels = 4 # [3,7]
+
+minimum_units_per_level = 4
+maximum_units_per_level = 8
+
+minimum_neurons_per_unit=1
 maximum_neurons_per_unit = 5  # [2,20]
+
+
 
 #
 # Logging
@@ -189,11 +197,11 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     validation_split=0.35,
     direction='maximize',
     metric_to_rank_by="val_binary_accuracy",
-    minimum_levels=2,
+    minimum_levels=minimum_levels,
     maximum_levels=maximum_levels,
-    minimum_units_per_level=1,
+    minimum_units_per_level=minimum_units_per_level,
     maximum_units_per_level=maximum_units_per_level,
-    minimum_neurons_per_unit=1,
+    minimum_neurons_per_unit=minimum_neurons_per_unit,
     maximum_neurons_per_unit=maximum_neurons_per_unit,
     activation=activation,
     final_activation='sigmoid',
