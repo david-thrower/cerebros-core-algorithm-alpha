@@ -167,7 +167,7 @@ batch_size = 20 # Original 20
 minimum_levels = 2
 maximum_levels = 4 # [3,7]
 
-minimum_units_per_level = 5 # 4
+minimum_units_per_level = 4
 maximum_units_per_level = 8
 
 minimum_neurons_per_unit = 1
