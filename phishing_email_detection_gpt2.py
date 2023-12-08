@@ -164,14 +164,14 @@ learning_rate = 0.0000511065 # original 0.0000511065
 epochs = 13  # [1, 100]
 batch_size = 20 # Original 20
 
-minimum_levels = 3
-maximum_levels = 4 # [3,7]
+minimum_levels = 2
+maximum_levels = 3 # [3,7]
 
-minimum_units_per_level = 3
-maximum_units_per_level = 7
+minimum_units_per_level = 4
+maximum_units_per_level = 8
 
 minimum_neurons_per_unit = 1
-maximum_neurons_per_unit = 6  # [2,20]
+maximum_neurons_per_unit = 5  # [2,20]
 
 number_of_architecture_moities_to_try = 4
 
