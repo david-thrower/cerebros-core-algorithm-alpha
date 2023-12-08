@@ -138,10 +138,23 @@ embedded =\
         mask_zero=True)(tokens)
 flattened = tf.keras.layers.Flatten()(embedded)
 
+# tokenized_embedded_model=\
+#     tf.keras.Model(
+#         inputs=inp,
+#         outputs=flattened)
+
+# Since Cerebros is laden with skip connections,
+# I think concatenating the embedded and 
+# un-embedded tokens may emulate a wide and deep model. 
+# Worth a try.
+concatenated_inputs =\
+    tf.keras.layers.Concatenate(axis=1)([flattened, tokens])
+
 tokenized_embedded_model=\
     tf.keras.Model(
         inputs=inp,
-        outputs=flattened)
+        outputs=concatenated_inputs)
+# outputs=flattened)
 
 print(f"VOCABULARY_SIZE: {VOCABULARY_SIZE}")
 
