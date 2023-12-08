@@ -120,7 +120,7 @@ class GPT2Layer(tf.keras.layers.Layer):
 
 # GPT2 configurables
 
-max_seq_length = 1024
+max_seq_length = 512
 
 inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
 gp2 = GPT2Layer(max_seq_length=max_seq_length)
@@ -167,10 +167,10 @@ batch_size = 20 # Original 20
 minimum_levels = 2
 maximum_levels = 4 # [3,7]
 
-minimum_units_per_level = 4
+minimum_units_per_level = 5 # 4
 maximum_units_per_level = 8
 
-minimum_neurons_per_unit=1
+minimum_neurons_per_unit = 1
 maximum_neurons_per_unit = 5  # [2,20]
 
 
