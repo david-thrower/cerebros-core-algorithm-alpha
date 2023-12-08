@@ -244,7 +244,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     num_lateral_connection_tries_per_unit=num_lateral_connection_tries_per_unit,
     learning_rate=learning_rate,
     loss=tf.keras.losses.CategoricalHinge(),
-    metrics=[tf.keras.metrics.BinaryAccuracy(),
+    metrics=[tf.keras.metrics.Accuracy(),
              tf.keras.metrics.Precision(),
              tf.keras.metrics.Recall()],
     epochs=epochs,
