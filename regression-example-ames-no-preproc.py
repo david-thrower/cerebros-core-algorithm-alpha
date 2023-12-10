@@ -58,12 +58,12 @@ predecessor_level_connection_affinity_factor_main = 0.5518
 max_consecutive_lateral_connections = 34
 p_lateral_connection = 0.36014
 num_lateral_connection_tries_per_unit = 11
-learning_rate = 0.03 # 0.095
+learning_rate = 0.125 # 0.095
 epochs = 145
 batch_size = 634
-maximum_levels = 5
-maximum_units_per_level = 5
-maximum_neurons_per_unit = 25
+maximum_levels = 7 # 5
+maximum_units_per_level = 7 # 5
+maximum_neurons_per_unit = 35 # 25
 
 
 cerebros =\
@@ -84,7 +84,7 @@ cerebros =\
         maximum_neurons_per_unit=maximum_neurons_per_unit,
         activation=activation,
         final_activation=None,
-        number_of_architecture_moities_to_try=7,
+        number_of_architecture_moities_to_try=15,
         number_of_tries_per_architecture_moity=1,
         number_of_generations=3,
         minimum_skip_connection_depth=1,
