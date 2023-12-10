@@ -148,7 +148,7 @@ print(f"Shape of val labels: {val_labels_pd.shape}")
 # discovered in a bayesian tuning study done on Katib)
 
 meta_trial_number = 0  # In distributed training set this to a random number
-activation = "gelu"
+activation = "randomise" # "gelu"
 predecessor_level_connection_affinity_factor_first = 19.613
 predecessor_level_connection_affinity_factor_main = 0.5518
 max_consecutive_lateral_connections = 34
