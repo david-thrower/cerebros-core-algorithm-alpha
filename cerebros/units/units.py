@@ -521,10 +521,23 @@ class DenseUnit(Unit,
                                  "'bnorm_or_dropout' are 'bnorm' and 'dropout'")
             rn_5 = int(np.round(np.random.random(1)[0]*10**12))
             rn_5 = ''
+
+            # Try to see if randomizing activations improves performance in our context.
+            if self.activation == "randomize":
+                activation_0 =\
+                    np.random.choice(
+                        ["relu",
+                         "elu",
+                         "softsign",
+                         "gelu",
+                         "swish"])
+            else:
+                activation_0 = self.activation
+            print(f"activation for unit: {self.name}_dns_{rn_5} is: {activation_0}"
             self.neural_network_layer =\
                 tf.keras.layers.Dense(
                     self.n_neurons,
-                    self.activation,
+                    activation_0,
                     name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
             self.materialized = True
         # refactor the lagic below and this class is complete
