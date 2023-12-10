@@ -523,7 +523,7 @@ class DenseUnit(Unit,
             rn_5 = ''
 
             # Try to see if randomizing activations improves performance in our context.
-            if self.activation == "randomize":
+            if self.activation == "randomize" or self.activation == "randomise":
                 activation_0 =\
                     np.random.choice(
                         ["relu",
