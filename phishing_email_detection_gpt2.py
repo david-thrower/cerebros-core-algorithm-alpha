@@ -121,7 +121,7 @@ class GPT2Layer(tf.keras.layers.Layer):
 
 # GPT2 configurables
 
-max_seq_length = 800
+max_seq_length = 900
 
 inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
 gp2 = GPT2Layer(max_seq_length=max_seq_length)
