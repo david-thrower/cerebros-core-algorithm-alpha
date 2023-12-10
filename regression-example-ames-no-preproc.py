@@ -61,6 +61,8 @@ num_lateral_connection_tries_per_unit = 11
 learning_rate = 0.125 # 0.095
 epochs = 145
 batch_size = 634
+
+minimum_levels = 4
 maximum_levels = 7 # 5
 maximum_units_per_level = 7 # 5
 maximum_neurons_per_unit = 35 # 25
@@ -76,7 +78,7 @@ cerebros =\
         validation_split=0.35,
         direction='minimize',
         metric_to_rank_by='val_root_mean_squared_error',
-        minimum_levels=1,
+        minimum_levels=minimum_levels,
         maximum_levels=maximum_levels,
         minimum_units_per_level=1,
         maximum_units_per_level=maximum_units_per_level,
