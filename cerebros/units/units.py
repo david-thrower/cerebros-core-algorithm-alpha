@@ -529,8 +529,8 @@ class DenseUnit(Unit,
                         ["relu",
                          "elu",
                          "softsign",
-                         "gelu",
-                         "swish"])
+                         "gelu" #, "swish"
+                        ])
             else:
                 activation_0 = self.activation
             print(f"activation for unit: {self.name}_dns_{rn_5} is: {activation_0}")
