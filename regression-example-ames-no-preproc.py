@@ -52,7 +52,7 @@ OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
 # discovered in a bayesian tuning study done on Katib)
 
 meta_trial_number = 0  # In distributed training set this to a random number
-activation = "gelu"
+activation = "randomize" # "gelu"
 predecessor_level_connection_affinity_factor_first = 19.613
 predecessor_level_connection_affinity_factor_main = 0.5518
 max_consecutive_lateral_connections = 34
