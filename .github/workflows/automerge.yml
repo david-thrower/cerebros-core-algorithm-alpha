@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "131-test-text-llm-encodings-without-attention-layers-with-cerebros" ]
+    branches: [ "main", "134-try-750-seq-length-cerebros-attention-free-text" ]
 
 permissions:
   contents: read
