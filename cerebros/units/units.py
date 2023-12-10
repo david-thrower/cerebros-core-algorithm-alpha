@@ -533,7 +533,7 @@ class DenseUnit(Unit,
                          "swish"])
             else:
                 activation_0 = self.activation
-            print(f"activation for unit: {self.name}_dns_{rn_5} is: {activation_0}"
+            print(f"activation for unit: {self.name}_dns_{rn_5} is: {activation_0}")
             self.neural_network_layer =\
                 tf.keras.layers.Dense(
                     self.n_neurons,
