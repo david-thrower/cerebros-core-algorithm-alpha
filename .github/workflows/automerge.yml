@@ -52,5 +52,5 @@ jobs:
     #   timeout-minutes: 90
     #   run: python3 cifar10-example.py
     - name: Phishing email detection with GPT2 embedding
-      timeout-minutes: 160
+      timeout-minutes: 300
       run: python3 phishing_email_detection_gpt2.py
