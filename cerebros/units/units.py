@@ -548,7 +548,8 @@ class DenseUnit(Unit,
             shape_of_embedding = embeded_merged_inputs.shape
             scale_factor_broadcast =\
                 np.ones(
-                    shape_of_embedding) * upscale_factor
+                    tuple([ind for ind in shape_of_embedding)
+                ) * upscale_factor
             scaled_embedded_merged =\
                 tf.keras.layers.multiply(
                     [
