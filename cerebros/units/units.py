@@ -12,14 +12,38 @@ from cerebros.denseautomlstructuralcomponent.\
 
 import tensorflow as tf
 
-class UpscaledEmbedding(tf.keras.layers.Embedding):
-    def __init__(self, input_dim, output_dim, upscale_factor, **kwargs):
-        super(UpscaledEmbedding, self).__init__(input_dim, output_dim, **kwargs)
-        self.upscale_factor = upscale_factor
+# class UpscaledEmbedding(tf.keras.layers.Embedding):
+#     def __init__(self, input_dim, output_dim, upscale_factor, **kwargs):
+#         super(UpscaledEmbedding, self).__init__(input_dim, output_dim, **kwargs)
+#         self.upscale_factor = upscale_factor
+
+#     def call(self, inputs):
+#         embed_result = super(UpscaledEmbedding, self).__call__(inputs)
+#         return embed_result * self.upscale_factor
+
+import numpy as np
+from keras import backend as K
+from keras.layers import Layer
+
+class DiscretizeFloats(tf.keras.layers.Layer):
+    def __init__(self, step=1, multiplier=1000, **kwargs):
+        self.step = step
+        self.multiplier = multiplier
+        super(DiscretizeFloats, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        self.w = self.add_weight(name='w',
+                                 shape=(input_shape[1],),
+                                 initializer='zeros',
+                                 trainable=False)
 
     def call(self, inputs):
-        embed_result = super(UpscaledEmbedding, self).__call__(inputs)
-        return embed_result * self.upscale_factor
+        return np.round(K.cast(inputs, K.floatx()) * self.multiplier)
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0],)
+
+
 
 class Unit(NeuralNetworkFutureComponent):
     def __init__(self,
@@ -535,9 +559,12 @@ class DenseUnit(Unit,
             num_buckets = 100
             upscale_factor = 10 ** 3
             bucketized_dense =\
-                tf.keras.layers.Discretization(
-                    num_bins=num_buckets)(
-                            merged_neural_network_layer_input)
+                DiscretizeFloats(multiplier=upscale_factor)(
+                    merged_neural_network_layer_input)
+            # bucketized_dense =\
+            #     tf.keras.layers.Discretization(
+            #         num_bins=num_buckets)(
+            #                 merged_neural_network_layer_input)
             output_dim =\
                 int(np.ceil((100 * self.n_neurons) ** (1/4)))
             embeded_merged_inputs =\
