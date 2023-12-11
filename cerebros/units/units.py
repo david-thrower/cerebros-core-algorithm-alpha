@@ -533,17 +533,22 @@ class DenseUnit(Unit,
             rn_5 = ''
 
             num_buckets = 100
+            upscale_factor=10000
             bucketized_dense =\
                 tf.keras.layers.Discretization(
-                    num_bins=num_buckets)(merged_neural_network_layer_input)
+                    num_bins=num_buckets)(
+                            merged_neural_network_layer_input)
             output_dim =\
                 int(np.ceil((100 * self.n_neurons) ** (1/4)))
             embeded_merged_inputs =\
-                UpscaledEmbedding(
+                tf.keras.layers.Embedding(
                     input_dim=num_buckets,
                     output_dim=output_dim,
-                    input_length=self.n_neurons,
-                    upscale_factor=10000)(bucketized_dense)
+                    input_length=self.n_neurons)(bucketized_dense)
+            scaled_embedded_merged =\
+                tf.keras.layers.Multiply(
+                    np.ones(
+                        (output_dim, self.n_neurons)) * upscale_factor)
             flat_embed_merged =\
                 tf.keras.layers.Flatten()(embeded_merged_inputs)
             
