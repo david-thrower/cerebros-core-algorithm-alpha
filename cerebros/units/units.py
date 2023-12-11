@@ -537,7 +537,7 @@ class DenseUnit(Unit,
                     input_dim=num_buckets,
                     output_dim=output_dim,
                     input_length=self.n_neurons)(bucketized_dense)
-135-lightweight-testing-on-tendem-embeddings            self.neural_network_layer =\
+            self.neural_network_layer =\
                 tf.keras.layers.Flatten()(embeded_dense)
             self.materialized = True
         # refactor the lagic below and this class is complete
