@@ -546,7 +546,7 @@ class DenseUnit(Unit,
                     output_dim=output_dim,
                     input_length=self.n_neurons)(bucketized_dense)
             shape_of_embedding = embeded_merged_inputs.shape
-            raise ValueError(f"n_neurons: {self.self.n_neurons}, buckets: {num_buckets}, output_dim: {output_dim}, Shape of embedding: {shape_of_embedding}")
+            raise ValueError(f"n_neurons: {self.n_neurons}, buckets: {num_buckets}, output_dim: {output_dim}, Shape of embedding: {shape_of_embedding}")
             scale_factor_broadcast =\
                 np.ones(
                     tuple([ind for ind in shape_of_embedding
