@@ -10,6 +10,16 @@ from cerebros.denseautomlstructuralcomponent.\
     simple_sigmoid, \
     DenseAutoMlStructuralComponent, DenseLateralConnectivity
 
+import tensorflow as tf
+
+class UpscaledEmbedding(tf.keras.layers.Embedding):
+    def __init__(self, input_dim, output_dim, upscale_factor, **kwargs):
+        super(UpscaledEmbedding, self).__init__(input_dim, output_dim, **kwargs)
+        self.upscale_factor = upscale_factor
+
+    def call(self, inputs):
+        embed_result = super(UpscaledEmbedding, self).__call__(inputs)
+        return embed_result * self.upscale_factor
 
 class Unit(NeuralNetworkFutureComponent):
     def __init__(self,
@@ -529,10 +539,11 @@ class DenseUnit(Unit,
             output_dim =\
                 int(np.ceil((100 * self.n_neurons) ** (1/4)))
             embeded_merged_inputs =\
-                tf.keras.layers.Embedding(
+                UpscaledEmbedding(
                     input_dim=num_buckets,
                     output_dim=output_dim,
-                    input_length=self.n_neurons)(bucketized_dense)
+                    input_length=self.n_neurons,
+                    upscale_factor=10000)(bucketized_dense)
             flat_embed_merged =\
                 tf.keras.layers.Flatten()(embeded_merged_inputs)
             
