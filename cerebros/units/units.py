@@ -533,7 +533,7 @@ class DenseUnit(Unit,
             rn_5 = ''
 
             num_buckets = 100
-            upscale_factor = 10 ** 9 
+            upscale_factor = 10 ** 7
             bucketized_dense =\
                 tf.keras.layers.Discretization(
                     num_bins=num_buckets)(
