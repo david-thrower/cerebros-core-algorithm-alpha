@@ -545,13 +545,16 @@ class DenseUnit(Unit,
                     input_dim=num_buckets,
                     output_dim=output_dim,
                     input_length=self.n_neurons)(bucketized_dense)
+            scale_factor_broadcast =\
+                np.ones(
+                    (output_dim, 
+                     self.n_neurons)) * upscale_factor
             scaled_embedded_merged =\
                 tf.keras.layers.Multiply(
-                    np.ones(
-                        (output_dim, self.n_neurons)) * upscale_factor,
-                    embeded_merged_inputs)
+                    embeded_merged_inputs,
+                    scale_factor_broadcast)
             flat_embed_merged =\
-                tf.keras.layers.Flatten()(embeded_merged_inputs)
+                tf.keras.layers.Flatten()(scaled_embedded_merged)
             
             self.neural_network_layer =\
                 tf.keras.layers.Dense(
