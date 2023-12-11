@@ -521,11 +521,22 @@ class DenseUnit(Unit,
                                  "'bnorm_or_dropout' are 'bnorm' and 'dropout'")
             rn_5 = int(np.round(np.random.random(1)[0]*10**12))
             rn_5 = ''
-            self.neural_network_layer =\
+            dense_layer_0 =\ 
                 tf.keras.layers.Dense(
                     self.n_neurons,
                     self.activation,
                     name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
+            num_buckets = 1000
+            bucketized_dense = tf.keras.layers.Discretization(num_bins=num_buckets)(dense_layer_0)
+            output_dim =\
+                int(np.ceil((10 * self.n_neurons) ** (1/3)))
+            embeded_dense =\
+                tf.keras.layers.Embedding(
+                    input_dim=num_buckets,
+                    output_dim=output_dim,
+                    input_length=self.n_neurons)(bucketized_dense)
+            self.neural_network_layer =\
+                tf.keras.layers.Flatten()(embeded_dense)            
             self.materialized = True
         # refactor the lagic below and this class is complete
         # self.dense_unit_module_id = dense_unit_module_id
