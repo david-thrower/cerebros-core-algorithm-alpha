@@ -526,12 +526,12 @@ class DenseUnit(Unit,
                     self.n_neurons,
                     self.activation,
                     name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
-            num_buckets = 1000
+            num_buckets = 10000
             bucketized_dense =\
                 tf.keras.layers.Discretization(
                     num_bins=num_buckets)(dense_layer_0)
             output_dim =\
-                int(np.ceil((10 * self.n_neurons) ** (1/4)))
+                int(np.ceil((100 * self.n_neurons) ** (1/4)))
             embeded_dense =\
                 tf.keras.layers.Embedding(
                     input_dim=num_buckets,
