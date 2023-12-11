@@ -59,11 +59,11 @@ max_consecutive_lateral_connections = 34
 p_lateral_connection = 0.36014
 num_lateral_connection_tries_per_unit = 11
 learning_rate = 0.25 # 0.095
-epochs = 145
-batch_size = 634
-maximum_levels = 5
-maximum_units_per_level = 5
-maximum_neurons_per_unit = 25
+epochs = 20 # 145
+batch_size = 300 # 634
+maximum_levels = 4 # 5
+maximum_units_per_level = 4 # 5
+maximum_neurons_per_unit = 10 # 25
 
 
 cerebros =\
