@@ -522,7 +522,7 @@ class DenseUnit(Unit,
             rn_5 = int(np.round(np.random.random(1)[0]*10**12))
             rn_5 = ''
 
-            num_buckets = 10000
+            num_buckets = 1000
             bucketized_dense =\
                 tf.keras.layers.Discretization(
                     num_bins=num_buckets)(merged_neural_network_layer_input)
