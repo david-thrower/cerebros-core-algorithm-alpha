@@ -533,7 +533,7 @@ class DenseUnit(Unit,
             rn_5 = ''
 
             num_buckets = 100
-            upscale_factor = 10 ** 7
+            upscale_factor = 10 ** 3
             bucketized_dense =\
                 tf.keras.layers.Discretization(
                     num_bins=num_buckets)(
@@ -547,6 +547,7 @@ class DenseUnit(Unit,
                     input_length=self.n_neurons)(bucketized_dense)
             flat_embed_merged =\
                 tf.keras.layers.Flatten()(embeded_merged_inputs)
+            soft_and_flat_merged = tf.keras.layers.Softmax()(flat_embed_merged)
             shape_of_flat_embedding = flat_embed_merged.shape
             print(f"n_neurons: {self.n_neurons}, buckets: {num_buckets}, output_dim: {output_dim}, Shape of embedding: {shape_of_flat_embedding}")
             scale_factor_broadcast =\
@@ -557,7 +558,7 @@ class DenseUnit(Unit,
             scaled_embedded_merged =\
                 tf.keras.layers.multiply(
                     [
-                        flat_embed_merged,
+                        soft_and_flat_merged,
                         scale_factor_broadcast])
 
             
