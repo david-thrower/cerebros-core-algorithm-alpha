@@ -31,13 +31,13 @@ class DiscretizeFloats(tf.keras.layers.Layer):
         self.multiplier = multiplier
         super(DiscretizeFloats, self).__init__(**kwargs)
 
-    def build(self, input_shape):
-        self.w = self.add_weight(name='w',
-                                 shape=(input_shape[1],),
-                                 initializer='zeros',
-                                 trainable=False)
+    # def build(self, input_shape):
+    #     self.w = self.add_weight(name='w',
+    #                              shape=(input_shape[1],),
+    #                              initializer='zeros',
+    #                              trainable=False)
 
-    def call(self, inputs):
+    def __call__(self, inputs):
         return np.round(K.cast(inputs, K.floatx()) * self.multiplier)
 
     def compute_output_shape(self, input_shape):
