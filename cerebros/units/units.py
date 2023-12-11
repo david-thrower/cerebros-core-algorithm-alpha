@@ -550,9 +550,10 @@ class DenseUnit(Unit,
                     (output_dim, 
                      self.n_neurons)) * upscale_factor
             scaled_embedded_merged =\
-                tf.keras.layers.Multiply(
-                    embeded_merged_inputs,
-                    scale_factor_broadcast)
+                tf.keras.layers.multiply(
+                    [
+                        embeded_merged_inputs,
+                        scale_factor_broadcast])
             flat_embed_merged =\
                 tf.keras.layers.Flatten()(scaled_embedded_merged)
             
