@@ -547,8 +547,7 @@ class DenseUnit(Unit,
                     input_length=self.n_neurons)(bucketized_dense)
             scale_factor_broadcast =\
                 np.ones(
-                    (output_dim, 
-                     self.n_neurons)) * upscale_factor
+                    (self.n_neurons, output_dim)) * upscale_factor
             scaled_embedded_merged =\
                 tf.keras.layers.multiply(
                     [
