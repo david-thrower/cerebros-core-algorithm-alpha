@@ -21,9 +21,6 @@ import tensorflow as tf
 #         embed_result = super(UpscaledEmbedding, self).__call__(inputs)
 #         return embed_result * self.upscale_factor
 
-import numpy as np
-from keras import backend as K
-from keras.layers import Layer
 
 class DiscretizeFloats(tf.keras.layers.Layer):
     def __init__(self, step=1, multiplier=1000, **kwargs):
@@ -37,8 +34,10 @@ class DiscretizeFloats(tf.keras.layers.Layer):
     #                              initializer='zeros',
     #                              trainable=False)
 
-    def __call__(self, inputs):
-        return np.round(K.cast(inputs, K.floatx()) * self.multiplier)
+    def call(self, inputs):
+        return tf.keras.backend.round(
+            tf.keras.backend.cast(inputs, tf.keras.backend.floatx()
+                                 ) * self.multiplier)
 
     def compute_output_shape(self, input_shape):
         return (input_shape[0],)
