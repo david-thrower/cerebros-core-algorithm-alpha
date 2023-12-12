@@ -10,8 +10,6 @@ from cerebros.denseautomlstructuralcomponent.\
     simple_sigmoid, \
     DenseAutoMlStructuralComponent, DenseLateralConnectivity
 
-import tensorflow as tf
-
 
 # class UpscaledEmbedding(tf.keras.layers.Embedding):
 #     def __init__(self, input_dim, output_dim, upscale_factor, **kwargs):
@@ -37,7 +35,7 @@ class DiscretizeFloats(tf.keras.layers.Layer):
 
     def call(self, inputs):
         return\
-            tensorflow.python.ops.math_ops.cast(
+            tf.python.ops.math_ops.cast(
                 tf.keras.activations.softsign(
                     inputs) * self.multiplier, 
             "int32")
