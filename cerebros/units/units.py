@@ -20,44 +20,31 @@ from cerebros.denseautomlstructuralcomponent.\
 #         embed_result = super(UpscaledEmbedding, self).__call__(inputs)
 #         return embed_result * self.upscale_factor
 
-
 class DiscretizeFloats(tf.keras.layers.Layer):
     def __init__(self, step=1, multiplier=1000, **kwargs):
         self.step = step
         self.multiplier = multiplier
         super(DiscretizeFloats, self).__init__(**kwargs)
 
-    # def build(self, input_shape):
-    #     self.w = self.add_weight(name='w',
-    #                              shape=(input_shape[1],),
-    #                              initializer='zeros',
-    #                              trainable=False)
+    def build(self, input_shape):
+        self.w = self.add_weight(name='w',
+                                 shape=(input_shape[1],),
+                                 initializer='zeros',
+                                 trainable=False)
 
     def call(self, inputs):
-        when_not_zero =\
-            tf.cast(
-                tf.keras.activations.softsign(
-                    inputs) * self.multiplier, 
+        when_not_zero = tf.cast(
+            tf.keras.activations.softsign(inputs) * self.multiplier,
             tf.int32)
-        when_is_zero: =\
-            tf.cast(
-                tf.keras.activations.softsign(
-                    tf.math.add(inputs, 0.01) * self.multiplier,
+        when_is_zero = tf.cast(
+            tf.keras.activations.softsign(
+                tf.math.add(inputs, 0.01) * self.multiplier),
             tf.int32)
         where_theres_a_zero = tf.math.equal(when_not_zero, 0)
-        discretized = tf.where(where_theres_a_zero, where_theres_a_zero, when_not_zero)
+        discretized = tf.where(where_theres_a_zero, 
+                               when_is_zero, 
+                               when_not_zero)
         return discretized
-        
-
-            # tf.math.floor_divide(
-            #     tf.math.abs(inputs) * self.multiplier,
-            #     self.step)
-        # tf.math.ceil(
-        #     tf.keras.backend.cast(inputs, "int32"
-        #                          ) * self.multiplier)
-
-    def compute_output_shape(self, input_shape):
-        return (input_shape[0],)
 
 
 
