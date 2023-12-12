@@ -34,11 +34,21 @@ class DiscretizeFloats(tf.keras.layers.Layer):
     #                              trainable=False)
 
     def call(self, inputs):
-        return\
+        when_not_zero =\
             tf.cast(
                 tf.keras.activations.softsign(
                     inputs) * self.multiplier, 
             tf.int32)
+        when_is_zero: =\
+            tf.cast(
+                tf.keras.activations.softsign(
+                    tf.math.add(inputs, 0.01) * self.multiplier,
+            tf.int32)
+        where_theres_a_zero = tf.math.equal(when_not_zero, 0)
+        discretized = tf.where(where_theres_a_zero, where_theres_a_zero, when_not_zero)
+        return discretized
+        
+
             # tf.math.floor_divide(
             #     tf.math.abs(inputs) * self.multiplier,
             #     self.step)
