@@ -63,7 +63,7 @@ epochs = 40 # 145
 batch_size = 300 # 634
 maximum_levels = 4 # 5
 maximum_units_per_level = 4 # 5
-maximum_neurons_per_unit 5 = # 10 # 25
+maximum_neurons_per_unit = 5 # 10 # 25
 
 
 cerebros =\
