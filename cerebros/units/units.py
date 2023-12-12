@@ -562,7 +562,7 @@ class DenseUnit(Unit,
             rn_5 = int(np.round(np.random.random(1)[0]*10**12))
             rn_5 = ''
 
-            num_buckets = 10 ** 7
+            num_buckets = 5 * 10 ** 5
             upscale_factor = num_buckets
             bucketized_dense =\
                 DiscretizeFloats(multiplier=upscale_factor)(
