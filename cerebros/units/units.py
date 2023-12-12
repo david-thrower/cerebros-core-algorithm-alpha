@@ -594,11 +594,30 @@ class DenseUnit(Unit,
                         soft_and_flat_merged,
                         scale_factor_broadcast])
 
+            # Try to see if randomizing activations improves performance in our context.
+            if self.activation == "randomize" or self.activation == "randomise":
+                activation_0 =\
+                    np.random.choice(
+                        ["relu",
+                         "elu",
+                         "softsign",
+                         "gelu" #, "swish"
+                        ])
+            else:
+                activation_0 = self.activation
+            print(f"activation for unit: {self.name}_dns_{rn_5} is: {activation_0}")
+            self.neural_network_layer =\
+                tf.keras.layers.Dense(
+                    self.n_neurons,
+                    activation_0,
+                    name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
+            self.materialized = True
+
             
             self.neural_network_layer =\
                 tf.keras.layers.Dense(
                     self.n_neurons,
-                    self.activation,
+                    activation_0,
                     name=f"{self.name}_dns_{rn_5}")(flat_embed_merged)
 
             self.materialized = True
