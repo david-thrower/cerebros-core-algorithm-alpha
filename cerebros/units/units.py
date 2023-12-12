@@ -566,7 +566,9 @@ class DenseUnit(Unit,
             upscale_factor = num_buckets
             bucketized_dense =\
                 DiscretizeFloats(multiplier=upscale_factor)(
-                    merged_neural_network_layer_input)
+                    unprocessed_merged_nn_layer_input
+                    # merged_neural_network_layer_input
+                )
             # bucketized_dense =\
             #     tf.keras.layers.Discretization(
             #         num_bins=num_buckets)(
