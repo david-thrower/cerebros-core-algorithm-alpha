@@ -35,7 +35,7 @@ class DiscretizeFloats(tf.keras.layers.Layer):
     #                              trainable=False)
 
     def call(self, inputs):
-        return tf.keras.backend.round(
+        return tf.math.ceil(
             tf.keras.backend.cast(inputs, tf.keras.backend.floatx()
                                  ) * self.multiplier)
 
