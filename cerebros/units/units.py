@@ -12,6 +12,7 @@ from cerebros.denseautomlstructuralcomponent.\
 
 import tensorflow as tf
 
+
 # class UpscaledEmbedding(tf.keras.layers.Embedding):
 #     def __init__(self, input_dim, output_dim, upscale_factor, **kwargs):
 #         super(UpscaledEmbedding, self).__init__(input_dim, output_dim, **kwargs)
@@ -36,7 +37,9 @@ class DiscretizeFloats(tf.keras.layers.Layer):
 
     def call(self, inputs):
         return\
-            tf.keras.activations.softsign(inputs) * self.multiplier
+            tf.keras.ops.cast(inputs
+            tf.keras.activations.softsign(inputs) * self.multiplier, 
+                              "int32")
             # tf.math.floor_divide(
             #     tf.math.abs(inputs) * self.multiplier,
             #     self.step)
