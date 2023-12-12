@@ -35,9 +35,13 @@ class DiscretizeFloats(tf.keras.layers.Layer):
     #                              trainable=False)
 
     def call(self, inputs):
-        return tf.math.ceil(
-            tf.keras.backend.cast(inputs, "int32"
-                                 ) * self.multiplier)
+        return\
+            tf.math.floor_divide(
+                tf.math.abs(inputs) * self.multiplier,
+                self.step)
+        # tf.math.ceil(
+        #     tf.keras.backend.cast(inputs, "int32"
+        #                          ) * self.multiplier)
 
     def compute_output_shape(self, input_shape):
         return (input_shape[0],)
