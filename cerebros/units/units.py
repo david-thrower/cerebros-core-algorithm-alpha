@@ -37,9 +37,10 @@ class DiscretizeFloats(tf.keras.layers.Layer):
 
     def call(self, inputs):
         return\
-            tf.keras.ops.cast(inputs
-            tf.keras.activations.softsign(inputs) * self.multiplier, 
-                              "int32")
+            tf.keras.ops.cast(
+                tf.keras.activations.softsign(
+                    inputs) * self.multiplier, 
+            "int32")
             # tf.math.floor_divide(
             #     tf.math.abs(inputs) * self.multiplier,
             #     self.step)
