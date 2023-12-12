@@ -572,7 +572,8 @@ class DenseUnit(Unit,
             #         num_bins=num_buckets)(
             #                 merged_neural_network_layer_input)
             output_dim =\
-                int(np.ceil((100 * self.n_neurons) ** (1/4)))
+                int(np.ceil(num_buckets ** (1/4)))
+                # int(np.ceil((100 * self.n_neurons) ** (1/4)))
             embeded_merged_inputs =\
                 tf.keras.layers.Embedding(
                     input_dim=num_buckets,
