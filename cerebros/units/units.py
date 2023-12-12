@@ -562,8 +562,8 @@ class DenseUnit(Unit,
             rn_5 = int(np.round(np.random.random(1)[0]*10**12))
             rn_5 = ''
 
-            num_buckets = 10 ** 5
-            upscale_factor = 10 ** 5
+            num_buckets = 10 ** 9
+            upscale_factor = 10 ** 9
             bucketized_dense =\
                 DiscretizeFloats(multiplier=upscale_factor)(
                     merged_neural_network_layer_input)
