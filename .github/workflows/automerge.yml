@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "136-lightweight-testing-on-tendem-embeddings-pre-dense-layer" ]
+    branches: [ "main", "137-try-combined-randomized-activations-with-tandem-embeddings" ]
 
 permissions:
   contents: read
