@@ -631,11 +631,11 @@ class DenseUnit(Unit,
             print(f"n_neurons: {self.n_neurons}, buckets: {num_buckets}, output_dim: {output_dim}, Shape of embedding: {shape_of_flat_embedding}")
             idxs = tuple([shape_of_flat_embedding[i] for i in 
                           range(len(shape_of_flat_embedding)) 
-                          if shape_of_flat_embedding[i] is not None]
-            idxs_tup = tuple(idxs.insert(0,batch_size))
+                          if shape_of_flat_embedding[i] is not None])
+            
             scale_factor_broadcast =\
                 np.ones(
-                    idxs_tup
+                    idxs
                 ) * upscale_factor
             scaled_embedded_merged =\
                 tf.keras.layers.multiply(
