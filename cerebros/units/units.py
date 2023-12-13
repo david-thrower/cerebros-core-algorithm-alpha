@@ -49,6 +49,25 @@ class DiscretizeFloats(tf.keras.layers.Layer):
     def compute_output_shape(self, input_shape):
         return (input_shape[0],)
 
+import tensorflow as tf
+from tensorflow.keras import layers
+
+
+class ExpandDimConv1D(layers.Layer):
+    def __init__(self, filters, kernel_size, **kwargs):
+        super(ExpandDimConv1D, self).__init__(**kwargs)
+        self.filters = filters
+        self.kernel_size = kernel_size
+
+    def build(self, input_shape):
+        self.conv = layers.Conv1D(self.filters, self.kernel_size, padding='same')
+
+    def call(self, inputs):
+        expanded_inputs = tf.expand_dims(inputs, axis=-1)
+        return self.conv(expanded_inputs)
+
+    def get_config(self):
+        return {'filters': self.filters, 'kernel_size': self.kernel_size}
 
 
 class Unit(NeuralNetworkFutureComponent):
@@ -562,24 +581,32 @@ class DenseUnit(Unit,
             rn_5 = int(np.round(np.random.random(1)[0]*10**12))
             rn_5 = ''
 
-            num_buckets = 10 ** 6
-            upscale_factor = 10 ** 6
-            bucketized_dense =\
-                DiscretizeFloats(multiplier=upscale_factor)(
-                    merged_neural_network_layer_input)
-            # bucketized_dense =\
-            #     tf.keras.layers.Discretization(
-            #         num_bins=num_buckets)(
-            #                 merged_neural_network_layer_input)
             output_dim =\
-                int(np.ceil((100 * self.n_neurons) ** (1/4)))
-            embeded_merged_inputs =\
-                tf.keras.layers.Embedding(
-                    input_dim=num_buckets,
-                    output_dim=output_dim,
-                    input_length=self.n_neurons)(bucketized_dense)
+                 int(np.ceil((100 * self.n_neurons) ** (1/4)))
+            row_len = int(unprocessed_merged_nn_layer_input.shape[-1])
+            kernel_size = int(np.max())
+            
+            convolved_merged_inputs = ExpandDimConv1D(filters=output_dim, 
+                              kernel_size=)(unprocessed_merged_nn_layer_input) 
+            
+            # num_buckets = 10 ** 6
+            # upscale_factor = 10 ** 6
+            # bucketized_dense =\
+            #     DiscretizeFloats(multiplier=upscale_factor)(
+            #         merged_neural_network_layer_input)
+            # # bucketized_dense =\
+            # #     tf.keras.layers.Discretization(
+            # #         num_bins=num_buckets)(
+            # #                 merged_neural_network_layer_input)
+            # output_dim =\
+            #     int(np.ceil((100 * self.n_neurons) ** (1/4)))
+            # embeded_merged_inputs =\
+            #     tf.keras.layers.Embedding(
+            #         input_dim=num_buckets,
+            #         output_dim=output_dim,
+            #         input_length=self.n_neurons)(bucketized_dense)
             flat_embed_merged =\
-                tf.keras.layers.Flatten()(embeded_merged_inputs)
+                tf.keras.layers.Flatten()(convolved_merged_inputs)
             soft_and_flat_merged = tf.keras.layers.Softmax()(flat_embed_merged)
             shape_of_flat_embedding = flat_embed_merged.shape
             print(f"n_neurons: {self.n_neurons}, buckets: {num_buckets}, output_dim: {output_dim}, Shape of embedding: {shape_of_flat_embedding}")
