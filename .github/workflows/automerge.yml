@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "137-try-combined-randomized-activations-with-tandem-embeddings" ]
+    branches: [ "main", "138-try-alex-custom-embedding-with-no-bnorm" ]
 
 permissions:
   contents: read
@@ -43,8 +43,8 @@ jobs:
     # Uncomment all below
     - name: Test distributed random search Ames by running
       run: python3 regression-example-ames-no-preproc.py
-    - name: Test distributed random search Ames by running - Val set
-      run: python3 regression-example-ames-no-preproc-val-set.py
+    # - name: Test distributed random search Ames by running - Val set
+    #   run: python3 regression-example-ames-no-preproc-val-set.py
     # - name: Test text classifier - random search - ham-spam
     #   run: python3 text-class-ham-or-spam.py
     #   timeout-minutes: 90
