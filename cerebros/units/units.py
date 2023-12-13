@@ -626,10 +626,12 @@ class DenseUnit(Unit,
             #         input_length=self.n_neurons)(bucketized_dense)
             flat_embed_merged =\
                 tf.keras.layers.Flatten()(embeded_merged_inputs)
-            # soft_and_flat_merged = tf.keras.layers.Softmax()(flat_embed_merged)
-            shape_of_flat_embedding = flat_embed_merged.shape
+            soft_and_flat_merged = tf.keras.layers.Softmax()(flat_embed_merged)
+            shape_of_flat_embedding = soft_and_flat_merged.shape
             print(f"n_neurons: {self.n_neurons}, buckets: {num_buckets}, output_dim: {output_dim}, Shape of embedding: {shape_of_flat_embedding}")
-            idxs = [shape_of_flat_embedding[i] for i in range(len(shape_of_flat_embedding)) if shape_of_flat_embedding[i] is not None]
+            idxs = tuple([shape_of_flat_embedding[i] for i in 
+                          range(len(shape_of_flat_embedding)) 
+                          if shape_of_flat_embedding[i] is not None]
             idxs_tup = tuple(idxs.insert(0,batch_size))
             scale_factor_broadcast =\
                 np.ones(
@@ -638,7 +640,7 @@ class DenseUnit(Unit,
             scaled_embedded_merged =\
                 tf.keras.layers.multiply(
                     [
-                        flat_embed_merged,
+                        soft_and_flat_merged,
                         scale_factor_broadcast])
 
             # Try to see if randomizing activations improves performance in our context.
