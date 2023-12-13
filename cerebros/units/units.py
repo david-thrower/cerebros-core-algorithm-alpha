@@ -52,6 +52,13 @@ class DiscretizeFloats(tf.keras.layers.Layer):
 import tensorflow as tf
 from tensorflow.keras import layers
 
+class SoftSign(layers.Layer):
+    def __init__(self, **kwargs):
+        super(SoftSign, self).__init__(**kwargs)
+
+    def call(self, inputs):
+        outs = tf.keras.activations.softsign(inputs) 
+        return outs
 
 class ExpandDimConv1D(layers.Layer):
     def __init__(self, filters, kernel_size, **kwargs):
@@ -612,8 +619,11 @@ class DenseUnit(Unit,
             #         input_dim=num_buckets,
             #         output_dim=output_dim,
             #         input_length=self.n_neurons)(bucketized_dense)
-            flat_embed_merged =\
+            flat_convolved_merged_inputs =\
                 tf.keras.layers.Flatten()(convolved_merged_inputs)
+            soft_flat_convolved_merged_inputs =\
+                SoftSign()(flat_convolved_merged_inputs)
+            
             #  soft_and_flat_merged = tf.keras.layers.Softmax()(flat_embed_merged)
             #  shape_of_flat_embedding = flat_embed_merged.shape
             # print(f"n_neurons: {self.n_neurons}, buckets: {num_buckets}, output_dim: {output_dim}, Shape of embedding: {shape_of_flat_embedding}")
@@ -633,7 +643,7 @@ class DenseUnit(Unit,
                 tf.keras.layers.Dense(
                     self.n_neurons,
                     self.activation,
-                    name=f"{self.name}_dns_{rn_5}")(flat_embed_merged)
+                    name=f"{self.name}_dns_{rn_5}")(soft_flat_convolved_merged_inputs)
 
             self.materialized = True
         # refactor the lagic below and this class is complete
