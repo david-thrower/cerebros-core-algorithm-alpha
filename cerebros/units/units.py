@@ -638,7 +638,7 @@ class DenseUnit(Unit,
                     idxs
                 ) * upscale_factor
             scaled_embedded_merged =\
-                tf.keras.layers.multiply(
+                tf.keras.layers.tf.keras.layers.Multiply()(
                     [
                         soft_and_flat_merged,
                         scale_factor_broadcast])
