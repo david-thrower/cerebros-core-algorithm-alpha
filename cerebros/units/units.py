@@ -47,6 +47,46 @@ class DiscretizeFloats(tf.keras.layers.Layer):
         return discretized
 
 
+class CustomEmbedding(tf.keras.layers.Layer):
+   
+    def __init__(self, input_dim, output_dim, **kwargs):
+        super(CustomEmbedding, self).__init__(**kwargs)
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+
+    def build(self, input_shape):
+        self.embeddings = self.add_weight(
+            shape=(self.input_dim, self.output_dim),
+            initializer='uniform',
+            trainable=True,
+            name='embeddings'
+        )
+        self.scaling = self.add_weight(
+            shape=input_shape[-1],
+            initializer='ones',
+            trainable=True,
+            name='scaling'
+        )
+        super(CustomEmbedding, self).build(input_shape)
+
+    def gaussian_one_hot(self, x, depth, sigma=0.1):
+        y = tf.range(depth, dtype=tf.float32)
+        x = tf.expand_dims(x, -1)  # Add an extra dimension for broadcasting
+        vec = tf.exp(-tf.square(y - x) / (2 * tf.square(sigma)))
+        vec = vec / tf.reduce_sum(vec, axis=-1, keepdims=True)
+        return vec
+
+    def call(self, inputs):
+        scaled   = tf.nn.softmax(inputs) * tf.exp(self.scaling)
+        #tf.print(scaled)
+        retrieve = self.gaussian_one_hot(scaled, self.input_dim)
+        embedded = tf.einsum('bik,kj->bij', retrieve, self.embeddings)
+        return embedded
+
+    def compute_output_shape(self, input_shape):
+        return input_shape+(self.output_dim,)
+
+
 
 class Unit(NeuralNetworkFutureComponent):
     def __init__(self,
@@ -561,11 +601,11 @@ class DenseUnit(Unit,
 
             num_buckets = 5 * 10 ** 5
             upscale_factor = num_buckets
-            bucketized_dense =\
-                DiscretizeFloats(multiplier=upscale_factor)(
-                    unprocessed_merged_nn_layer_input
-                    # merged_neural_network_layer_input
-                )
+            # bucketized_dense =\
+            #     DiscretizeFloats(multiplier=upscale_factor)(
+            #         unprocessed_merged_nn_layer_input
+            #         # merged_neural_network_layer_input
+            #     )
             # bucketized_dense =\
             #     tf.keras.layers.Discretization(
             #         num_bins=num_buckets)(
@@ -573,14 +613,19 @@ class DenseUnit(Unit,
             output_dim =\
                 int(np.ceil(num_buckets ** (1/4)))
                 # int(np.ceil((100 * self.n_neurons) ** (1/4)))
-            embeded_merged_inputs =\
-                tf.keras.layers.Embedding(
+            embeded_merged_inputs = CustomEmbedding(
                     input_dim=num_buckets,
-                    output_dim=output_dim,
-                    input_length=self.n_neurons)(bucketized_dense)
+                    output_dim=output_dim)(unprocessed_merged_nn_layer_input)
+
+            
+            # embeded_merged_inputs =\
+            #     tf.keras.layers.Embedding(
+            #         input_dim=num_buckets,
+            #         output_dim=output_dim,
+            #         input_length=self.n_neurons)(bucketized_dense)
             flat_embed_merged =\
                 tf.keras.layers.Flatten()(embeded_merged_inputs)
-            soft_and_flat_merged = tf.keras.layers.Softmax()(flat_embed_merged)
+            # soft_and_flat_merged = tf.keras.layers.Softmax()(flat_embed_merged)
             shape_of_flat_embedding = flat_embed_merged.shape
             print(f"n_neurons: {self.n_neurons}, buckets: {num_buckets}, output_dim: {output_dim}, Shape of embedding: {shape_of_flat_embedding}")
             scale_factor_broadcast =\
@@ -591,7 +636,7 @@ class DenseUnit(Unit,
             scaled_embedded_merged =\
                 tf.keras.layers.multiply(
                     [
-                        soft_and_flat_merged,
+                        flat_embed_merged,
                         scale_factor_broadcast])
 
             # Try to see if randomizing activations improves performance in our context.
@@ -606,19 +651,12 @@ class DenseUnit(Unit,
             else:
                 activation_0 = self.activation
             print(f"activation for unit: {self.name}_dns_{rn_5} is: {activation_0}")
-            self.neural_network_layer =\
-                tf.keras.layers.Dense(
-                    self.n_neurons,
-                    activation_0,
-                    name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
-            self.materialized = True
-
             
             self.neural_network_layer =\
                 tf.keras.layers.Dense(
                     self.n_neurons,
                     activation_0,
-                    name=f"{self.name}_dns_{rn_5}")(flat_embed_merged)
+                    name=f"{self.name}_dns_{rn_5}")(scaled_embedded_merged)
 
             self.materialized = True
         # refactor the lagic below and this class is complete
