@@ -632,11 +632,11 @@ class DenseUnit(Unit,
             idxs = tuple([shape_of_flat_embedding[i] for i in 
                           range(len(shape_of_flat_embedding)) 
                           if shape_of_flat_embedding[i] is not None])
-            
-            scale_factor_broadcast =\
-                np.ones(
-                    idxs
-                ) * upscale_factor
+            scale_factor_broadcast = tf.ones_like(soft_and_flat_merged) * upscale_factor
+            # scale_factor_broadcast =\
+            #     np.ones(
+            #         idxs
+            #     ) * upscale_factor
             scaled_embedded_merged =\
                 tf.keras.layers.Multiply()(
                     [
