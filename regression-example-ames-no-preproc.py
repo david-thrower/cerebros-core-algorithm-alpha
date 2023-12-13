@@ -58,12 +58,27 @@ predecessor_level_connection_affinity_factor_main = 0.5518
 max_consecutive_lateral_connections = 34
 p_lateral_connection = 0.36014
 num_lateral_connection_tries_per_unit = 11
-learning_rate = 0.7 # 0.25 # 0.095
-epochs = 200 # 145
-batch_size = 300 # 634
-maximum_levels = 4 # 5
-maximum_units_per_level = 4 # 5
-maximum_neurons_per_unit = 10 # 25
+learning_rate = 0.095
+epochs = 145
+batch_size = 634
+maximum_levels = 5
+maximum_units_per_level = 5
+maximum_neurons_per_unit = 25
+
+
+# meta_trial_number = 0  # In distributed training set this to a random number
+# activation = "gelu"
+# predecessor_level_connection_affinity_factor_first = 19.613
+# predecessor_level_connection_affinity_factor_main = 0.5518
+# max_consecutive_lateral_connections = 34
+# p_lateral_connection = 0.36014
+# num_lateral_connection_tries_per_unit = 11
+# learning_rate = 0.7 # 0.25 # 0.095
+# epochs = 200 # 145
+# batch_size = 300 # 634
+# maximum_levels = 4 # 5
+# maximum_units_per_level = 4 # 5
+# maximum_neurons_per_unit = 10 # 25
 
 
 cerebros =\
