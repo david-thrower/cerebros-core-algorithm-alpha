@@ -584,9 +584,14 @@ class DenseUnit(Unit,
             output_dim =\
                  int(np.ceil((100 * self.n_neurons) ** (1/4)))
             row_len = int(unprocessed_merged_nn_layer_input.shape[-1])
-            kernel_size = int(np.min(np.max(row_len - 1, 
-                                            np.random.choice(
-                                                [2,3,4,5,6,7]))))
+            kernel_size = int( 
+                              np.random.choice(
+                                               np.arange(
+                                                         2, 
+                                                         output_dim
+                                               )
+                              )
+            )
             
             convolved_merged_inputs = ExpandDimConv1D(filters=output_dim, 
                               kernel_size=kernel_size)(unprocessed_merged_nn_layer_input) 
