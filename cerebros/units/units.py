@@ -617,6 +617,7 @@ class DenseUnit(Unit,
                     input_dim=num_buckets,
                     output_dim=output_dim)(unprocessed_merged_nn_layer_input)
 
+            print(f"Shape of embed: {embeded_merged_inputs.shape}")
             
             # embeded_merged_inputs =\
             #     tf.keras.layers.Embedding(
@@ -628,10 +629,11 @@ class DenseUnit(Unit,
             # soft_and_flat_merged = tf.keras.layers.Softmax()(flat_embed_merged)
             shape_of_flat_embedding = flat_embed_merged.shape
             print(f"n_neurons: {self.n_neurons}, buckets: {num_buckets}, output_dim: {output_dim}, Shape of embedding: {shape_of_flat_embedding}")
+            idxs = [shape_of_flat_embedding[i] for i in range(len(shape_of_flat_embedding)) if shape_of_flat_embedding[i] is not None]
+            idxs_tup = tuple(idxs.insert(0,batch_size))
             scale_factor_broadcast =\
                 np.ones(
-                    tuple([ind for ind in shape_of_flat_embedding
-                          if ind is not None])
+                    idxs_tup
                 ) * upscale_factor
             scaled_embedded_merged =\
                 tf.keras.layers.multiply(
