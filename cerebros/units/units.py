@@ -609,19 +609,19 @@ class DenseUnit(Unit,
             #         input_length=self.n_neurons)(bucketized_dense)
             flat_embed_merged =\
                 tf.keras.layers.Flatten()(convolved_merged_inputs)
-            soft_and_flat_merged = tf.keras.layers.Softmax()(flat_embed_merged)
-            shape_of_flat_embedding = flat_embed_merged.shape
-            print(f"n_neurons: {self.n_neurons}, buckets: {num_buckets}, output_dim: {output_dim}, Shape of embedding: {shape_of_flat_embedding}")
-            scale_factor_broadcast =\
-                np.ones(
-                    tuple([ind for ind in shape_of_flat_embedding
-                          if ind is not None])
-                ) * upscale_factor
-            scaled_embedded_merged =\
-                tf.keras.layers.multiply(
-                    [
-                        soft_and_flat_merged,
-                        scale_factor_broadcast])
+            #  soft_and_flat_merged = tf.keras.layers.Softmax()(flat_embed_merged)
+            #  shape_of_flat_embedding = flat_embed_merged.shape
+            # print(f"n_neurons: {self.n_neurons}, buckets: {num_buckets}, output_dim: {output_dim}, Shape of embedding: {shape_of_flat_embedding}")
+            # scale_factor_broadcast =\
+            #     np.ones(
+            #         tuple([ind for ind in shape_of_flat_embedding
+            #               if ind is not None])
+            #     ) * upscale_factor
+            # scaled_embedded_merged =\
+            #     tf.keras.layers.multiply(
+            #         [
+            #             soft_and_flat_merged,
+            #             scale_factor_broadcast])
 
             
             self.neural_network_layer =\
