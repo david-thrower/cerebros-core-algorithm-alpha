@@ -603,7 +603,7 @@ class DenseUnit(Unit,
                 int(np.ceil(num_buckets ** (1/4)))
                 # int(np.ceil((100 * self.n_neurons) ** (1/4)))
             embeded_merged_inputs_init =\
-                tf.keras.layers.TemporalEmbedding(
+                TemporalEmbedding(
                     input_dim=num_buckets,
                     output_dim=output_dim,
                     input_length=self.n_neurons)
