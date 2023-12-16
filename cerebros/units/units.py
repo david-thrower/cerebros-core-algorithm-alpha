@@ -48,7 +48,7 @@ class DiscretizeFloats(tf.keras.layers.Layer):
 
 
 class TemporalEmbedding(tf.keras.layers.Layer):
-    def __init__(self, vocab_size, embedding_dim, **kwargs):
+    def __init__(self, input_dim, output_dim, **kwargs):
         super(TemporalEmbedding, self).__init__(trainable=True)
         self.compute_gradient_for_n_epochs = 7
         self.train_counter = 0
