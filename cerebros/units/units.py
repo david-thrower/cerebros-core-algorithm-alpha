@@ -52,8 +52,8 @@ class TemporalEmbedding(tf.keras.layers.Layer):
         super(TemporalEmbedding, self).__init__(trainable=True)
         self.compute_gradient_for_n_epochs = 7
         self.train_counter = 0
-        self.embedding_1 = tf.keras.layers.Embedding(vocab_size, embedding_dim, **kwargs)
-        self.embedding_2 = tf.keras.layers.Embedding(vocab_size, embedding_dim, **kwargs)
+        self.embedding_1 = tf.keras.layers.Embedding(input_dim, output_dim, **kwargs)
+        self.embedding_2 = tf.keras.layers.Embedding(input_dim, output_dim, **kwargs)
         self.embedding_2.trainable = False
     def set_compute_gradient_for_n_epochs(self, n: int):
         self.compute_gradient_for_n_epochs = n
