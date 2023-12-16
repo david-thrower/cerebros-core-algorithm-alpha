@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "137-try-combined-randomized-activations-with-tandem-embeddings" ]
+    branches: [ "main", "140-tandem-embeddings-with-freezable-weights" ]
 
 permissions:
   contents: read
