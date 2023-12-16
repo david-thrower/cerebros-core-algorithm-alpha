@@ -638,12 +638,12 @@ class DenseUnit(Unit,
             else:
                 activation_0 = self.activation
             print(f"activation for unit: {self.name}_dns_{rn_5} is: {activation_0}")
-            self.neural_network_layer =\
-                tf.keras.layers.Dense(
-                    self.n_neurons,
-                    activation_0,
-                    name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
-            self.materialized = True
+            # self.neural_network_layer =\
+            #     tf.keras.layers.Dense(
+            #         self.n_neurons,
+            #         activation_0,
+            #         name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
+            # self.materialized = True
 
             
             self.neural_network_layer =\
