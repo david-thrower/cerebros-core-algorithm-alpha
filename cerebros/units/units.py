@@ -607,7 +607,7 @@ class DenseUnit(Unit,
                     input_dim=num_buckets,
                     output_dim=output_dim,
                     input_length=self.n_neurons)
-            embeded_merged_inputs_init.set_compute_gradient_for_n_epochs(n=3)
+            embeded_merged_inputs_init.set_compute_gradient_for_n_epochs(n=4)
             embeded_merged_inputs = embeded_merged_inputs_init(bucketized_dense)
             
             flat_embed_merged =\
