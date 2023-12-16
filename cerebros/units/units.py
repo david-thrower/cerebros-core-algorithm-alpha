@@ -47,6 +47,35 @@ class DiscretizeFloats(tf.keras.layers.Layer):
         return discretized
 
 
+class TemporalEmbedding(tf.keras.layers.Layer):
+    def __init__(self, vocab_size, embedding_dim, **kwargs):
+        super(TemporalEmbedding, self).__init__(trainable=True)
+        self.compute_gradient_for_n_epochs = 7
+        self.train_counter = 0
+        self.embedding_1 = tf.keras.layers.Embedding(vocab_size, embedding_dim, **kwargs)
+        self.embedding_2 = tf.keras.layers.Embedding(vocab_size, embedding_dim, **kwargs)
+        self.embedding_2.trainable = False
+    def set_compute_gradient_for_n_epochs(self, n: int):
+        self.compute_gradient_for_n_epochs = n
+        print(f"Training this layer for only {self.compute_gradient_for_n_epochs} epochs")
+    def call(self, inputs):
+        print(f"starting state: {self.train_counter}")
+        if self.train_counter < self.compute_gradient_for_n_epochs:
+            print(f"Training weights for epoch {self.train_counter}")
+            self.train_counter += 1
+            return self.embedding_1(inputs)
+        elif self.train_counter == self.compute_gradient_for_n_epochs:
+            print(f"Setting trained weights to untrainable model (1) {self.train_counter}")
+            self.train_counter += 1
+            weights_0 =  self.embedding_1.get_weights()
+            self.embedding_2.set_weights(weights_0)
+            print("Returning weights from untrainable model")
+            return self.embedding_2(inputs)
+        else:
+            print(f"Returning weights from untrainable model (2) {self.train_counter}")
+            self.train_counter += 1
+            return self.embedding_2(inputs)
+
 
 class Unit(NeuralNetworkFutureComponent):
     def __init__(self,
@@ -573,11 +602,14 @@ class DenseUnit(Unit,
             output_dim =\
                 int(np.ceil(num_buckets ** (1/4)))
                 # int(np.ceil((100 * self.n_neurons) ** (1/4)))
-            embeded_merged_inputs =\
-                tf.keras.layers.Embedding(
+            embeded_merged_inputs_init =\
+                tf.keras.layers.TemporalEmbedding(
                     input_dim=num_buckets,
                     output_dim=output_dim,
-                    input_length=self.n_neurons)(bucketized_dense)
+                    input_length=self.n_neurons)
+            embeded_merged_inputs_init.set_compute_gradient_for_n_epochs(n=10)
+            embeded_merged_inputs = embeded_merged_inputs_init(bucketized_dense)
+            
             flat_embed_merged =\
                 tf.keras.layers.Flatten()(embeded_merged_inputs)
             soft_and_flat_merged = tf.keras.layers.Softmax()(flat_embed_merged)
