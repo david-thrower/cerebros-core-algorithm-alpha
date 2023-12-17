@@ -56,7 +56,7 @@ class TemporalEmbedding(tf.keras.layers.Layer):
         self.get_weights_callback = tf.keras.callbacks.LambdaCallback(
             on_epoch_end=lambda batch: self.embedding_1.get_weights())
         self.set_weights_callback = tf.keras.callbacks.LambdaCallback(
-            on_epoch_end=lambda batch: self.embedding_1.set_weights())
+            on_epoch_end=lambda batch: self.embedding_2.set_weights())
         self.embedding_2 = tf.keras.layers.Embedding(input_dim, output_dim, **kwargs)
         self.embedding_2.trainable = False
 
@@ -74,7 +74,7 @@ class TemporalEmbedding(tf.keras.layers.Layer):
             self.set_weights_callback(self.get_weights_callback())
 
         result = tf.where(self.train_counter < self.compute_gradient_for_n_epochs, self.embedding_1(inputs), self.embedding_2(inputs))     
-        )
+        
         
         return result
         
