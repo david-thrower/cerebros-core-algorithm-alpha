@@ -53,28 +53,47 @@ class TemporalEmbedding(tf.keras.layers.Layer):
         self.compute_gradient_for_n_epochs = 7
         self.train_counter = 0
         self.embedding_1 = tf.keras.layers.Embedding(input_dim, output_dim, **kwargs)
+        self.get_weights_callback = tf.keras.callbacks.LambdaCallback(
+            on_epoch_end=lambda batch: self.embedding_1.get_weights())
+        self.set_weights_callback = tf.keras.callbacks.LambdaCallback(
+            on_epoch_end=lambda batch: self.embedding_1.set_weights())
         self.embedding_2 = tf.keras.layers.Embedding(input_dim, output_dim, **kwargs)
         self.embedding_2.trainable = False
+
+
     def set_compute_gradient_for_n_epochs(self, n: int):
         self.compute_gradient_for_n_epochs = n
         print(f"Training this layer for only {self.compute_gradient_for_n_epochs} epochs")
     def call(self, inputs):
         print(f"starting state: {self.train_counter}")
-        if self.train_counter < self.compute_gradient_for_n_epochs:
-            print(f"Training weights for epoch {self.train_counter}")
-            self.train_counter += 1
-            return self.embedding_1(inputs)
-        elif self.train_counter == self.compute_gradient_for_n_epochs:
-            print(f"Setting trained weights to untrainable model (1) {self.train_counter}")
-            self.train_counter += 1
-            weights_0 =  self.embedding_1.get_weights()
-            self.embedding_2.set_weights(weights_0)
-            print("Returning weights from untrainable model")
-            return self.embedding_2(inputs)
-        else:
-            print(f"Returning weights from untrainable model (2) {self.train_counter}")
-            self.train_counter += 1
-            return self.embedding_2(inputs)
+        
+
+
+        # 
+        if self.train_counter == self.compute_gradient_for_n_epochs:
+            self.set_weights_callback(self.get_weights_callback())
+
+        result = tf.where(self.train_counter < self.compute_gradient_for_n_epochs, self.embedding_1(inputs), self.embedding_2(inputs))     
+        )
+        
+        return result
+        
+        
+        # if self.train_counter < self.compute_gradient_for_n_epochs:
+        #     print(f"Training weights for epoch {self.train_counter}")
+        #     self.train_counter += 1
+        #     return self.embedding_1(inputs)
+        # elif self.train_counter == self.compute_gradient_for_n_epochs:
+        #     print(f"Setting trained weights to untrainable model (1) {self.train_counter}")
+        #     self.train_counter += 1
+        #     weights_0 =  self.embedding_1.get_weights()
+        #     self.embedding_2.set_weights(weights_0)
+        #     print("Returning weights from untrainable model")
+        #     return self.embedding_2(inputs)
+        # else:
+        #     print(f"Returning weights from untrainable model (2) {self.train_counter}")
+        #     self.train_counter += 1
+        #     return self.embedding_2(inputs)
 
 
 class Unit(NeuralNetworkFutureComponent):
