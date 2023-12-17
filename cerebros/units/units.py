@@ -70,7 +70,7 @@ class TemporalEmbedding(tf.keras.layers.Layer):
 
 
         # 
-        self.train_counte += 1
+        self.train_counter += 1
         if self.train_counter == self.compute_gradient_for_n_epochs:
             self.set_weights_callback(self.get_weights_callback())
 
