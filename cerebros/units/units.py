@@ -631,8 +631,7 @@ class DenseUnit(Unit,
                     input_length=self.n_neurons)
             # Need to pass batch size
             freeze_embeddings_after_n_epochs = 7
-            freeze_embedding_training_after_n_batches = 7 * freeze_embeddings_after_n_epochs
-            embeded_merged_inputs_init.set_compute_gradient_for_n_epochs(n=freeze_embedding_training_after_n_batches)
+            embeded_merged_inputs_init.set_compute_gradient_for_n_epochs(n=10)
             embeded_merged_inputs = embeded_merged_inputs_init(bucketized_dense)
             
             flat_embed_merged =\
