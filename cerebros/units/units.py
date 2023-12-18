@@ -527,7 +527,7 @@ class DenseUnit(Unit,
                 tf.keras.layers.Dense(
                     self.n_neurons,
                     self.activation,
-                    name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
+                    name=f"{self.name}_dns_{rn_5}")(unprocessed_merged_nn_layer_input)
             self.materialized = True
         # refactor the lagic below and this class is complete
         # self.dense_unit_module_id = dense_unit_module_id
