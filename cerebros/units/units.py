@@ -516,6 +516,8 @@ class DenseUnit(Unit,
                     tf.keras.layers.Dropout(
                         dropout_rate=self.dropout_rate,
                         name=f"{self.name}_drp_{rn_4}")(unprocessed_merged_nn_layer_input)
+            elif self.bnorm_or_dropout == 'skip':
+                merged_neural_network_layer_input = unprocessed_merged_nn_layer_input
             else:
                 raise ValueError("The only arguments supported by the parameter "
                                  "'bnorm_or_dropout' are 'bnorm' and 'dropout'")
