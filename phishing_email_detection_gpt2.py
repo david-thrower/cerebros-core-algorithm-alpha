@@ -128,13 +128,13 @@ gp2 = GPT2Layer(max_seq_length=max_seq_length)
 VOCABULARY_SIZE = gp2.tokenizer.vocabulary_size()
 tokens = gp2(inp)
 
-
+dropout_tokens = tf.keras.layers.Dropout(0.75)(tokens)
 embedded =\
     tf.keras.layers.Embedding(
         input_dim=VOCABULARY_SIZE,
         output_dim=15,
         input_length=max_seq_length,
-        mask_zero=True)(tokens)
+        mask_zero=True)(dropout_tokens)
 flattened = tf.keras.layers.Flatten()(embedded)
 
 tokenized_embedded_model=\
