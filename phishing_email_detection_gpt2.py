@@ -170,10 +170,10 @@ minimum_levels = 2
 maximum_levels = 4 # [3,7]
 
 minimum_units_per_level = 4
-maximum_units_per_level = 8
+maximum_units_per_level = 10
 
 minimum_neurons_per_unit = 1
-maximum_neurons_per_unit = 5  # [2,20]
+maximum_neurons_per_unit = 7  # [2,20]
 
 
 
