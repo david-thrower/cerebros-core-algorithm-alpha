@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "141-try-dropout-embedding-with-gpt-tokenizer-best-run" ]
+    branches: [ "main", "142-dropout-embeddings-plus-randomized-activations" ]
 
 permissions:
   contents: read
