@@ -135,7 +135,7 @@ embedded =\
         output_dim=15,
         input_length=max_seq_length,
         mask_zero=True)(tokens)
-dropout_embedded = tf.keras.layers.Dropout(0.6)(embedded) # Best yet, 0.5
+dropout_embedded = tf.keras.layers.Dropout(0.6)(embedded)
 flattened = tf.keras.layers.Flatten()(dropout_embedded)
 
 tokenized_embedded_model=\
@@ -162,7 +162,7 @@ predecessor_level_connection_affinity_factor_main = 0.31456
 max_consecutive_lateral_connections = 22
 p_lateral_connection = 0.39256
 num_lateral_connection_tries_per_unit = 10
-learning_rate = 0.0000511065 # original 0.0000511065
+learning_rate = 0.000511065 # original 0.0000511065
 epochs = 15  # [1, 100]
 batch_size = 20 # Original 20
 
