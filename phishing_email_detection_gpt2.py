@@ -163,7 +163,7 @@ predecessor_level_connection_affinity_factor_main = 0.31456
 max_consecutive_lateral_connections = 22
 p_lateral_connection = 0.39256
 num_lateral_connection_tries_per_unit = 10
-learning_rate = 0.000511065 # original 0.0000511065
+learning_rate = 0.0000511065 # original 0.0000511065
 epochs = 15  # [1, 100]
 batch_size = 20 # Original 20
 
@@ -171,11 +171,10 @@ minimum_levels = 2
 maximum_levels = 4 # [3,7]
 
 minimum_units_per_level = 4
-maximum_units_per_level = 10
+maximum_units_per_level = 8
 
 minimum_neurons_per_unit = 1
-maximum_neurons_per_unit = 7  # [2,20]
-
+maximum_neurons_per_unit = 5  # [2,20]
 
 
 #
