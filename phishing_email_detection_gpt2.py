@@ -135,8 +135,8 @@ embedded =\
         output_dim=15,
         input_length=max_seq_length,
         mask_zero=True)(tokens)
-dropout_embedded = tf.keras.layers.Dropout(0.6)(embedded)
-flattened = tf.keras.layers.Flatten()(dropout_embedded)
+# dropout_embedded = tf.keras.layers.Dropout(0.6)(embedded)
+flattened = tf.keras.layers.Flatten()(embedded) # (dropout_embedded)
 
 tokenized_embedded_model=\
     tf.keras.Model(
