@@ -243,7 +243,7 @@ class DenseUnit(Unit,
              p_lateral_connection_decay=zero_95_exp_decay,
              num_lateral_connection_tries_per_unit=1,
              bnorm_or_dropout='dropout',
-             dropout_rate=0.85,
+             dropout_rate=0.5,
              *args,
              **kwargs):
 
