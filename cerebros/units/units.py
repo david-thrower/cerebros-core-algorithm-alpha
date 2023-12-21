@@ -242,8 +242,8 @@ class DenseUnit(Unit,
              p_lateral_connection=.97,
              p_lateral_connection_decay=zero_95_exp_decay,
              num_lateral_connection_tries_per_unit=1,
-             bnorm_or_dropout='bnorm',
-             dropout_rate=0.2,
+             bnorm_or_dropout='dropout',
+             dropout_rate=0.3,
              *args,
              **kwargs):
 
@@ -542,7 +542,7 @@ class DenseUnit(Unit,
                 tf.keras.layers.Dense(
                     self.n_neurons,
                     activation_0,
-                    name=f"{self.name}_dns_{rn_5}")(unprocessed_merged_nn_layer_input)
+                    name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
             self.neural_network_layer =\
                     tf.keras.layers.LayerNormalization(axis=1)(dense_output)
             self.materialized = True
