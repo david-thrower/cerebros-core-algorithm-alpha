@@ -544,7 +544,7 @@ class DenseUnit(Unit,
                     activation_0,
                     name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
             self.neural_network_layer =\
-                    tf.keras.layers.LayerNormalization()(dense_output)
+                    tf.keras.layers.LayerNormalization(axis=-2)(dense_output)
             self.materialized = True
         # refactor the lagic below and this class is complete
         # self.dense_unit_module_id = dense_unit_module_id
