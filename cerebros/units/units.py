@@ -543,7 +543,7 @@ class DenseUnit(Unit,
                     self.n_neurons,
                     "softsign", # activation_0,
                     name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
-            scale_up = tf.constant([scale_factor for _ in np.arange(dense_output.shape[-1])],
+            scale_up = tf.constant([[scale_factor for _ in np.arange(dense_output.shape[-1])] for _ in np.arange(dense_output.shape[0])],
                                   dtype=tf.float32)
             self.neural_network_layer = tf.keras.layers.Multiply()(
                 [dense_output, 
