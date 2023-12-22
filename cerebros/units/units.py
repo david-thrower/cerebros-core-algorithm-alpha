@@ -544,7 +544,7 @@ class DenseUnit(Unit,
                     "softsign", # activation_0,
                     name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
             
-            scale_up = tf.ones_like(dense_output, dtype=tf.float32) * scale_factor = 50000
+            scale_up = tf.ones_like(dense_output, dtype=tf.float32) * scale_factor
             
             self.neural_network_layer = tf.keras.layers.Multiply()(
                 [dense_output, 
