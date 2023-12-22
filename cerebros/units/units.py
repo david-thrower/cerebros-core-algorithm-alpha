@@ -10,6 +10,22 @@ from cerebros.denseautomlstructuralcomponent.\
     simple_sigmoid, \
     DenseAutoMlStructuralComponent, DenseLateralConnectivity
 
+class IdentitySoftSign(tf.keras.layers.Layer):
+    def __init__(self, **kwargs):
+        super(IdentitySoftSign, self).__init__(**kwargs)
+
+    def call(self, inputs):
+        # Compute the maximum value for each sample along the first axis (batch dimension)
+        max_values = tf.reduce_max(inputs, axis=1, keepdims=True)
+
+        # Apply the softsign activation to the batch
+        batch_through_softsign = tf.keras.activations.softsign(inputs)
+
+        # Multiply the result by the maximum value calculated earlier
+        output = batch_through_softsign * max_values
+
+        return output
+
 
 class Unit(NeuralNetworkFutureComponent):
     def __init__(self,
@@ -541,14 +557,15 @@ class DenseUnit(Unit,
             dense_output =\
                 tf.keras.layers.Dense(
                     self.n_neurons,
-                    "softsign", # activation_0,
+                    None, # activation_0,
                     name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
+
+            self.neural_network_layer = IdentitySoftSign()(dense_output)
+            # scale_up = tf.ones_like(dense_output, dtype=tf.float32) * scale_factor
             
-            scale_up = tf.ones_like(dense_output, dtype=tf.float32) * scale_factor
-            
-            self.neural_network_layer = tf.keras.layers.Multiply()(
-                [dense_output, 
-                 scale_up])
+            # self.neural_network_layer = tf.keras.layers.Multiply()(
+            #     [dense_output, 
+            #      scale_up])
             # self.neural_network_layer
             # =\
             #        tf.keras.layers.LayerNormalization(axis=-2)(dense_output)
