@@ -554,17 +554,16 @@ class DenseUnit(Unit,
             dense_output =\
                 tf.keras.layers.Dense(
                     self.n_neurons,
-                    None, # activation_0,
+                    activation_0,
                     name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
 
-            self.neural_network_layer = IdentitySoftSign()(dense_output)
+            # self.neural_network_layer = IdentitySoftSign()(dense_output)
             # scale_up = tf.ones_like(dense_output, dtype=tf.float32) * scale_factor
             
             # self.neural_network_layer = tf.keras.layers.Multiply()(
             #     [dense_output, 
             #      scale_up])
-            # self.neural_network_layer
-            # =\
+            # self.neural_network_layer =\
             #        tf.keras.layers.LayerNormalization(axis=-2)(dense_output)
             self.materialized = True
         # refactor the lagic below and this class is complete
