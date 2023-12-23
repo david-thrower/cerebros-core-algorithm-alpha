@@ -74,6 +74,22 @@ train_labels = [tf.constant(y_train)]
 INPUT_SHAPES  = [()]
 OUTPUT_SHAPES = [1]
 
+# A custom layer for scaling that punished values near 0
+# Punitively and returns values in around the same range 
+# as the right tail of the original data, but makes it symetrical  
+class IdentitySoftSign(tf.keras.layers.Layer):
+    def __init__(self, **kwargs):
+        super(IdentitySoftSign, self).__init__(**kwargs)
+    def call(self, inputs):
+        # Compute the maximum value for each sample along the first axis (batch dimension)
+        max_values = tf.reduce_max(inputs)
+        # Apply the softsign activation to the batch
+        batch_through_softsign = tf.keras.activations.softsign(inputs)
+        # Multiply the result by the maximum value calculated earlier
+        output = batch_through_softsign * max_values
+        return output
+
+
 """### A custom GPT2 encoder layer for text tokenization"""
 
 class GPT2Layer(tf.keras.layers.Layer):
@@ -135,14 +151,19 @@ embedded =\
         output_dim=15,
         input_length=max_seq_length,
         mask_zero=True)(tokens)
-dropout_embedded = tf.keras.layers.Dropout(0.6)(embedded)
 
-flattened = tf.keras.layers.Flatten()(dropout_embedded)
+flattened = tf.keras.layers.Flatten()(embedded)
+soft_scaled = IdentitySoftSign()(flattened)
+
+dropout_embedded = tf.keras.layers.Dropout(0.6)(soft_scaled)
+
+
+
 
 tokenized_embedded_model=\
     tf.keras.Model(
         inputs=inp,
-        outputs=flattened)
+        outputs=dropout_embedded)
 
 print(f"VOCABULARY_SIZE: {VOCABULARY_SIZE}")
 
