@@ -551,7 +551,7 @@ class DenseUnit(Unit,
             print(f"activation for unit: {self.name}_dns_{rn_5} is: {activation_0}")
 
             scale_factor = 50000
-            dense_output =\
+            self.neural_network_layer =\
                 tf.keras.layers.Dense(
                     self.n_neurons,
                     activation_0,
