@@ -1,4 +1,4 @@
-
+e
 # -*- coding: utf-8 -*-
 """phishing-email-detection-gpt2.ipynb
 
@@ -151,19 +151,16 @@ embedded =\
         output_dim=15,
         input_length=max_seq_length,
         mask_zero=True)(tokens)
-
 flattened = tf.keras.layers.Flatten()(embedded)
-soft_scaled = IdentitySoftSign()(flattened)
-
-dropout_embedded = tf.keras.layers.Dropout(0.6)(soft_scaled)
-
-
+dropout_embedded = tf.keras.layers.Dropout(0.6)(flattened)
+dense = ft.keras.layers.Dense(400, activation=None)(dropout_embedded)
+soft_scaled = IdentitySoftSign()(dense)
 
 
 tokenized_embedded_model=\
     tf.keras.Model(
         inputs=inp,
-        outputs=dropout_embedded)
+        outputs=soft_scaled)
 
 print(f"VOCABULARY_SIZE: {VOCABULARY_SIZE}")
 
