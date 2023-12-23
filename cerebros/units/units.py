@@ -555,7 +555,7 @@ class DenseUnit(Unit,
                 tf.keras.layers.Dense(
                     self.n_neurons,
                     activation_0,
-                    name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
+                    name=f"{self.name}_dns_{rn_5}")(unprocessed_merged_nn_layer_input)
 
             # self.neural_network_layer = IdentitySoftSign()(dense_output)
             # scale_up = tf.ones_like(dense_output, dtype=tf.float32) * scale_factor
