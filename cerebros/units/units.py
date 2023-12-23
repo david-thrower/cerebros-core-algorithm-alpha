@@ -10,20 +10,17 @@ from cerebros.denseautomlstructuralcomponent.\
     simple_sigmoid, \
     DenseAutoMlStructuralComponent, DenseLateralConnectivity
 
+
 class IdentitySoftSign(tf.keras.layers.Layer):
     def __init__(self, **kwargs):
         super(IdentitySoftSign, self).__init__(**kwargs)
-
     def call(self, inputs):
         # Compute the maximum value for each sample along the first axis (batch dimension)
-        max_values = tf.reduce_max(inputs, axis=1, keepdims=True)
-
+        max_values = tf.reduce_max(inputs)
         # Apply the softsign activation to the batch
         batch_through_softsign = tf.keras.activations.softsign(inputs)
-
         # Multiply the result by the maximum value calculated earlier
         output = batch_through_softsign * max_values
-
         return output
 
 
