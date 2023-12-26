@@ -78,14 +78,24 @@ OUTPUT_SHAPES = [1]
 # Punitively and returns values in around the same range 
 # as the right tail of the original data, but makes it symetrical  
 class IdentitySoftSign(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
+    def __init__(self,
+                 scale_factor="identity",
+                 **kwargs):
         super(IdentitySoftSign, self).__init__(**kwargs)
+        self.scale_factor = scale_factor
     def call(self, inputs):
         # Compute the maximum value for each sample along the first axis (batch dimension)
-        max_values = tf.reduce_max(inputs)
+        if self.scale_factor == "identity":
+            max_values = tf.reduce_max(inputs)
+        elif isinstance(self.scale_factor,float) or isinstance(self.scale_factor,int):
+            max_values = self.scale_factor
+        else:
+            raise ValueError("Scale factor must be set to "
+                             "either the string 'identity' "
+                            "or an int or float value.")
         # Apply the softsign activation to the batch
         batch_through_softsign = tf.keras.activations.softsign(inputs)
-        # Multiply the result by the maximum value calculated earlier
+        # Multiply the result by the maximum value calculated earlier 
         output = batch_through_softsign * max_values
         return output
 
@@ -154,7 +164,8 @@ embedded =\
 flattened = tf.keras.layers.Flatten()(embedded)
 dropout_embedded = tf.keras.layers.Dropout(0.93)(flattened)
 dense = tf.keras.layers.Dense(max_seq_length, activation=None)(dropout_embedded)
-soft_scaled = IdentitySoftSign()(dense)
+soft_scaled = IdentitySoftSign(
+    scale_factor=VOCABULARY_SIZE)(dense)
 
 
 tokenized_embedded_model=\
