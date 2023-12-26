@@ -152,7 +152,7 @@ embedded =\
         input_length=max_seq_length,
         mask_zero=True)(tokens)
 flattened = tf.keras.layers.Flatten()(embedded)
-dropout_embedded = tf.keras.layers.Dropout(0.6)(flattened)
+dropout_embedded = tf.keras.layers.Dropout(0.75)(flattened)
 dense = tf.keras.layers.Dense(max_seq_length, activation=None)(dropout_embedded)
 soft_scaled = IdentitySoftSign()(dense)
 
