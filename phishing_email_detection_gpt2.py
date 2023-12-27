@@ -79,10 +79,19 @@ OUTPUT_SHAPES = [1]
 # as the right tail of the original data, but makes it symetrical  
 class IdentitySoftSign(tf.keras.layers.Layer):
     def __init__(self,
+                 input_length=900,
+                 input_dropout=0.5,
+                 output_len=900,
+                 output_dropout=0.5,
                  scale_factor="identity",
                  **kwargs):
         super(IdentitySoftSign, self).__init__(**kwargs)
+        self.input_length = input_length
+        self.input_dropout = input_dropout
+        self.output_len = output_len
+        self.output_dropout = output_dropout
         self.scale_factor = scale_factor
+
     def call(self, inputs):
         # Compute the maximum value for each sample along the first axis (batch dimension)
         if self.scale_factor == "identity":
@@ -94,7 +103,11 @@ class IdentitySoftSign(tf.keras.layers.Layer):
                              "either the string 'identity' "
                             "or an int or float value.")
         # Apply the softsign activation to the batch
-        batch_through_softsign = tf.keras.activations.softsign(inputs)
+        dropout_first = tf.keras.layer.Dropout(self.input_dropout)(inputs)
+        dense_inputs = tf.keras.layers.Dense(self.input_length, "relu")
+        dropout_out = tf.keras.layer.Dropout(self.output_dropout)(dense_inputs)
+        dense_outputs = tf.keras.layers.Dense(self.output_len)(dropout_out)
+        batch_through_softsign = tf.keras.activations.softsign(dense_outputs)
         # Multiply the result by the maximum value calculated earlier 
         output = batch_through_softsign * max_values
         return output
