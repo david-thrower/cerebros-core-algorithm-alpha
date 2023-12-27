@@ -77,7 +77,7 @@ OUTPUT_SHAPES = [1]
 # A custom layer for scaling that punished values near 0
 # Punitively and returns values in around the same range 
 # as the right tail of the original data, but makes it symetrical  
-class IdentitySoftSign(tf.keras.layers.Layer):
+class IdentitySoftSignEmbedding(tf.keras.layers.Layer):
     def __init__(self,
                  input_length=900,
                  input_dropout=0.5,
@@ -167,24 +167,29 @@ gp2 = GPT2Layer(max_seq_length=max_seq_length)
 VOCABULARY_SIZE = gp2.tokenizer.vocabulary_size()
 tokens = gp2(inp)
 
-
-embedded =\
-    tf.keras.layers.Embedding(
-        input_dim=VOCABULARY_SIZE,
-        output_dim=15,
+embedded = IdentitySoftSignEmbedding(                 
         input_length=max_seq_length,
-        mask_zero=True)(tokens)
-flattened = tf.keras.layers.Flatten()(embedded)
-dropout_embedded = tf.keras.layers.Dropout(0.3)(flattened)
-dense = tf.keras.layers.Dense(max_seq_length, activation=None)(dropout_embedded)
-soft_scaled = IdentitySoftSign(
-    scale_factor=VOCABULARY_SIZE)(dense)
+        input_dropout=0.5,
+        output_len=900,
+        output_dropout=0.5,
+        scale_factor="identity")(tokens)
+# embedded =\
+#     tf.keras.layers.Embedding(
+#         input_dim=VOCABULARY_SIZE,
+#         output_dim=15,
+#         input_length=max_seq_length,
+#         mask_zero=True)(tokens)
+# flattened = tf.keras.layers.Flatten()(embedded)
+# dropout_embedded = tf.keras.layers.Dropout(0.3)(flattened)
+# dense = tf.keras.layers.Dense(max_seq_length, activation=None)(dropout_embedded)
+# soft_scaled = IdentitySoftSign(
+#     scale_factor=VOCABULARY_SIZE)(dense)
 
 
 tokenized_embedded_model=\
     tf.keras.Model(
         inputs=inp,
-        outputs=soft_scaled)
+        outputs=embedded)
 
 print(f"VOCABULARY_SIZE: {VOCABULARY_SIZE}")
 
