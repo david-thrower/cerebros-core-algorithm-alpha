@@ -85,7 +85,7 @@ class IdentitySoftSignEmbedding(tf.keras.layers.Layer):
                  output_dropout=0.5,
                  scale_factor="identity",
                  **kwargs):
-        super(IdentitySoftSign, self).__init__(**kwargs)
+        super(IdentitySoftSignEmbedding, self).__init__(**kwargs)
         self.input_length = input_length
         self.input_dropout = input_dropout
         self.output_len = output_len
