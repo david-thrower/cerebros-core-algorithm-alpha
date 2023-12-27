@@ -100,22 +100,22 @@ class IdentitySoftSignEmbedding(tf.keras.layers.Layer):
                     inputs,
                     axis=-1,
                     keepdims=False),
-                tf.float32) 
-        elif isinstance(self.scale_factor,float) or isinstance(self.scale_factor,int):
-            max_values = self.scale_factor
+                tf.float32)
+        elif isinstance(self.scale_factor, (int, float)):
+            max_values = tf.constant([self.scale_factor] * inputs.shape[0], dtype=tf.float32)
         else:
             raise ValueError("Scale factor must be set to "
                              "either the string 'identity' "
-                            "or an int or float value.")
+                             "or an int or float value.")
+
         # Apply the softsign activation to the batch
-        inp_0 = tf.cast(inputs, 
-                        tf.float32)
-        dropout_first = tf.keras.layers.Dropout(self.input_dropout)(inp_0)
-        dense_inputs = tf.keras.layers.Dense(self.input_length, "relu")(dropout_first)
+        dropout_first = tf.keras.layers.Dropout(self.input_dropout)(inputs)
+        dense_inputs = tf.keras.layers.Dense(self.input_length)(dropout_first)
         dropout_out = tf.keras.layers.Dropout(self.output_dropout)(dense_inputs)
         dense_outputs = tf.keras.layers.Dense(self.output_len)(dropout_out)
         batch_through_softsign = tf.keras.activations.softsign(dense_outputs)
-        # Multiply the result by the maximum value calculated earlier 
+
+        # Multiply the result by the maximum value calculated earlier
         output = batch_through_softsign * max_values
         return output
 
