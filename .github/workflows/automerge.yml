@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "143-add-layernorm-to-dropout-embed-rand-activation" ]
+    branches: [ "main", "144-replace-embedding-with-identity-soft-sign" ]
 
 permissions:
   contents: read
