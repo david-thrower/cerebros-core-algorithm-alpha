@@ -91,26 +91,36 @@ class IdentitySoftSignEmbedding(tf.keras.layers.Layer):
         self.output_len = output_len
         self.output_dropout = output_dropout
         self.scale_factor = scale_factor
+        self.initialized = False
 
-    def call(self, inputs):
+    def call(self, inputs, initial_weights=None):
+        if not self.initialized:
+            if initial_weights is None:
+                raise ValueError("Initial weights must be provided to initialize the layer.")
+            else:
+                self.set_weights(initial_weights)
+                self.initialized = True
+
+        # Cast the input tensor to tf.float32
+        float_inputs = tf.cast(inputs, tf.float32)
+
         # Compute the maximum value for each sample along the first axis (batch dimension)
         if self.scale_factor == "identity":
             max_values = tf.cast(
                 tf.math.reduce_max(
-                    inputs,
+                    float_inputs,
                     axis=-1,
                     keepdims=False),
                 tf.float32)
         elif isinstance(self.scale_factor, (int, float)):
-            max_values = tf.constant([self.scale_factor] * inputs.shape[0], dtype=tf.float32)
+            max_values = tf.constant([self.scale_factor] * float_inputs.shape[0], dtype=tf.float32)
         else:
             raise ValueError("Scale factor must be set to "
                              "either the string 'identity' "
                              "or an int or float value.")
 
         # Apply the softsign activation to the batch
-        inp_as_float = tf.cast(inputs, tf.float32)
-        dropout_first = tf.keras.layers.Dropout(self.input_dropout)(inp_as_float)
+        dropout_first = tf.keras.layers.Dropout(self.input_dropout)(float_inputs)
         dense_inputs = tf.keras.layers.Dense(self.input_length)(dropout_first)
         dropout_out = tf.keras.layers.Dropout(self.output_dropout)(dense_inputs)
         dense_outputs = tf.keras.layers.Dense(self.output_len)(dropout_out)
@@ -119,6 +129,17 @@ class IdentitySoftSignEmbedding(tf.keras.layers.Layer):
         # Multiply the result by the maximum value calculated earlier
         output = batch_through_softsign * max_values
         return output
+
+    def build(self, initial_shape):
+        super(IdentitySoftSignEmbedding, self).build(initial_shape)
+        self.initialized = True
+
+    def set_weights(self, weights):
+        assert len(weights) == self.count_weights(), "Invalid weight count."
+        super(IdentitySoftSignEmbedding, self).set_weights(weights)
+
+    def count_weights(self):
+        return sum(self.unit_for_size(u).count_weights() for u in self._units)
 
 
 """### A custom GPT2 encoder layer for text tokenization"""
