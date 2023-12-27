@@ -315,6 +315,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                  base_models=[''],
                  train_data_dtype=tf.float32,
                  chart_network_graph: bool=False,
+                 bnorm_or_dropout="bnorm",
                  *args,
                  **kwargs):
 
@@ -375,6 +376,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.best_model_path = ""
         self.train_data_dtype = train_data_dtype
         self.chart_network_graph = chart_network_graph
+        self.bnorm_or_dropout = bnorm_or_dropout
         # Can be varied throughout the serch session;
         # must be controlled internally
         DenseAutoMlStructuralComponent.__init__(
