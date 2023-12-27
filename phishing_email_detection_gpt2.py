@@ -103,9 +103,9 @@ class IdentitySoftSign(tf.keras.layers.Layer):
                              "either the string 'identity' "
                             "or an int or float value.")
         # Apply the softsign activation to the batch
-        dropout_first = tf.keras.layer.Dropout(self.input_dropout)(inputs)
+        dropout_first = tf.keras.layers.Dropout(self.input_dropout)(inputs)
         dense_inputs = tf.keras.layers.Dense(self.input_length, "relu")
-        dropout_out = tf.keras.layer.Dropout(self.output_dropout)(dense_inputs)
+        dropout_out = tf.keras.layers.Dropout(self.output_dropout)(dense_inputs)
         dense_outputs = tf.keras.layers.Dense(self.output_len)(dropout_out)
         batch_through_softsign = tf.keras.activations.softsign(dense_outputs)
         # Multiply the result by the maximum value calculated earlier 
