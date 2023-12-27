@@ -113,15 +113,16 @@ class IdentitySoftSignEmbedding(tf.keras.layers.Layer):
                     keepdims=False),
                 tf.float32)
         elif isinstance(self.scale_factor, (int, float)):
-            max_values = tf.constant([self.scale_factor] * float_inputs.shape[0], dtype=tf.float32)
+            max_values = tf.constant([self.scale_factor] * float_inputs.shape[0], 
+                                     dtype=tf.float32)
         else:
             raise ValueError("Scale factor must be set to "
                              "either the string 'identity' "
                              "or an int or float value.")
 
         # Apply the softsign activation to the batch
-        dropout_first = tf.keras.layers.Dropout(self.input_dropout)(float_inputs)
-        dense_inputs = tf.keras.layers.Dense(self.input_length)(dropout_first)
+        # dropout_first = tf.keras.layers.Dropout(self.input_dropout)()
+        dense_inputs = tf.keras.layers.Dense(self.input_length)(float_inputs)
         dropout_out = tf.keras.layers.Dropout(self.output_dropout)(dense_inputs)
         dense_outputs = tf.keras.layers.Dense(self.output_len)(dropout_out)
         batch_through_softsign = tf.keras.activations.softsign(dense_outputs)
@@ -195,6 +196,9 @@ inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
 gp2 = GPT2Layer(max_seq_length=max_seq_length)
 VOCABULARY_SIZE = gp2.tokenizer.vocabulary_size()
 tokens = gp2(inp)
+
+
+
 
 embedded = IdentitySoftSignEmbedding(                 
         input_length=max_seq_length,
