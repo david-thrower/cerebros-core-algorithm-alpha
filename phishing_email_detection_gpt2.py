@@ -95,7 +95,12 @@ class IdentitySoftSignEmbedding(tf.keras.layers.Layer):
     def call(self, inputs):
         # Compute the maximum value for each sample along the first axis (batch dimension)
         if self.scale_factor == "identity":
-            max_values = tf.constant(tf.reduce_max(inputs).numpy(), dtype=tf.float32)
+            max_values = tf.cast(
+                tf.math.reduce_max(
+                    inputs,
+                    axis=-1,
+                    keepdims=False),
+                tf.float32) 
         elif isinstance(self.scale_factor,float) or isinstance(self.scale_factor,int):
             max_values = self.scale_factor
         else:
