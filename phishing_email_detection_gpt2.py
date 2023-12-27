@@ -156,7 +156,7 @@ print(f"VOCABULARY_SIZE: {VOCABULARY_SIZE}")
 # Best so far: original params
 
 
-activation = 'gelu'
+activation = "softsign" # 'gelu'
 predecessor_level_connection_affinity_factor_first = 49.9999
 predecessor_level_connection_affinity_factor_main = 0.31456
 max_consecutive_lateral_connections = 22
