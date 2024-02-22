@@ -76,77 +76,115 @@ train_labels = [tf.constant(y_train)]
 INPUT_SHAPES  = [()]
 OUTPUT_SHAPES = [1]
 
-"""### A custom GPT2 encoder layer for text tokenization"""
+# """### A custom GPT2 encoder layer for text tokenization"""
 
-class GPT2Layer(tf.keras.layers.Layer):
+# class GPT2Layer(tf.keras.layers.Layer):
 
-    def __init__(self, max_seq_length, **kwargs):
-        #
-        super(GPT2Layer, self).__init__(**kwargs)
-        #
-        # Load the GPT2 tokenizer, preprocessor and model
-        self.tokenizer = GPT2Tokenizer.from_preset("gpt2_extra_large_en") # "gpt2_base_en"
-        self.preprocessor = GPT2Preprocessor(self.tokenizer,
-                                             sequence_length=max_seq_length)
-        # self.encoder   = GPT2Backbone.from_preset("gpt2_base_en")
-        #
-        # Set whether the GPT2 model's layers are trainable
-        # self.encoder.trainable = False
-        # for layer in self.encoder.layers:
-        #     layer.trainable = False
-        #
-        # self.encoder.layers[-2].trainable = True
-        #
-        # Set the maximum sequence length for tokenization
-        self.max_seq_length = max_seq_length
+#     def __init__(self, max_seq_length, **kwargs):
+#         #
+#         super(GPT2Layer, self).__init__(**kwargs)
+#         #
+#         # Load the GPT2 tokenizer, preprocessor and model
+#         self.tokenizer = GPT2Tokenizer.from_preset("gpt2_extra_large_en") # "gpt2_base_en"
+#         self.preprocessor = GPT2Preprocessor(self.tokenizer,
+#                                              sequence_length=max_seq_length)
+#         # self.encoder   = GPT2Backbone.from_preset("gpt2_base_en")
+#         #
+#         # Set whether the GPT2 model's layers are trainable
+#         # self.encoder.trainable = False
+#         # for layer in self.encoder.layers:
+#         #     layer.trainable = False
+#         #
+#         # self.encoder.layers[-2].trainable = True
+#         #
+#         # Set the maximum sequence length for tokenization
+#         self.max_seq_length = max_seq_length
 
-    def call(self, inputs):
-        #
-        # Output the GPT2 embedding
-        prep = self.preprocessor([inputs])
-        # embedding  = self.encoder(prep)
-        # avg_pool = tf.reduce_mean(embedding, axis=1)
-        #
-        return prep['token_ids']
+#     def call(self, inputs):
+#         #
+#         # Output the GPT2 embedding
+#         prep = self.preprocessor([inputs])
+#         # embedding  = self.encoder(prep)
+#         # avg_pool = tf.reduce_mean(embedding, axis=1)
+#         #
+#         return prep['token_ids']
 
-    def get_config(self):
-        #
-        config = super(GPT2Layer, self).get_config()
-        config.update({'max_seq_length': self.max_seq_length})
-        #
-        return config
+#     def get_config(self):
+#         #
+#         config = super(GPT2Layer, self).get_config()
+#         config.update({'max_seq_length': self.max_seq_length})
+#         #
+#         return config
 
-    @classmethod
-    def from_config(cls, config):
-        #
-        return cls(max_seq_length=config['max_seq_length'])
+#     @classmethod
+#     def from_config(cls, config):
+#         #
+#         return cls(max_seq_length=config['max_seq_length'])
 
 # GPT2 configurables
 
 max_seq_length = 900
 
-inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
-gp2 = GPT2Layer(max_seq_length=max_seq_length)
-VOCABULARY_SIZE = gp2.tokenizer.vocabulary_size()
-tokens = gp2(inp)
+# inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
+# gp2 = GPT2Layer(max_seq_length=max_seq_length)
+# VOCABULARY_SIZE = gp2.tokenizer.vocabulary_size()
+# tokens = gp2(inp)
 
 
-embedded =\
-    tf.keras.layers.Embedding(
-        input_dim=VOCABULARY_SIZE,
-        output_dim=15,
-        input_length=max_seq_length,
-        mask_zero=True)(tokens)
-dropout_embedded = tf.keras.layers.Dropout(0.6)(embedded) # Best yet, 0.5
-flattened = tf.keras.layers.Flatten()(dropout_embedded)
+# embedded =\
+#     tf.keras.layers.Embedding(
+#         input_dim=VOCABULARY_SIZE,
+#         output_dim=15,
+#         input_length=max_seq_length,
+#         mask_zero=True)(tokens)
+# dropout_embedded = tf.keras.layers.Dropout(0.6)(embedded) # Best yet, 0.5
+# flattened = tf.keras.layers.Flatten()(dropout_embedded)
 
-tokenized_embedded_model=\
-    tf.keras.Model(
-        inputs=inp,
-        outputs=flattened)
+# tokenized_embedded_model=\
+#     tf.keras.Model(
+#         inputs=inp,
+#         outputs=flattened)
 
+VOCABULARY_SIZE = 100276
 print(f"VOCABULARY_SIZE: {VOCABULARY_SIZE}")
 
+class TextEncoderLayer(tf.keras.layers.Layer):
+    def __init__(self,
+                 # tokenizer,
+                 sequence_length = 900):
+        super(TextEncoderLayer, self).__init__()
+        tokenizer = GPT4Tokenizer()
+        self.tokenizer = tokenizer
+        self.sequence_length = sequence_length
+
+    def call(self, text):
+        _tokens = []
+        for text_0 in text:
+            tokens = self.tokenizer.encode(str(text_0), allowed_special="all")
+
+            _tokens.append(tokens)
+        # ragged_tokens = tf.ragged.constant(padded_tokens)
+        # token_tensor = tf.constant(_tokens)
+        padded_tokens =\
+                tf.keras.preprocessing.sequence.pad_sequences(
+                 _tokens, maxlen=self.sequence_length, padding='post')
+        
+        return tf.constant(padded_tokens) # ragged_tokens
+
+# GPT 4 tokenization + embedding
+inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
+tokens_1 = TextEncoderLayer()(inp)
+embedded = tf.keras.layers.Embedding(
+    input_dim=VOCABULARY_SIZE,
+    output_dim=18,
+    input_length=max_seq_length)(tokens_1)
+flat = tf.keras.layers.Flatten()(embedded)
+dropout_flat = tf.keras.layers.Dropout(0.6)(flat)
+
+tokenized_embedded_model =\
+        tf.keras.Model(
+            inputs=inp,
+            outputs=dropout_flat)
 
 
 """### Cerebros search for the best model"""
