@@ -30,6 +30,8 @@ from cerebros.units.units import DenseUnit
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 from ast import literal_eval
+from minbpe import GPT4Tokenizer
+
 
 #
 # Load the email data
