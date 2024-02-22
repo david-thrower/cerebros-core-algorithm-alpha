@@ -123,7 +123,7 @@ OUTPUT_SHAPES = [1]
 
 # GPT2 configurables
 
-max_seq_length = 900
+max_seq_length = 2000
 
 # inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
 # gp2 = GPT2Layer(max_seq_length=max_seq_length)
@@ -179,7 +179,7 @@ embedded = tf.keras.layers.Embedding(
     output_dim=18,
     input_length=max_seq_length)(tokens_1)
 flat = tf.keras.layers.Flatten()(embedded)
-dropout_flat = tf.keras.layers.Dropout(0.6)(flat)
+dropout_flat = tf.keras.layers.Dropout(0.75)(flat)
 
 tokenized_embedded_model =\
         tf.keras.Model(
