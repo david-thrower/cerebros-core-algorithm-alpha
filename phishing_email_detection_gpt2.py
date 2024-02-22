@@ -159,7 +159,8 @@ class TextEncoderLayer(tf.keras.layers.Layer):
 
     def call(self, text):
         _tokens = []
-        for text_0 in text:
+        for i in range(len(text.shape[0])):
+            text_0 = text[i]
             tokens = self.tokenizer.encode(str(text_0), allowed_special="all")
 
             _tokens.append(tokens)
