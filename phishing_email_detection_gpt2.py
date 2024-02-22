@@ -285,8 +285,10 @@ print(f'binary accuracy')
 # Load the best model (taking into account that it has a custom layer)
 #
 best_model_found =\
-tf.keras.models.load_model(cerebros_automl.best_model_path,\
-custom_objects={'GPT2Layer': GPT2Layer(max_seq_length)})
+        cerebros_automl.get_best_model()
+                           
+#                            best_model_path,\
+# custom_objects={'GPT2Layer': GPT2Layer(max_seq_length)})
 
 print('Evaluating on the test dataset')
 best_model_found.evaluate(X_test, y_test)
