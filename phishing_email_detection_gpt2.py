@@ -159,11 +159,12 @@ class TextEncoderLayer(tf.keras.layers.Layer):
 
     def call(self, text):
         _tokens = []
-        for i in range(len(text.shape[0])):
-            text_0 = text[i]
-            tokens = self.tokenizer.encode(str(text_0), allowed_special="all")
+        # for i in range(len(text.shape[0])):
+        #    text_0 = text[i]
+        
+        _tokens = tf.map_fn(self.tokenizer.encode, text)
 
-            _tokens.append(tokens)
+        # _tokens.append(tokens)
         # ragged_tokens = tf.ragged.constant(padded_tokens)
         # token_tensor = tf.constant(_tokens)
         padded_tokens =\
