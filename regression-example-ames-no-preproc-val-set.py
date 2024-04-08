@@ -141,7 +141,7 @@ val_tensor_x = tf.constant(val_df.values)
 val_x = [val_tensor_x]
 
 
-val_labels = [val_labels_pd.values]
+val_labels = [tf.constant(val_labels_pd.values.astype(float))]
 print(f"Shape of val labels: {val_labels_pd.shape}")
 
 # Params for a training function (Approximately the oprma
