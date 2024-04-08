@@ -122,14 +122,14 @@ train_data_np = train_df.values
 print(f"Shape of train data: {train_data_np.shape}")
 
 tensor_x =\
-    tf.constant(train_df.values)
+    tf.constant(train_df.values, dtype=tf.float32)
 
 
 training_x = [tensor_x]
 
 INPUT_SHAPES = [training_x[i].shape[1] for i in np.arange(len(training_x))]
 
-train_labels = [tf.constant(train_labels_pd.values.astype(float))]
+train_labels = [tf.constant(train_labels_pd.values.astype(float), dtype=tf.float32)]
 print(f"Shape of train labels: {train_labels_pd.shape}")
 
 OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
@@ -137,11 +137,11 @@ OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
 ## Val set:
 
 print(f"Shape of val data: {val_df.shape}")
-val_tensor_x = tf.constant(val_df.values)
+val_tensor_x = tf.constant(val_df.values, dtype=tf.float32)
 val_x = [val_tensor_x]
 
 
-val_labels = [tf.constant(val_labels_pd.values.astype(float))]
+val_labels = [tf.constant(val_labels_pd.values.astype(float), dtype=tf.float32)]
 print(f"Shape of val labels: {val_labels_pd.shape}")
 
 # Params for a training function (Approximately the oprma
