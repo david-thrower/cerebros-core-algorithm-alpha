@@ -100,7 +100,7 @@ class InputUnit(Unit):
 
     def materialize(self):
 
-        self.raw_input = tf.keras.layers.InputLayer((self.input_shape),
+        self.raw_input = tf.keras.layers.Input(int(self.input_shape),
                                                name=f"{self.name}_inp",
                                                dtype=self.train_data_dtype)
         print(f"$$$$$$>>>>> Base model: {self.base_models[self.unit_id]}")
