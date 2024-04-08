@@ -43,7 +43,7 @@ training_x = [tensor_x]
 
 INPUT_SHAPES = [training_x[i].shape[1] for i in np.arange(len(training_x))]
 
-train_labels = [label.values]
+train_labels = [tf.constant(label.values.astype(float))]
 
 OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
 
