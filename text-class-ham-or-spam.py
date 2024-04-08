@@ -68,7 +68,7 @@ labels = raw_text.pop(prediction_target_column)
 labels = labels.values
 data = raw_text.values
 
-labels_tensor = tf.constant(labels, dtype=tf.int8)
+labels_tensor = tf.constant(labels, dtype=tf.float32)
 data_tensor = tf.constant(data, dtype=tf.string)
 
 TIME = pendulum.now(tz='America/New_York').__str__()[:16]\
