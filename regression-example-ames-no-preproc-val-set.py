@@ -129,7 +129,7 @@ training_x = [tensor_x]
 
 INPUT_SHAPES = [training_x[i].shape[1] for i in np.arange(len(training_x))]
 
-train_labels = [train_labels_pd.values]
+train_labels = [tf.constant(train_labels_pd.values.astype(float))]
 print(f"Shape of train labels: {train_labels_pd.shape}")
 
 OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
