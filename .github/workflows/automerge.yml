@@ -13,6 +13,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: python:12
     steps:
     - uses: actions/checkout@v3
     - name: Test Cerebros
