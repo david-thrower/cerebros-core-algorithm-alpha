@@ -51,29 +51,46 @@ maximum_neurons_per_unit = 5  # [2,20]
 # encoder_inputs = preprocessor(text_input)
 
 ###
-preprocessor = hub.load(
-    "https://www.kaggle.com/models/tensorflow/bert/TensorFlow2/en-uncased-preprocess/3")
-inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
-text_inputs = [inp]
-tokenize = hub.KerasLayer(preprocessor.tokenize)
-tokenized_inputs = [tokenize(segment) for segment in text_inputs]
+# preprocessor = hub.load(
+#     "https://www.kaggle.com/models/tensorflow/bert/TensorFlow2/en-uncased-preprocess/3")
+# inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
+# text_inputs = [inp]
+# tokenize = hub.KerasLayer(preprocessor.tokenize)
+# tokenized_inputs = [tokenize(segment) for segment in text_inputs]
 
-seq_length = 128  # Your choice here.
-bert_pack_inputs = hub.KerasLayer(
-    preprocessor.bert_pack_inputs,
-    arguments=dict(seq_length=seq_length))  # Optional argument.
-encoder_inputs = bert_pack_inputs(tokenized_inputs)
+# seq_length = 128  # Your choice here.
+# bert_pack_inputs = hub.KerasLayer(
+#     preprocessor.bert_pack_inputs,
+#     arguments=dict(seq_length=seq_length))  # Optional argument.
+# encoder_inputs = bert_pack_inputs(tokenized_inputs)
+# ###
+
+
+
+# encoder = hub.KerasLayer(
+#     "https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/4",
+#     trainable=True)
+# outputs = encoder(encoder_inputs)
+# pooled_output = outputs["pooled_output"]      # [batch_size, 768].
+# sequence_output = outputs["sequence_output"]  # [batch_size, seq_length, 768].
+# embedding_model = tf.keras.Model(inp, pooled_output)
+
+
 ###
-
-
-
+text_input = tf.keras.layers.Input(shape=(), dtype=tf.string)
+preprocessor = hub.KerasLayer(
+    "https://kaggle.com/models/tensorflow/bert/TensorFlow2/en-uncased-preprocess/3")
+encoder_inputs = preprocessor(text_input)
 encoder = hub.KerasLayer(
-    "https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/4",
+    "https://www.kaggle.com/models/tensorflow/bert/TensorFlow2/bert-en-uncased-l-10-h-128-a-2/2",
     trainable=True)
 outputs = encoder(encoder_inputs)
-pooled_output = outputs["pooled_output"]      # [batch_size, 768].
-sequence_output = outputs["sequence_output"]  # [batch_size, seq_length, 768].
-embedding_model = tf.keras.Model(inp, pooled_output)
+pooled_output = outputs["pooled_output"]      # [batch_size, 128].
+sequence_output = outputs["sequence_output"]  # [batch_size, seq_length, 128].
+
+embedding_model = tf.keras.Model(text_input, pooled_output)
+###
+
 
 ## Load the Data set
 raw_text = pd.read_csv(data_file, dtype='object')
