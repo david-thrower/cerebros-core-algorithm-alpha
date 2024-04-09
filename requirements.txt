@@ -1,6 +1,6 @@
 jax==0.4.26
 jaxlib==0.4.26
-pendulum==2.1.2
+pendulum==3.0.0
 tensorflow==2.16.1
 numpy==1.26.4
 pandas==2.2.1
