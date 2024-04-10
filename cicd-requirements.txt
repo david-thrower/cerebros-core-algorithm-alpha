@@ -1,5 +1,5 @@
 matplotlib==3.8.4
-tensorflow-text==2.16.1
+tensorflow-text==2.15.1
 keras-nlp==0.9.1
 scikit-learn==1.4.1.post1
 tensorflow-hub==0.16.1
