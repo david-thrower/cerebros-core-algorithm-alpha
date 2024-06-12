@@ -10,6 +10,31 @@ from cerebros.denseautomlstructuralcomponent.\
     simple_sigmoid, \
     DenseAutoMlStructuralComponent, DenseLateralConnectivity
 
+class TernaryDenseLayer(tf.keras.layers.Layer):
+    def __init__(self, units, input_dim, **kwargs):
+        super(TernaryDenseLayer, self).__init__(**kwargs)
+        self.units = units
+        self.input_dim = input_dim
+        self.ternary_weights = self.add_weight(name='ternary_weights', 
+                                                shape=(input_dim, units),
+                                                initializer='glorot_uniform',
+                                                trainable=True)
+
+    def build(self, input_shape):
+        # Create a trainable weight variable for the bias
+        self.bias = self.add_weight(name='bias', 
+                                    shape=(self.units,),
+                                    initializer='zeros',
+                                    trainable=True)
+
+    def call(self, inputs):
+        # Apply ternary weights to the input vector
+        ternary_inputs = tf.cast(tf.sign(inputs), tf.float32) * tf.abs(inputs)
+        output = tf.matmul(ternary_inputs, self.ternary_weights)
+        # Add bias and apply activation function
+        output = tf.nn.bias_add(output, self.bias)
+        output = tf.nn.relu(output)
+        return output
 
 class Unit(NeuralNetworkFutureComponent):
     def __init__(self,
@@ -527,7 +552,7 @@ class DenseUnit(Unit,
             rn_5 = int(np.round(np.random.random(1)[0]*10**12))
             rn_5 = ''
             self.neural_network_layer =\
-                tf.keras.layers.Dense(
+                TernaryDenseLayer(
                     self.n_neurons,
                     self.activation,
                     name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
