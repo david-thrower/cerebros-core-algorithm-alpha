@@ -572,7 +572,9 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
 
     def get_best_model(self):
         best_model_path = self.best_model_path
-        best_model = clone_model(tf.keras.models.load_model(best_model_path))
+        best_model =\
+            tensorflow.keras.models.clone_model(
+                tf.keras.models.load_model(best_model_path))
         # best_model = tf.keras.models.load_model(self.best_model_path)
         return best_model
 
