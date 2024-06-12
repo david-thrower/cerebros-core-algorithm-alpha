@@ -554,7 +554,7 @@ class DenseUnit(Unit,
             self.neural_network_layer =\
                 TernaryDenseLayer(
                     units=self.n_neurons,
-                    input_dim=5,
+                    input_dim=merged_neural_network_layer_input.shape[-1],
                     # activation=self.activation,
                     name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
             self.materialized = True
