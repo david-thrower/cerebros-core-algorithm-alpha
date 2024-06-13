@@ -29,7 +29,7 @@ class TernaryDenseLayer(tf.keras.layers.Layer):
 
 # Utility layer for encoding for GPT
 class GPT2Layer(tf.keras.layers.Layer):
-
+    """### A custom GPT2 encoder layer for text embedding"""
     def __init__(self, max_seq_length, **kwargs):
         #
         super(GPT2Layer, self).__init__(**kwargs)
