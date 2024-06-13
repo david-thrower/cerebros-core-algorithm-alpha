@@ -10,31 +10,7 @@ from cerebros.denseautomlstructuralcomponent.\
     simple_sigmoid, \
     DenseAutoMlStructuralComponent, DenseLateralConnectivity
 
-class TernaryDenseLayer(tf.keras.layers.Layer):
-    def __init__(self, units, input_dim, **kwargs):
-        super(TernaryDenseLayer, self).__init__(**kwargs)
-        self.units = units
-        self.input_dim = input_dim
-        self.ternary_weights = self.add_weight(name='ternary_weights', 
-                                                shape=(input_dim, units),
-                                                initializer='glorot_uniform',
-                                                trainable=True)
-
-    def build(self, input_shape):
-        # Create a trainable weight variable for the bias
-        self.bias = self.add_weight(name='bias', 
-                                    shape=(self.units,),
-                                    initializer='zeros',
-                                    trainable=True)
-
-    def call(self, inputs):
-        # Apply ternary weights to the input vector
-        ternary_inputs = tf.cast(tf.sign(inputs), tf.float32) * tf.abs(inputs)
-        output = tf.matmul(ternary_inputs, self.ternary_weights)
-        # Add bias and apply activation function
-        output = tf.nn.bias_add(output, self.bias)
-        output = tf.nn.relu(output)
-        return output
+from custom.custom import TernaryDenseLayer
 
 class Unit(NeuralNetworkFutureComponent):
     def __init__(self,
