@@ -1,4 +1,6 @@
 
+import tensorflow as tf
+
 # Custom keras layer, analogue of Dense that does 
 # ternary mathematical operations 
 class TernaryDenseLayer(tf.keras.layers.Layer):
