@@ -510,29 +510,29 @@ class DenseUnit(Unit,
                 raise ValueError("The only supported arguments for "
                                  "merging_strategy are 'concatenate' and add")
 
-            if self.bnorm_or_dropout == "bnorm":
-                # rn_3 = int(np.round(np.random.random(1)[0]*10**12))
-                rn_3 = ''
-                merged_neural_network_layer_input = tf.keras.layers.BatchNormalization(
-                    name=f"{self.name}_btn_{rn_3}")(unprocessed_merged_nn_layer_input)
-            elif self.bnorm_or_dropout == 'dropout':
-                # rn_4 = int(np.round(np.random.random(1)[0]*10**12))
-                rn_4 = ''
-                merged_neural_network_layer_input =\
-                    tf.keras.layers.Dropout(
-                        dropout_rate=self.dropout_rate,
-                        name=f"{self.name}_drp_{rn_4}")(unprocessed_merged_nn_layer_input)
-            else:
-                raise ValueError("The only arguments supported by the parameter "
-                                 "'bnorm_or_dropout' are 'bnorm' and 'dropout'")
+            # if self.bnorm_or_dropout == "bnorm":
+            #     # rn_3 = int(np.round(np.random.random(1)[0]*10**12))
+            #     rn_3 = ''
+            #     merged_neural_network_layer_input = tf.keras.layers.BatchNormalization(
+            #         name=f"{self.name}_btn_{rn_3}")(unprocessed_merged_nn_layer_input)
+            # elif self.bnorm_or_dropout == 'dropout':
+            #     # rn_4 = int(np.round(np.random.random(1)[0]*10**12))
+            #     rn_4 = ''
+            #     merged_neural_network_layer_input =\
+            #         tf.keras.layers.Dropout(
+            #             dropout_rate=self.dropout_rate,
+            #             name=f"{self.name}_drp_{rn_4}")(unprocessed_merged_nn_layer_input)
+            # else:
+            #     raise ValueError("The only arguments supported by the parameter "
+            #                      "'bnorm_or_dropout' are 'bnorm' and 'dropout'")
             rn_5 = int(np.round(np.random.random(1)[0]*10**12))
             rn_5 = ''
             self.neural_network_layer =\
                 TernaryDenseLayer(
                     units=self.n_neurons,
-                    input_dim=merged_neural_network_layer_input.shape[-1],
+                    input_dim=unprocessed_merged_nn_layer_input.shape[-1],
                     # activation=self.activation,
-                    name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
+                    name=f"{self.name}_dns_{rn_5}")(unprocessed_merged_nn_layer_input)
             self.materialized = True
         # refactor the lagic below and this class is complete
         # self.dense_unit_module_id = dense_unit_module_id
