@@ -527,12 +527,14 @@ class DenseUnit(Unit,
             #                      "'bnorm_or_dropout' are 'bnorm' and 'dropout'")
             rn_5 = int(np.round(np.random.random(1)[0]*10**12))
             rn_5 = ''
+            lnorm_merged = tf.keras.layers.LayerNormalization()(unprocessed_merged_nn_layer_input)
+
             self.neural_network_layer =\
                 TernaryDenseLayer(
                     units=self.n_neurons,
-                    input_dim=unprocessed_merged_nn_layer_input.shape[-1],
+                    input_dim=lnorm_merged.shape[-1],
                     # activation=self.activation,
-                    name=f"{self.name}_dns_{rn_5}")(unprocessed_merged_nn_layer_input)
+                    name=f"{self.name}_dns_{rn_5}")(lnorm_merged)
             self.materialized = True
         # refactor the lagic below and this class is complete
         # self.dense_unit_module_id = dense_unit_module_id
