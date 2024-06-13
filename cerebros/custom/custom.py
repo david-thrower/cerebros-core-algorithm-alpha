@@ -1,5 +1,6 @@
 
 import tensorflow as tf
+from keras_nlp.models import GPT2Tokenizer, GPT2Preprocessor, GPT2Backbone
 
 # Custom keras layer, analogue of Dense that does 
 # ternary mathematical operations 
