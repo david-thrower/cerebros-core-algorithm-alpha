@@ -29,7 +29,7 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 from ast import literal_eval
 
-from custom.custom import GPT2Layer
+from cerebros.custom.custom import GPT2Layer
 
 #
 # Load the email data
