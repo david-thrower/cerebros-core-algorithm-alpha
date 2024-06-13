@@ -10,7 +10,7 @@ from cerebros.denseautomlstructuralcomponent.\
     simple_sigmoid, \
     DenseAutoMlStructuralComponent, DenseLateralConnectivity
 
-from custom.custom import TernaryDenseLayer
+from cerebros.custom.custom import TernaryDenseLayer
 
 class Unit(NeuralNetworkFutureComponent):
     def __init__(self,
