@@ -6,7 +6,8 @@ from cerebros.denseautomlstructuralcomponent.\
     dense_automl_structural_component \
     import DenseAutoMlStructuralComponent, DenseLateralConnectivity, \
     zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
-from cerebros.units.units import Unit, InputUnit, FinalDenseUnit, TernaryDenseLayer
+from cerebros.units.units import Unit, InputUnit, FinalDenseUnit
+from custom.custom import TernaryDenseLayer, GPT2Layer
 from cerebros.neuralnetworkfuture.neural_network_future \
     import NeuralNetworkFuture, RealNeuronNeuralNetworkFuture
 # from cmdutil.cmdutil import run_command
@@ -579,7 +580,8 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
             tf.keras.models.load_model(
                 self.best_model_path,
                 custom_objects=\
-                    {"TernaryDenseLayer": TernaryDenseLayer})
+                    {"TernaryDenseLayer": TernaryDenseLayer,
+                     "GPT2Layer": GPT2Layer})
         return best_model
 
 # ->
