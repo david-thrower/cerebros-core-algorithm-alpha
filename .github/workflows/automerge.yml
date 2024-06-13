@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "151-try-using-ternary-dense" ]
+    branches: [ "main", "152-from-151-ternary-dense-try-different-normalization-to-optimize-outcome" ]
 
 permissions:
   contents: read
