@@ -13,7 +13,6 @@ Initialization
 
 import tensorflow as tf
 import tensorflow_text
-from keras_nlp.models import GPT2Tokenizer, GPT2Preprocessor, GPT2Backbone
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from tensorflow.keras.utils import to_categorical
