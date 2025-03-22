@@ -135,10 +135,10 @@ input_layer = Input(shape=(), dtype=tf.string)
 gpt2_layer = GPT2Layer(max_seq_length)(input_layer)
 #output = Flatten()(gpt2_layer)
 binary_output = tf.keras.layers.Dense(1, activation='sigmoid')(gpt2_layer)
+
 gpt_baseline_model = Model(inputs=input_layer, outputs=binary_output)
 
-## Un - string out this
-"""
+
 gpt_baseline_model.compile(
     optimizer=Adam(learning_rate=1e-4),  # Small LR since we're fine-tuning GPT
     loss='binary_crossentropy',
@@ -181,7 +181,6 @@ gpt_time_on_one_model_min =  (gpt_t1 - gpt_t1) / 60
 hy_df = pd.DataFrame(history.history)
 print(hy_df)
 
-"""
 
 ### Cerebros model:
 
@@ -321,11 +320,11 @@ cerebros_t0 = time.time()
 result = cerebros_automl.run_random_search()
 cerebros_t1 = time.time()
 cerebros_time_all_models_min = (cerebros_t1 - cerebros_t0) / 60
-cerebros_time_per_model = cerebros_time_all_models_min / (moities_to_try  * tries_per_moity)
+models_tried = moities_to_try  * tries_per_moity
+cerebros_time_per_model = cerebros_time_all_models_min / models_tried
 
-print(f"Cerebros trained 2 models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
-# Un-comment this !!!!!
-# print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
+print(f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
+print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
 
 
 print(f'Cerebros best accuracy achieved is {result}')
