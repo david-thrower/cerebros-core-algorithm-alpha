@@ -173,8 +173,7 @@ history = gpt_baseline_model.fit(
 gpt_t1 = time.time()
 gpt_time_on_one_model_min =  (gpt_t1 - gpt_t1) / 60
 
-hy = history["history"]
-hy_df = pd.DataFrame(hy)
+hy_df = pd.DataFrame(history.history)
 print(hy_df)
 
 ### Cerebros model:
