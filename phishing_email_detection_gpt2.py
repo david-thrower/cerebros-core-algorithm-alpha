@@ -29,6 +29,8 @@ from cerebros.units.units import DenseUnit
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 from ast import literal_eval
+import time
+
 
 #
 # Load the email data
@@ -141,10 +143,14 @@ gpt_baseline_model.compile(
     metrics=['accuracy', tf.keras.metrics.AUC(name='auc')]
 )
 
+gpt_t0 = time.time()
+
+print(gpt_baseline_model.summary())
+
 history = gpt_baseline_model.fit(
     x=X_train,  # Input data
     y=y_train,  # Labels
-    epochs=20,  # Number of training iterations
+    epochs=4,  # Number of training iterations
     batch_size=16,  # Batch size small due to GPU memory constraints
     validation_split=0.2,  # Hold out 20% of training data for validation
     shuffle=True,  # Shuffle data at each epoch
@@ -164,111 +170,146 @@ history = gpt_baseline_model.fit(
     ]
 )
 
+gpt_t1 = time.time()
+gpt_time_on_one_model_min =  (gpt_t1 - gpt_t1) / 60
+
 hy = history["history"]
 hy_df = pd.DataFrame(hy)
 print(hy_df)
 
+### Cerebros model:
+
+# TokenizerLayer class to handle tokenization and return only token_ids
+class TokenizerLayer(tf.keras.layers.Layer):
+    def __init__(self, max_seq_length, **kwargs):
+        super().__init__(**kwargs)
+        self.tokenizer = GPT2Tokenizer.from_preset("gpt2_base_en")
+        self.preprocessor = GPT2Preprocessor(self.tokenizer, sequence_length=max_seq_length)
+        self.max_seq_length = max_seq_length
+
+    def call(self, inputs):
+        processed = self.preprocessor(inputs)  # Accepts tensor of strings, outputs {"token_ids": ...}
+        return processed["token_ids"]  # Output shape: (batch_size, max_seq_length)
+
+    def get_config(self):
+        base_config = super().get_config()
+        base_config.update({"max_seq_length": self.max_seq_length})
+        return base_config
 
 
+VOCAB_SIZE = GPT2Tokenizer.vocabulary_size()
+
+# Create cerebros_base_model
+def build_cerebros_base_model(max_seq_length=96, embedding_dim=256, output_dim=VOCAB_SIZE):
+    input_layer = Input(shape=(), dtype=tf.string)  # Text input
+    token_ids = TokenizerLayer(max_seq_length)(input_layer)
+    # Build embedding layer with GPT2 tokenizer's vocabulary size (50257 for GPT2Base)
+    embedded = tf.keras.layers.Embedding(
+        input_dim=GPT2Tokenizer.vocabulary_size(),  # Uses standard GPT-2 vocab size
+        output_dim=embedding_dim,
+        mask_zero=True,          # Handle <PAD> tokens
+        name="custom_embedding"
+    )(token_ids)
+    
+    # Flatten for downstream models
+    flattened = Flatten()(embedded)
+    model = Model(inputs=input_layer, outputs=flattened)
+    return model
+
+# Example usage (outputs depend on parameters, set embedding_dim as desired)
+cerebros_base_model = build_cerebros_base_model(max_seq_length=96)
 
 
+"""### Cerebros search for the best model"""
+
+#
+# Cerebros configurables
+#
+activation = 'gelu'
+predecessor_level_connection_affinity_factor_first = 49.9999
+predecessor_level_connection_affinity_factor_main = 0.31456
+max_consecutive_lateral_connections = 22
+p_lateral_connection = 0.39256
+num_lateral_connection_tries_per_unit = 10
+learning_rate = 0.0000511065
+epochs = 6  # [1, 100]
+batch_size = 13
+maximum_levels = 4  # [3,7]
+maximum_units_per_level = 8  # [2,10]
+maximum_neurons_per_unit = 5  # [2,20]
+moities_to_try = 2
+tries_per_moity = 1
+
+#
+# Logging
+#
+TIME = pendulum.now(tz='America/New_York').__str__()[:16]\
+    .replace('T', '_')\
+    .replace(':', '_')\
+    .replace('-', '_')
+PROJECT_NAME = f'{TIME}_cerebros_auto_ml_phishing_email_test'
+
+meta_trial_number = 42 # irrelevant unless in distributed training
 
 
+cerebros_automl = SimpleCerebrosRandomSearch(
+    unit_type=DenseUnit,
+    input_shapes=INPUT_SHAPES,
+    output_shapes=OUTPUT_SHAPES,
+    training_data=training_x,
+    labels=train_labels,
+    validation_split=0.35,
+    direction='maximize',
+    metric_to_rank_by="val_accuracy",
+    minimum_levels=2,
+    maximum_levels=maximum_levels,
+    minimum_units_per_level=1,
+    maximum_units_per_level=maximum_units_per_level,
+    minimum_neurons_per_unit=1,
+    maximum_neurons_per_unit=maximum_neurons_per_unit,
+    activation=activation,
+    final_activation='sigmoid',
+    number_of_architecture_moities_to_try=moities_to_try,
+    number_of_tries_per_architecture_moity=tries_per_moity,
+    minimum_skip_connection_depth=1,
+    maximum_skip_connection_depth=7,
+    predecessor_level_connection_affinity_factor_first=predecessor_level_connection_affinity_factor_first,
+    predecessor_level_connection_affinity_factor_first_rounding_rule='ceil',
+    predecessor_level_connection_affinity_factor_main=predecessor_level_connection_affinity_factor_main,
+    predecessor_level_connection_affinity_factor_main_rounding_rule='ceil',
+    predecessor_level_connection_affinity_factor_decay_main=zero_7_exp_decay,
+    seed=8675309,
+    max_consecutive_lateral_connections=max_consecutive_lateral_connections,
+    gate_after_n_lateral_connections=3,
+    gate_activation_function=simple_sigmoid,
+    p_lateral_connection=p_lateral_connection,
+    p_lateral_connection_decay=zero_95_exp_decay,
+    num_lateral_connection_tries_per_unit=num_lateral_connection_tries_per_unit,
+    learning_rate=learning_rate,
+    loss=tf.keras.losses.CategoricalHinge(),
+    metrics=[tf.keras.metrics.Accuracy(),
+             tf.keras.metrics.Precision(),
+             tf.keras.metrics.Recall()],
+    epochs=epochs,
+    project_name=f"{PROJECT_NAME}_meta_{meta_trial_number}",
+    model_graphs='model_graphs',
+    batch_size=batch_size,
+    meta_trial_number=meta_trial_number,
+    base_models=[cerebros_base_model],
+    train_data_dtype=tf.string)
+
+cerebros_t0 = time.time()
+result = cerebros_automl.run_random_search()
+cerebros_t1 = time.time()
+cerebros_time_all_models_min = (cerebros_t1 - cerebros_t0) / 60
+cerebros_time_per_model = cerebros_time_all_models_min / (moities_to_try  * tries_per_moity)
+
+print(f"Cerebros trained 2 models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
+print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
 
 
-
-
-
-
-# base_model = Model(inputs=input_layer, outputs=gpt2_layer)
-# base_model.summary()
-
-
-
-
-
-
-
-
-# """### Cerebros search for the best model"""
-
-# #
-# # Cerebros configurables
-# #
-# activation = 'gelu'
-# predecessor_level_connection_affinity_factor_first = 49.9999
-# predecessor_level_connection_affinity_factor_main = 0.31456
-# max_consecutive_lateral_connections = 22
-# p_lateral_connection = 0.39256
-# num_lateral_connection_tries_per_unit = 10
-# learning_rate = 0.0000511065
-# epochs = 6  # [1, 100]
-# batch_size = 13
-# maximum_levels = 4  # [3,7]
-# maximum_units_per_level = 8  # [2,10]
-# maximum_neurons_per_unit = 5  # [2,20]
-
-# #
-# # Logging
-# #
-# TIME = pendulum.now(tz='America/New_York').__str__()[:16]\
-#     .replace('T', '_')\
-#     .replace(':', '_')\
-#     .replace('-', '_')
-# PROJECT_NAME = f'{TIME}_cerebros_auto_ml_phishing_email_test'
-
-# meta_trial_number = 42 # irrelevant unless in distributed training
-
-# cerebros_automl = SimpleCerebrosRandomSearch(
-#     unit_type=DenseUnit,
-#     input_shapes=INPUT_SHAPES,
-#     output_shapes=OUTPUT_SHAPES,
-#     training_data=training_x,
-#     labels=train_labels,
-#     validation_split=0.35,
-#     direction='maximize',
-#     metric_to_rank_by="val_binary_accuracy",
-#     minimum_levels=2,
-#     maximum_levels=maximum_levels,
-#     minimum_units_per_level=1,
-#     maximum_units_per_level=maximum_units_per_level,
-#     minimum_neurons_per_unit=1,
-#     maximum_neurons_per_unit=maximum_neurons_per_unit,
-#     activation=activation,
-#     final_activation='sigmoid',
-#     number_of_architecture_moities_to_try=2,
-#     number_of_tries_per_architecture_moity=1,
-#     minimum_skip_connection_depth=1,
-#     maximum_skip_connection_depth=7,
-#     predecessor_level_connection_affinity_factor_first=predecessor_level_connection_affinity_factor_first,
-#     predecessor_level_connection_affinity_factor_first_rounding_rule='ceil',
-#     predecessor_level_connection_affinity_factor_main=predecessor_level_connection_affinity_factor_main,
-#     predecessor_level_connection_affinity_factor_main_rounding_rule='ceil',
-#     predecessor_level_connection_affinity_factor_decay_main=zero_7_exp_decay,
-#     seed=8675309,
-#     max_consecutive_lateral_connections=max_consecutive_lateral_connections,
-#     gate_after_n_lateral_connections=3,
-#     gate_activation_function=simple_sigmoid,
-#     p_lateral_connection=p_lateral_connection,
-#     p_lateral_connection_decay=zero_95_exp_decay,
-#     num_lateral_connection_tries_per_unit=num_lateral_connection_tries_per_unit,
-#     learning_rate=learning_rate,
-#     loss=tf.keras.losses.CategoricalHinge(),
-#     metrics=[tf.keras.metrics.BinaryAccuracy(),
-#              tf.keras.metrics.Precision(),
-#              tf.keras.metrics.Recall()],
-#     epochs=epochs,
-#     project_name=f"{PROJECT_NAME}_meta_{meta_trial_number}",
-#     model_graphs='model_graphs',
-#     batch_size=batch_size,
-#     meta_trial_number=meta_trial_number,
-#     base_models=[base_model],
-#     train_data_dtype=tf.string)
-
-# result = cerebros_automl.run_random_search()
-
-# print(f'Best accuracy achieved is {result}')
-# print(f'binary accuracy')
+print(f'Cerebros best accuracy achieved is {result}')
+print(f'val set accuracy')
 
 # """### Testing the best model found"""
 
