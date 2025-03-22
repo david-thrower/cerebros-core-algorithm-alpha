@@ -186,44 +186,22 @@ print(hy_df)
 class TokenizerLayer(tf.keras.layers.Layer):
 
     def __init__(self, max_seq_length, **kwargs):
-        #
-        super(GPT2Layer, self).__init__(**kwargs)
-        #
-        # Load the GPT2 tokenizer, preprocessor and model
-        self.tokenizer = GPT2Tokenizer.from_preset("gpt2_extra_large_en") # "gpt2_base_en"
-        self.preprocessor = GPT2Preprocessor(self.tokenizer,
-                                             sequence_length=max_seq_length)
-        # self.encoder   = GPT2Backbone.from_preset("gpt2_base_en")
-        #
-        # Set whether the GPT2 model's layers are trainable
-        # self.encoder.trainable = False
-        # for layer in self.encoder.layers:
-        #     layer.trainable = False
-        #
-        # self.encoder.layers[-2].trainable = True
-        #
-        # Set the maximum sequence length for tokenization
+        super(TokenizerLayer, self).__init__(**kwargs)  # Update this line
+        self.tokenizer = GPT2Tokenizer.from_preset("gpt2_extra_large_en")
+        self.preprocessor = GPT2Preprocessor(self.tokenizer, sequence_length=max_seq_length)
         self.max_seq_length = max_seq_length
 
     def call(self, inputs):
-        #
-        # Output the GPT2 embedding
         prep = self.preprocessor([inputs])
-        # embedding  = self.encoder(prep)
-        # avg_pool = tf.reduce_mean(embedding, axis=1)
-        #
         return prep['token_ids']
 
     def get_config(self):
-        #
-        config = super(GPT2Layer, self).get_config()
+        config = super(TokenizerLayer, self).get_config()
         config.update({'max_seq_length': self.max_seq_length})
-        #
         return config
 
     @classmethod
     def from_config(cls, config):
-        #
         return cls(max_seq_length=config['max_seq_length'])
 
 # GPT2 configurables
