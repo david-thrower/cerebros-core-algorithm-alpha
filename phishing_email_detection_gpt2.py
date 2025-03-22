@@ -137,6 +137,8 @@ gpt2_layer = GPT2Layer(max_seq_length)(input_layer)
 binary_output = tf.keras.layers.Dense(1, activation='sigmoid')(gpt2_layer)
 gpt_baseline_model = Model(inputs=input_layer, outputs=binary_output)
 
+## Un - string out this
+"""
 gpt_baseline_model.compile(
     optimizer=Adam(learning_rate=1e-4),  # Small LR since we're fine-tuning GPT
     loss='binary_crossentropy',
@@ -175,6 +177,8 @@ gpt_time_on_one_model_min =  (gpt_t1 - gpt_t1) / 60
 
 hy_df = pd.DataFrame(history.history)
 print(hy_df)
+
+"""
 
 ### Cerebros model:
 
