@@ -181,46 +181,71 @@ print(hy_df)
 
 # TokenizerLayer class to handle tokenization and return only token_ids
 class TokenizerLayer(tf.keras.layers.Layer):
+
     def __init__(self, max_seq_length, **kwargs):
-        super().__init__(**kwargs)
-        self.tokenizer = GPT2Tokenizer.from_preset("gpt2_base_en")
-        self.preprocessor = GPT2Preprocessor(self.tokenizer, sequence_length=max_seq_length)
+        #
+        super(GPT2Layer, self).__init__(**kwargs)
+        #
+        # Load the GPT2 tokenizer, preprocessor and model
+        self.tokenizer = GPT2Tokenizer.from_preset("gpt2_extra_large_en") # "gpt2_base_en"
+        self.preprocessor = GPT2Preprocessor(self.tokenizer,
+                                             sequence_length=max_seq_length)
+        # self.encoder   = GPT2Backbone.from_preset("gpt2_base_en")
+        #
+        # Set whether the GPT2 model's layers are trainable
+        # self.encoder.trainable = False
+        # for layer in self.encoder.layers:
+        #     layer.trainable = False
+        #
+        # self.encoder.layers[-2].trainable = True
+        #
+        # Set the maximum sequence length for tokenization
         self.max_seq_length = max_seq_length
 
     def call(self, inputs):
-        processed = self.preprocessor(inputs)  # Accepts tensor of strings, outputs {"token_ids": ...}
-        return processed["token_ids"]  # Output shape: (batch_size, max_seq_length)
+        #
+        # Output the GPT2 embedding
+        prep = self.preprocessor([inputs])
+        # embedding  = self.encoder(prep)
+        # avg_pool = tf.reduce_mean(embedding, axis=1)
+        #
+        return prep['token_ids']
 
     def get_config(self):
-        base_config = super().get_config()
-        base_config.update({"max_seq_length": self.max_seq_length})
-        return base_config
+        #
+        config = super(GPT2Layer, self).get_config()
+        config.update({'max_seq_length': self.max_seq_length})
+        #
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        #
+        return cls(max_seq_length=config['max_seq_length'])
+
+# GPT2 configurables
+
+max_seq_length = 900
+
+inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
+gp2_tokenizer = TokenizerLayer(max_seq_length=max_seq_length)
+VOCABULARY_SIZE = gp2_tokenizer.tokenizer.vocabulary_size()
+tokens = gp2_tokenizer(inp)
 
 
-VOCAB_SIZE = GPT2Tokenizer.vocabulary_size()
+embedded =\
+    tf.keras.layers.Embedding(
+        input_dim=VOCABULARY_SIZE,
+        output_dim=15,
+        input_length=max_seq_length,
+        mask_zero=True)(tokens)
+dropout_embedded = tf.keras.layers.Dropout(0.6)(embedded)
+flattened = tf.keras.layers.Flatten()(dropout_embedded)
 
-# Create cerebros_base_model
-def build_cerebros_base_model(max_seq_length=96, embedding_dim=256, output_dim=VOCAB_SIZE):
-    input_layer = Input(shape=(), dtype=tf.string)  # Text input
-    token_ids = TokenizerLayer(max_seq_length)(input_layer)
-    # Build embedding layer with GPT2 tokenizer's vocabulary size (50257 for GPT2Base)
-    embedded = tf.keras.layers.Embedding(
-        input_dim=GPT2Tokenizer.vocabulary_size(),  # Uses standard GPT-2 vocab size
-        output_dim=embedding_dim,
-        mask_zero=True,          # Handle <PAD> tokens
-        name="custom_embedding"
-    )(token_ids)
-    
-    # Flatten for downstream models
-    flattened = Flatten()(embedded)
-    dropout = tf.keras.layers.Dropout(.6)(flattened)
-    model = Model(inputs=input_layer, outputs=dropout)
-    return model
-
-
-# Example usage (outputs depend on parameters, set embedding_dim as desired)
-cerebros_base_model = build_cerebros_base_model(max_seq_length=96)
-
+cerebros_base_model =\
+    tf.keras.Model(
+        inputs=inp,
+        outputs=flattened)
 
 """### Cerebros search for the best model"""
 
@@ -234,11 +259,17 @@ max_consecutive_lateral_connections = 22
 p_lateral_connection = 0.39256
 num_lateral_connection_tries_per_unit = 10
 learning_rate = 0.0000511065
-epochs = 6  # [1, 100]
-batch_size = 13
-maximum_levels = 4  # [3,7]
-maximum_units_per_level = 8  # [2,10]
+epochs = 15  # [1, 100]
+batch_size = 20
+minimum_levels = 2
+maximum_levels = 4 # [3,7]
+
+minimum_units_per_level = 4
+maximum_units_per_level = 8
+
+minimum_neurons_per_unit = 1
 maximum_neurons_per_unit = 5  # [2,20]
+
 moities_to_try = 2
 tries_per_moity = 1
 
@@ -263,11 +294,11 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     validation_split=0.35,
     direction='maximize',
     metric_to_rank_by="val_accuracy",
-    minimum_levels=2,
+    minimum_levels=minimum_levels,
     maximum_levels=maximum_levels,
-    minimum_units_per_level=1,
+    minimum_units_per_level=minimum_units_per_level,
     maximum_units_per_level=maximum_units_per_level,
-    minimum_neurons_per_unit=1,
+    minimum_neurons_per_unit=minimum_neurons_per_unit,
     maximum_neurons_per_unit=maximum_neurons_per_unit,
     activation=activation,
     final_activation='sigmoid',
