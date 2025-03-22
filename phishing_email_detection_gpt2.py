@@ -70,7 +70,7 @@ train_test_split(X, y, test_size=0.85, shuffle=False)
 
 # Training data for baseline model
 baseline_train_x = tf.constant(X_train)
-baseline_train_y = tf.constant(y_train)
+baseline_train_y = tf.constant(y_train, dtype=tf.int8)
 
 # Packaged for Cerebros (multimodal, takes inputs as a list)
 training_x   = [baseline_train_x]
@@ -142,7 +142,10 @@ gpt_baseline_model = Model(inputs=input_layer, outputs=binary_output)
 gpt_baseline_model.compile(
     optimizer=Adam(learning_rate=1e-4),  # Small LR since we're fine-tuning GPT
     loss='binary_crossentropy',
-    metrics=['accuracy', tf.keras.metrics.AUC(name='auc')]
+    # metrics=['accuracy', tf.keras.metrics.AUC(name='auc')]
+    metrics=[tf.keras.metrics.BinaryAccuracy(), 
+         tf.keras.metrics.Precision(), 
+         tf.keras.metrics.Recall()]
 )
 
 gpt_t0 = time.time()
@@ -303,9 +306,9 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     num_lateral_connection_tries_per_unit=num_lateral_connection_tries_per_unit,
     learning_rate=learning_rate,
     loss=tf.keras.losses.CategoricalHinge(),
-    metrics=[tf.keras.metrics.Accuracy(),
-             tf.keras.metrics.Precision(),
-             tf.keras.metrics.Recall()],
+    metrics=[tf.keras.metrics.BinaryAccuracy(), 
+         tf.keras.metrics.Precision(), 
+         tf.keras.metrics.Recall()],
     epochs=epochs,
     project_name=f"{PROJECT_NAME}_meta_{meta_trial_number}",
     model_graphs='model_graphs',
