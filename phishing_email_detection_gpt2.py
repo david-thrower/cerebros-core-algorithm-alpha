@@ -213,8 +213,10 @@ def build_cerebros_base_model(max_seq_length=96, embedding_dim=256, output_dim=V
     
     # Flatten for downstream models
     flattened = Flatten()(embedded)
-    model = Model(inputs=input_layer, outputs=flattened)
+    dropout = tf.keras.layers.Dropout(.6)(flattened)
+    model = Model(inputs=input_layer, outputs=dropout)
     return model
+
 
 # Example usage (outputs depend on parameters, set embedding_dim as desired)
 cerebros_base_model = build_cerebros_base_model(max_seq_length=96)
