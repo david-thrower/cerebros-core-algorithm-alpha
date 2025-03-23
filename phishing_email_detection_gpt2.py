@@ -226,13 +226,13 @@ embedded =\
         mask_zero=True)(tokens)
 
 gru1_output, gru1_state = tf.keras.layers.GRU(
-    128, 
+    64, 
     return_sequences=True, 
     return_state=True,
     dropout=0.2)(embedded)
 
 gru2_output = tf.keras.layers.GRU(
-    64, 
+    32, 
     return_sequences=True, 
     return_state=False)(gru1_output)
 flattened = tf.keras.layers.Flatten()(gru2_output)
