@@ -235,9 +235,10 @@ gru2_output = tf.keras.layers.GRU(
     64, 
     return_sequences=True, 
     return_state=False)(gru1_output)
+flattened = tf.keras.layers.Flatten()(gru2_output)
 
 # Apply dropout after the GRU sequence
-dropout = tf.keras.layers.Dropout(0.6)(gru2_output)
+dropout = tf.keras.layers.Dropout(0.6)(flattened)
 
 
 
