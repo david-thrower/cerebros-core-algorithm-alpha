@@ -208,9 +208,9 @@ class TokenizerLayer(tf.keras.layers.Layer):
 
 # GPT2 configurables
 
-# Optimal for accuracy:
-max_seq_length = 900
-max_seq_length = 750
+# Optimal for accuracy thus far:
+# max_seq_length = 900
+max_seq_length = 1024
 
 inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
 gp2_tokenizer = TokenizerLayer(max_seq_length=max_seq_length)
