@@ -255,7 +255,7 @@ maximum_units_per_level = 8
 minimum_neurons_per_unit = 1
 maximum_neurons_per_unit = 5  # [2,20]
 
-moities_to_try = 2
+moities_to_try = 5
 tries_per_moity = 1
 
 #
