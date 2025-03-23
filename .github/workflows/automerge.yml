@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "154-benchmark-inference-times---cerebros-model-vs-original-gpt-2" ]
+    branches: [ "main", "155-add-grus-to-optimal-model-154-a" ]
 
 permissions:
   contents: read
