@@ -176,7 +176,7 @@ history = gpt_baseline_model.fit(
 )
 
 gpt_t1 = time.time()
-gpt_time_on_one_model_min =  (gpt_t1 - gpt_t1) / 60
+gpt_time_on_one_model_min =  (gpt_t1 - gpt_t0) / 60
 
 hy_df = pd.DataFrame(history.history)
 print(hy_df)
@@ -210,7 +210,7 @@ class TokenizerLayer(tf.keras.layers.Layer):
 
 # Optimal for accuracy:
 max_seq_length = 900
-max_seq_length = 250
+max_seq_length = 750
 
 inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
 gp2_tokenizer = TokenizerLayer(max_seq_length=max_seq_length)
