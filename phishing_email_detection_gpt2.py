@@ -237,7 +237,7 @@ gru2_output = tf.keras.layers.GRU(
     return_state=False)(gru1_output)
 
 # Apply dropout after the GRU sequence
-dropout = Dropout(0.6)(gru2_output)
+dropout = tf.keras.layers.Dropout(0.6)(gru2_output)
 
 
 
