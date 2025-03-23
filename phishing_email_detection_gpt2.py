@@ -151,7 +151,7 @@ gpt_baseline_model.compile(
 gpt_t0 = time.time()
 
 print(gpt_baseline_model.summary())
-
+"""
 history = gpt_baseline_model.fit(
     x=X_train,  # Input data
     y=y_train,  # Labels
@@ -180,7 +180,7 @@ gpt_time_on_one_model_min =  (gpt_t1 - gpt_t0) / 60
 
 hy_df = pd.DataFrame(history.history)
 print(hy_df)
-
+"""
 
 ### Cerebros model:
 
@@ -224,13 +224,31 @@ embedded =\
         output_dim=15,
         input_length=max_seq_length,
         mask_zero=True)(tokens)
-dropout_embedded = tf.keras.layers.Dropout(0.6)(embedded)
-flattened = tf.keras.layers.Flatten()(dropout_embedded)
+
+gru1_output, gru1_state = tf.keras.layers.GRU(
+    128, 
+    return_sequences=True, 
+    return_state=True,
+    dropout=0.2)(embedded)
+
+gru2_output = tf.keras.layers.GRU(
+    64, 
+    return_sequences=True, 
+    return_state=False)(gru1_output)
+
+# Apply dropout after the GRU sequence
+dropout = Dropout(0.6)(gru2_output)
+
+
+
+# dropout_embedded = tf.keras.layers.Dropout(0.6)(embedded)
+# flattened = tf.keras.layers.Flatten()(dropout_embedded)
 
 cerebros_base_model =\
     tf.keras.Model(
         inputs=inp,
-        outputs=flattened)
+        # outputs=flattened
+        outputs=dropout)
 
 """### Cerebros search for the best model"""
 
@@ -324,7 +342,7 @@ models_tried = moities_to_try  * tries_per_moity
 cerebros_time_per_model = cerebros_time_all_models_min / models_tried
 
 print(f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
-print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
+# print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
 
 
 print(f'Cerebros best accuracy achieved is {result}')
