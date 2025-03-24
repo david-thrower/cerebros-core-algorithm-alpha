@@ -210,6 +210,8 @@ class TokenizerLayer(tf.keras.layers.Layer):
 
 # Cerebros Base Model (Optimized)
 
+max_seq_length = 1024
+
 inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
 gp2_tokenizer = TokenizerLayer(max_seq_length=max_seq_length)
 VOCABULARY_SIZE = gp2_tokenizer.tokenizer.vocabulary_size()
@@ -251,7 +253,6 @@ maximum_neurons_per_unit = 32 # Increased max neurons
 moities_to_try = 5         # Reduced for faster search
 tries_per_moity = 1
 learning_rate = 0.0001    # Adjusted learning rate
-cerebros_base_model = create_cerebros_base_model(max_seq_length)
 
 TIME = pendulum.now(tz='America/New_York').__str__()[:16].replace('T', '_').replace(':', '_').replace('-', '_')
 PROJECT_NAME = f'_cerebros_auto_ml_phishing_email_test'
@@ -260,8 +261,8 @@ meta_trial_number = 42
 cerebros_automl =\
         SimpleCerebrosRandomSearch(
             unit_type=DenseUnit,
-            input_shapes=input_shapes,
-            output_shapes=output_shapes,
+            input_shapes=INPUT_SHAPES,
+            output_shapes=OUTPUT_SHAPES,
             training_data=training_x,
             labels=train_labels,
             validation_split=0.3,   # Reduced validation split
@@ -304,6 +305,7 @@ cerebros_automl =\
             base_models=[cerebros_base_model],
             train_data_dtype=tf.string)
 
+
 cerebros_t0 = time.time()
 result = cerebros_automl.run_random_search()
 cerebros_t1 = time.time()
@@ -314,7 +316,6 @@ cerebros_time_per_model = cerebros_time_all_models_min / models_tried
 print(f"Cerebros trained {models_tried} models in {cerebros_time_all_models_min:.2f} min. Average time per model: {cerebros_time_per_model:.2f} min.")
 print(f'Cerebros best accuracy achieved: {result["best_score"]}')
 print(f'Validation set accuracy: {result["best_score"]}')
-return cerebros_automl
 
 
 # Evaluate the best model (Corrected Evaluation)
