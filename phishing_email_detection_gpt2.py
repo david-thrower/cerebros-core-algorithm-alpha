@@ -225,7 +225,7 @@ embedded = tf.keras.layers.Embedding(
 
 
 gru_output =\
-    tf.keras.layers.GRU(32,
+    tf.keras.layers.GRU(24,
                         return_sequences=True,
                         dropout=0.3)(embedded)
 
