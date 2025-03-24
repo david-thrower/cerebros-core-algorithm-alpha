@@ -219,13 +219,13 @@ tokens = gp2_tokenizer(inp)
 
 embedded = tf.keras.layers.Embedding(
         input_dim=VOCABULARY_SIZE,
-        output_dim=32,  # Increased embedding dimension
+        output_dim=16,  # Increased embedding dimension
         input_length=max_seq_length,
         mask_zero=True)(tokens)
 
 
 gru_output =\
-    tf.keras.layers.GRU(64,
+    tf.keras.layers.GRU(32,
                         return_sequences=True,
                         dropout=0.3)(embedded)
 
@@ -249,7 +249,7 @@ maximum_levels = 3        # Reduced max levels
 minimum_units_per_level = 4
 maximum_units_per_level = 8
 minimum_neurons_per_unit = 8  # Increased min neurons
-maximum_neurons_per_unit = 32 # Increased max neurons
+maximum_neurons_per_unit = 15 # 32 # suggested by AI # Increased max neurons
 moities_to_try = 5         # Reduced for faster search
 tries_per_moity = 1
 learning_rate = 0.0001    # Adjusted learning rate
