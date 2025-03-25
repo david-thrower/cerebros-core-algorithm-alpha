@@ -227,6 +227,12 @@ embedded =\
         input_length=max_seq_length,
         mask_zero=True)(tokens)
 
+position_embedding = tf.keras.layers.PositionEmbedding(
+    input_dim=max_seq_length,
+    output_dim=EMBEDDING_DIM,
+    embeddings_initializer="uniform"
+)(embedded)
+
 x = tf.keras.layers.add([embedded, position_embedding])
 x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
 x = tf.keras.layers.Dropout(0.6)(x)  # AI suggested 0.4
