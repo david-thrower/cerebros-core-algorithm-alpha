@@ -220,12 +220,13 @@ VOCABULARY_SIZE = gp2_tokenizer.tokenizer.vocabulary_size()
 tokens = gp2_tokenizer(inp)
 
 
-embedded =\
-    tf.keras.layers.Embedding(
-        input_dim=VOCABULARY_SIZE,
-        output_dim=15,
-        input_length=max_seq_length,
-        mask_zero=True)(tokens)
+EMBEDDING_DIM = 15  # Define EMBEDDING_DIM here, to match your embedding layer.
+
+embedded = tf.keras.layers.Embedding(
+    input_dim=VOCABULARY_SIZE,
+    output_dim=EMBEDDING_DIM,
+    input_length=max_seq_length,
+    mask_zero=True)(tokens)
 
 position_embedding = tf.keras.layers.PositionEmbedding(
     input_dim=max_seq_length,
