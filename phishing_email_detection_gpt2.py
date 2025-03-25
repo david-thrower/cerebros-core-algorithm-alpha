@@ -84,6 +84,7 @@ OUTPUT_SHAPES = [1]
 
 """### A custom GPT2 encoder layer for text embedding"""
 
+""" un - string out
 class GPT2Layer(tf.keras.layers.Layer):
 
     def __init__(self, max_seq_length, **kwargs):
@@ -181,6 +182,7 @@ gpt_time_on_one_model_min =  (gpt_t1 - gpt_t0) / 60
 hy_df = pd.DataFrame(history.history)
 print(hy_df)
 
+""" # end un - string out
 
 ### Cerebros model:
 
@@ -224,13 +226,28 @@ embedded =\
         output_dim=15,
         input_length=max_seq_length,
         mask_zero=True)(tokens)
-dropout_embedded = tf.keras.layers.Dropout(0.6)(embedded)
-flattened = tf.keras.layers.Flatten()(dropout_embedded)
 
-cerebros_base_model =\
-    tf.keras.Model(
-        inputs=inp,
-        outputs=flattened)
+x = tf.keras.layers.add([embedded, position_embedding])
+x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
+x = tf.keras.layers.Dropout(0.6)(x)  # AI suggested 0.4
+flattened = tf.keras.layers.Flatten()(x)
+
+cerebros_base_model = tf.keras.Model(
+    inputs=inp,
+    outputs=flattened  # Output enhanced embeddings now
+)
+
+
+
+
+
+# dropout_embedded = tf.keras.layers.Dropout(0.6)(embedded)
+# flattened = tf.keras.layers.Flatten()(dropout_embedded)
+
+# cerebros_base_model =\
+#     tf.keras.Model(
+#         inputs=inp,
+#         outputs=flattened)
 
 """### Cerebros search for the best model"""
 
@@ -304,7 +321,8 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     p_lateral_connection_decay=zero_95_exp_decay,
     num_lateral_connection_tries_per_unit=num_lateral_connection_tries_per_unit,
     learning_rate=learning_rate,
-    loss=tf.keras.losses.CategoricalHinge(),
+    loss=tf.keras.losses.BinaryCrossentropy(),
+    # loss=tf.keras.losses.CategoricalHinge(),
     metrics=[tf.keras.metrics.BinaryAccuracy(), 
          tf.keras.metrics.Precision(), 
          tf.keras.metrics.Recall()],
@@ -324,7 +342,8 @@ models_tried = moities_to_try  * tries_per_moity
 cerebros_time_per_model = cerebros_time_all_models_min / models_tried
 
 print(f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
-print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
+# Un-comment out the next line
+# print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
 
 
 print(f'Cerebros best accuracy achieved is {result}')
