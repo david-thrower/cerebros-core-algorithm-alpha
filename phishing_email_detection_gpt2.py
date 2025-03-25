@@ -14,6 +14,7 @@ Initialization
 import tensorflow as tf
 import tensorflow_text
 from keras_nlp.models import GPT2Tokenizer, GPT2Preprocessor, GPT2Backbone
+from keras_nlp.layers import PositionEmbedding
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from tensorflow.keras.utils import to_categorical
@@ -228,10 +229,9 @@ embedded = tf.keras.layers.Embedding(
     input_length=max_seq_length,
     mask_zero=True)(tokens)
 
-position_embedding = tf.keras.layers.PositionEmbedding(
-    input_dim=max_seq_length,
-    output_dim=EMBEDDING_DIM,
-    embeddings_initializer="uniform"
+position_embedding = PositionEmbedding(
+    sequence_length=max_seq_length,
+    initializer="uniform",
 )(embedded)
 
 x = tf.keras.layers.add([embedded, position_embedding])
