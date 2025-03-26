@@ -220,7 +220,8 @@ gp2_tokenizer = TokenizerLayer(max_seq_length=max_seq_length)
 VOCABULARY_SIZE = gp2_tokenizer.tokenizer.vocabulary_size()
 tokens = gp2_tokenizer(inp)
 
-
+# On larger hardware, this could probably be increased considerably and
+# Probably would improve performance ...
 EMBEDDING_DIM = 15  # Define EMBEDDING_DIM here, to match your embedding layer.
 
 embedded = tf.keras.layers.Embedding(
@@ -234,9 +235,11 @@ position_embedding = PositionEmbedding(
     initializer="uniform",
 )(embedded)
 
-x = tf.keras.layers.add([embedded, position_embedding])
-# x = x = tf.keras.layers.Concatenate()([embedded, position_embedding])
-# x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
+# As an FYI, we tried an add layer both with and without
+# LayerNorm ... It degraded accuracy
+# Just an FYI for anyone trying to apply conventional wisdom
+# to save you the time ...
+x = x = tf.keras.layers.Concatenate()([embedded, position_embedding])
 x = tf.keras.layers.Dropout(0.6)(x)  # AI suggested 0.4
 flattened = tf.keras.layers.Flatten()(x)
 
@@ -272,7 +275,7 @@ learning_rate = 0.0000511065
 epochs = 15  # [1, 100]
 batch_size = 20
 minimum_levels = 2
-maximum_levels = 4 # [3,7]
+maximum_levels = 3 # [3,7]
 
 minimum_units_per_level = 4
 maximum_units_per_level = 8
