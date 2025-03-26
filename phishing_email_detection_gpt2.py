@@ -234,8 +234,8 @@ position_embedding = PositionEmbedding(
     initializer="uniform",
 )(embedded)
 
-# x = tf.keras.layers.add([embedded, position_embedding])
-x = x = tf.keras.layers.Concatenate()([embedded, position_embedding])
+x = tf.keras.layers.add([embedded, position_embedding])
+# x = x = tf.keras.layers.Concatenate()([embedded, position_embedding])
 # x = tf.keras.layers.LayerNormalization(epsilon=1e-6)(x)
 x = tf.keras.layers.Dropout(0.6)(x)  # AI suggested 0.4
 flattened = tf.keras.layers.Flatten()(x)
