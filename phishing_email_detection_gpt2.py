@@ -274,7 +274,7 @@ num_lateral_connection_tries_per_unit = 10
 learning_rate = 0.0000511065
 epochs = 15  # [1, 100]
 batch_size = 20
-minimum_levels = 2
+minimum_levels = 3
 maximum_levels = 3 # [3,7]
 
 minimum_units_per_level = 4
