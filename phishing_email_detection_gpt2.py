@@ -85,7 +85,7 @@ OUTPUT_SHAPES = [1]
 
 """### A custom GPT2 encoder layer for text embedding"""
 
-
+"""
 class GPT2Layer(tf.keras.layers.Layer):
 
     def __init__(self, max_seq_length, **kwargs):
@@ -182,7 +182,7 @@ gpt_time_on_one_model_min =  (gpt_t1 - gpt_t0) / 60
 
 hy_df = pd.DataFrame(history.history)
 print(hy_df)
-
+"""
 
 ### Cerebros model:
 
@@ -249,16 +249,6 @@ cerebros_base_model = tf.keras.Model(
 
 
 
-
-
-# dropout_embedded = tf.keras.layers.Dropout(0.6)(embedded)
-# flattened = tf.keras.layers.Flatten()(dropout_embedded)
-
-# cerebros_base_model =\
-#     tf.keras.Model(
-#         inputs=inp,
-#         outputs=flattened)
-
 """### Cerebros search for the best model"""
 
 #
@@ -274,7 +264,7 @@ learning_rate = 0.0000511065
 epochs = 15  # [1, 100]
 batch_size = 20
 minimum_levels = 2
-maximum_levels = 3 # [3,7]
+maximum_levels = 2 # [3,7]
 
 minimum_units_per_level = 4
 maximum_units_per_level = 8
