@@ -157,7 +157,7 @@ print(gpt_baseline_model.summary())
 history = gpt_baseline_model.fit(
     x=X_train,  # Input data
     y=y_train,  # Labels
-    epochs=4,  # Number of training iterations
+    epochs=3,  # Number of training iterations
     batch_size=16,  # Batch size small due to GPU memory constraints
     validation_split=0.2,  # Hold out 20% of training data for validation
     shuffle=True,  # Shuffle data at each epoch
@@ -341,7 +341,7 @@ models_tried = moities_to_try  * tries_per_moity
 cerebros_time_per_model = cerebros_time_all_models_min / models_tried
 
 print(f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
-print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
+print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model for 3 epochs. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
 
 
 print(f'Cerebros best accuracy achieved is {result}')
