@@ -223,7 +223,7 @@ tokens = gp2_tokenizer(inp)
 
 # On larger hardware, this could probably be increased considerably and
 # Probably would improve performance ...
-EMBEDDING_DIM = 15  # Define EMBEDDING_DIM here, to match your embedding layer.
+EMBEDDING_DIM = 23  # Define EMBEDDING_DIM here, to match your embedding layer.
 
 embedded = tf.keras.layers.Embedding(
     input_dim=VOCABULARY_SIZE,
@@ -241,7 +241,7 @@ position_embedding = PositionEmbedding(
 # Just an FYI for anyone trying to apply conventional wisdom
 # to save you the time ...
 x = x = tf.keras.layers.Concatenate()([embedded, position_embedding])
-x = tf.keras.layers.Dropout(0.6)(x)  # AI suggested 0.4
+x = tf.keras.layers.Dropout(0.4)(x)  # AI suggested 0.4
 flattened = tf.keras.layers.Flatten()(x)
 
 cerebros_base_model = tf.keras.Model(
@@ -255,23 +255,23 @@ cerebros_base_model = tf.keras.Model(
 #
 # Cerebros configurables
 #
-activation = 'gelu'
-predecessor_level_connection_affinity_factor_first = 49.9999
-predecessor_level_connection_affinity_factor_main = 0.31456
-max_consecutive_lateral_connections = 22
-p_lateral_connection = 0.39256
-num_lateral_connection_tries_per_unit = 10
-learning_rate = 0.0000511065
+activation = "relu"
+predecessor_level_connection_affinity_factor_first = 10
+predecessor_level_connection_affinity_factor_main = 40
+max_consecutive_lateral_connections = 20
+p_lateral_connection = 30
+num_lateral_connection_tries_per_unit = 25
+learning_rate = 3 * 10 ** -3
 epochs = 15  # [1, 100]
-batch_size = 20
+batch_size = 17
 minimum_levels = 2
-maximum_levels = 3 # [3,7]
+maximum_levels = 2 # [3,7]
 
 minimum_units_per_level = 4
-maximum_units_per_level = 8
+maximum_units_per_level = 7
 
 minimum_neurons_per_unit = 1
-maximum_neurons_per_unit = 5  # [2,20]
+maximum_neurons_per_unit = 2
 
 moities_to_try = 5
 tries_per_moity = 1
