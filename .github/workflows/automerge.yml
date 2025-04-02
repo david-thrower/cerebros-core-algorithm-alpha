@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "158-try-adamw-optimizer" ]
+    branches: [ "main", "160-try-nlp-optima-from-2025-03-30-study-with-adamw" ]
 
 permissions:
   contents: read
