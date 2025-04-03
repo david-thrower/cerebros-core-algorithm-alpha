@@ -525,6 +525,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                       desc=f"Moiety {iter_trial} of {self.number_of_architecture_moities_to_try} running",
                       ascii=True,
                       colour="#16ceeb"):
+            iter_trial += 1
             self.parse_neural_network_structural_spec_random()
             spec = self.get_neural_network_spec()
 
@@ -542,7 +543,6 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                 p.start()
             for p in processes:
                 p.join()
-            iter_trial += 1
             # final_oracles = pd.concat(oracles, ignore_index=False)
             # if self.direction == "maximize":
             #     return float(final_oracles[self.metric_to_rank_by].values.max())
