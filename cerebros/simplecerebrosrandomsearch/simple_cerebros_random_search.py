@@ -523,6 +523,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         processes = []
         for i in tqdm(np.arange(self.number_of_architecture_moities_to_try),
                       desc=f"Moiety {iter_trial} of {self.number_of_architecture_moities_to_try} running",
+                      ascii=True,
                       colour="#16ceeb"):
             self.parse_neural_network_structural_spec_random()
             spec = self.get_neural_network_spec()
