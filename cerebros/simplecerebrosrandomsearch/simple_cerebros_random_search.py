@@ -518,8 +518,11 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         return 0
 
     def run_random_search(self):
+        iter_trial = 1
         processes = []
-        for i in np.arange(self.number_of_architecture_moities_to_try):
+        for i in tqdm(np.arange(self.number_of_architecture_moities_to_try),
+                      desc=f"Moiety {iter_trial}" of {self.number_of_architecture_moities_to_try} running",
+                      colour="#16ceeb"):
             self.parse_neural_network_structural_spec_random()
             spec = self.get_neural_network_spec()
 
@@ -537,6 +540,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                 p.start()
             for p in processes:
                 p.join()
+            iter_trial += 1
             # final_oracles = pd.concat(oracles, ignore_index=False)
             # if self.direction == "maximize":
             #     return float(final_oracles[self.metric_to_rank_by].values.max())
