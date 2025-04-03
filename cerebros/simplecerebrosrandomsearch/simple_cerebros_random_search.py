@@ -2,6 +2,7 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from tqdm import tqdm
 from cerebros.denseautomlstructuralcomponent.\
     dense_automl_structural_component \
     import DenseAutoMlStructuralComponent, DenseLateralConnectivity, \
