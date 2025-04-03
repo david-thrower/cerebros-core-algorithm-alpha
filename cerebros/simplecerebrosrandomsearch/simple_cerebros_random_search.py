@@ -521,8 +521,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
     def run_random_search(self):
         processes = []
         for i in tqdm(np.arange(self.number_of_architecture_moities_to_try),
-                      desc=f"Moiety {self.trial_number + 1} of {self.number_of_architecture_moities_to_try} running",
-                      ascii=True,
+                      desc=f"Global task progress",
                       colour="#16ceeb"):
 
             self.parse_neural_network_structural_spec_random()
