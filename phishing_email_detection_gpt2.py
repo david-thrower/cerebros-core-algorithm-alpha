@@ -208,6 +208,38 @@ class TokenizerLayer(tf.keras.layers.Layer):
     def from_config(cls, config):
         return cls(max_seq_length=config['max_seq_length'])
 
+
+class RotaryPositionEmbedding(tf.keras.layers.Layer):
+    def __init__(self, max_seq_length, d_model, **kwargs):
+        super().__init__(**kwargs)
+        self.max_seq_length = max_seq_length
+        self.d_model = d_model
+        assert d_model % 2 == 0, "d_model must be even"
+        
+        # Precompute rotation matrices
+        inv_freq = 1.0 / (10000 ** (tf.range(0, d_model, 2, dtype=tf.float32) / d_model))
+        positions = tf.range(max_seq_length, dtype=tf.float32)
+        sinusoid = tf.einsum('i,j->ij', positions, inv_freq)
+        
+        self.sin = tf.sin(sinusoid)
+        self.cos = tf.cos(sinusoid)
+        
+    def call(self, x):
+        batch_size = tf.shape(x)[0]
+        seq_len = tf.shape(x)[1]
+        
+        # Split dimensions into pairs
+        x = tf.reshape(x, [batch_size, seq_len, self.d_model//2, 2])
+        
+        # Apply rotation
+        x_rot = tf.stack([
+            x[..., 0] * self.cos[:seq_len] - x[..., 1] * self.sin[:seq_len],
+            x[..., 0] * self.sin[:seq_len] + x[..., 1] * self.cos[:seq_len]
+        ], axis=-1)
+        
+        return tf.reshape(x_rot, [batch_size, seq_len, self.d_model])
+
+
 # GPT2 configurables
 
 # Optimal for accuracy thus far:
@@ -221,7 +253,8 @@ tokens = gp2_tokenizer(inp)
 
 # On larger hardware, this could probably be increased considerably and
 # Probably would improve performance ...
-EMBEDDING_DIM = 23  # Define EMBEDDING_DIM here, to match your embedding layer.
+EMBEDDING_N = 12  # Define EMBEDDING_DIM here, to match your embedding layer.
+EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
 embedded = tf.keras.layers.Embedding(
     input_dim=VOCABULARY_SIZE,
@@ -229,9 +262,10 @@ embedded = tf.keras.layers.Embedding(
     input_length=max_seq_length,
     mask_zero=True)(tokens)
 
-position_embedding = PositionEmbedding(
+position_embedding = RotaryPositionEmbedding(
     sequence_length=max_seq_length,
-    initializer="uniform",
+    sequence_length=EMBEDDING_DIM
+    # initializer="uniform",
 )(embedded)
 
 # As an FYI, we tried an add layer both with and without
