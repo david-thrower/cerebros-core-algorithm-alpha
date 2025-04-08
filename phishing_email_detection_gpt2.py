@@ -264,7 +264,7 @@ embedded = tf.keras.layers.Embedding(
 
 position_embedding = RotaryPositionEmbedding(
     sequence_length=max_seq_length,
-    sequence_length=EMBEDDING_DIM
+    d_model=EMBEDDING_DIM,
     # initializer="uniform",
 )(embedded)
 
