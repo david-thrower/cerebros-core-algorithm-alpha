@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "162-add-a-tqdm-global-progress-bar-to-nas-search-task" ]
+    branches: [ "main", "166-try-rope-embedding" ]
 
 permissions:
   contents: read
