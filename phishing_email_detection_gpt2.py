@@ -209,6 +209,7 @@ class TokenizerLayer(tf.keras.layers.Layer):
         return cls(max_seq_length=config['max_seq_length'])
 
 
+
 class RotaryPositionEmbedding(tf.keras.layers.Layer):
     def __init__(self, max_seq_length, d_model, **kwargs):
         super().__init__(**kwargs)
@@ -218,32 +219,36 @@ class RotaryPositionEmbedding(tf.keras.layers.Layer):
         
         # Precompute rotation matrices
         inv_freq = 1.0 / (10000 ** (tf.range(0, d_model, 2, dtype=tf.float32) / d_model))
+        self.inv_freq = tf.cast(inv_freq, tf.float32)
         positions = tf.range(max_seq_length, dtype=tf.float32)
-        sinusoid = tf.einsum('i,j->ij', positions, inv_freq)
-        
-        self.sin = tf.sin(sinusoid)
-        self.cos = tf.cos(sinusoid)
+        self.sin = tf.sin(tf.einsum('i,j->ij', positions, inv_freq))
+        self.cos = tf.cos(tf.einsum('i,j->ij', positions, inv_freq))
         
     def call(self, x):
         batch_size = tf.shape(x)[0]
         seq_len = tf.shape(x)[1]
         
-        # Split dimensions into pairs
-        x = tf.reshape(x, [batch_size, seq_len, self.d_model//2, 2])
+        # Compute sine and cosine matrices for current sequence length
+        sinusoid = tf.einsum('i,j->ij', tf.range(seq_len, dtype=tf.float32), self.inv_freq)
+        current_sin = tf.sin(sinusoid)
+        current_cos = tf.cos(sinusoid)
         
-        # Apply rotation
-        x_rot = tf.stack([
-            x[..., 0] * self.cos[:seq_len] - x[..., 1] * self.sin[:seq_len],
-            x[..., 0] * self.sin[:seq_len] + x[..., 1] * self.cos[:seq_len]
+        # Split dimensions and apply rotation using einsum
+        x = tf.reshape(x, [batch_size, seq_len, self.d_model//2, 2])
+        rotated = tf.stack([
+            x[..., 0] * current_cos - x[..., 1] * current_sin,
+            x[..., 0] * current_sin + x[..., 1] * current_cos
         ], axis=-1)
         
-        return tf.reshape(x_rot, [batch_size, seq_len, self.d_model])
+        # Reshape back and apply dropout
+        return tf.reshape(rotated, [batch_size, seq_len, self.d_model])
+
+
 
 
 # GPT2 configurables
 
 # Optimal for accuracy thus far:
-# max_seq_length = 900
 max_seq_length = 1024
 
 inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
