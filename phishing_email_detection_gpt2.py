@@ -85,7 +85,7 @@ OUTPUT_SHAPES = [1]
 
 """### A custom GPT2 encoder layer for text embedding"""
 
-
+"""
 class GPT2Layer(tf.keras.layers.Layer):
 
     def __init__(self, max_seq_length, **kwargs):
@@ -182,7 +182,7 @@ gpt_time_on_one_model_min =  (gpt_t1 - gpt_t0) / 60
 
 hy_df = pd.DataFrame(history.history)
 print(hy_df)
-
+"""
 
 ### Cerebros model:
 
