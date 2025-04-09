@@ -258,7 +258,8 @@ def split_alternate(x):
 
 def rotate_half(x):
     x = split_alternate(x)
-    rotated_x = tf.concat([-x[..., x.shape[-1]//2:], x[..., :x.shape[-1]//2]], axis=-1)
+    d = tf.shape(x)[-1]
+    rotated_x = tf.concat([-x[..., d//2:], x[..., :d//2]], axis=-1)
     return tf.reshape(rotated_x, tf.shape(x))
 
 
