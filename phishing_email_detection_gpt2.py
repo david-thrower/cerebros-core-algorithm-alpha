@@ -9,7 +9,10 @@ Original file is located at
 ## GPT2 + Cerebros for Phishing email detection
 
 Initialization
-"""
+def rotate_half(x):
+    x = split_alternate(x)
+    rotated_x = tf.concat([-x[..., x.shape[-1]//2:], x[..., :x.shape[-1]//2]], axis=-1)
+    return tf.reshape(rotated_x, tf.shape(x))"""
 
 import tensorflow as tf
 import tensorflow_text
@@ -255,11 +258,8 @@ def split_alternate(x):
 
 def rotate_half(x):
     x = split_alternate(x)
-    d = tf.shape(x)[-1]
-    x1 = x[..., :d//2]
-    x2 = x[..., d//2:]
-    rotated_x = tf.concat([-x2, x1], axis=-1)
-    return tf.reshape(rotated_x, tf.shape(x)[:-2] + [-1])
+    rotated_x = tf.concat([-x[..., x.shape[-1]//2:], x[..., :x.shape[-1]//2]], axis=-1)
+    return tf.reshape(rotated_x, tf.shape(x))
 
 
 def apply_rotary_pos_emb(x, sin, cos):
@@ -267,6 +267,7 @@ def apply_rotary_pos_emb(x, sin, cos):
     sin = tf.reshape(sin, [tf.shape(sin)[0], tf.shape(sin)[1], -1])
     x_rotated = x * cos + rotate_half(x) * sin
     return x_rotated
+
 
 class InterleavedRoPE(tf.keras.layers.Layer):
     def __init__(self, dim, max_seq_len=1024, **kwargs):
