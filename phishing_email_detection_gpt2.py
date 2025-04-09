@@ -244,7 +244,7 @@ def split_alternate(x):
 
 def rotate_half(x):
     x = split_alternate(x)
-    d = x.shape[-1]
+    d = tf.shape(x)[-1]
     return x[..., d//2:]
 
 def apply_rotary_pos_emb(x, sin, cos):
