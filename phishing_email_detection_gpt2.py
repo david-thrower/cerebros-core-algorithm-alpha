@@ -210,11 +210,8 @@ class TokenizerLayer(tf.keras.layers.Layer):
 
 
 
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
 
-class RotaryEmbedding(keras.layers.Layer):
+class RotaryEmbedding(tf.keras.layers.Layer):
     def __init__(self, dim, max_seq_len=1024, temperature=10000.0, **kwargs):
         super().__init__(**kwargs)
         self.dim = dim
@@ -252,7 +249,7 @@ def apply_rotary_pos_emb(x, sin, cos):
     x_rotated = x * cos + rotate_half(x) * sin
     return x_rotated
 
-class InterleavedRoPE(layers.Layer):
+class InterleavedRoPE(tf.keras.layers.Layer):
     def __init__(self, dim, max_seq_len=1024, **kwargs):
         super().__init__(**kwargs)
         self.dim = dim
