@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "168-try-integrating-a-irope-layer" ]
+    branches: [ "main", "169-use-a-more-scalable-tokenizer" ]
 
 permissions:
   contents: read
