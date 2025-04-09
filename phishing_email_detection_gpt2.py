@@ -211,7 +211,7 @@ class TokenizerLayer(tf.keras.layers.Layer):
 
 
 
-class RotaryEmbedding(tf.keras.layers.Layer):
+def RotaryEmbedding(tf.keras.layers.Layer):
     def __init__(self, dim, max_seq_len=1024, temperature=10000.0, **kwargs):
         super().__init__(**kwargs)
         self.dim = dim
@@ -233,9 +233,16 @@ class RotaryEmbedding(tf.keras.layers.Layer):
         seq_len = tf.shape(x)[1] if seq_len is None else seq_len
         sin = self.sin_cache[:seq_len]
         cos = self.cos_cache[:seq_len]
-        sin = tf.cast(tf.repeat(sin[..., tf.newaxis], self.dim // 2, axis=-1), x.dtype)
-        cos = tf.cast(tf.repeat(cos[..., tf.newaxis], self.dim // 2, axis=-1), x.dtype)
+        sin = tf.cast(tf.repeat(sin[..., tf.newaxis], 2, axis=-1), x.dtype)
+        cos = tf.cast(tf.repeat(cos[..., tf.newaxis], 2, axis=-1), x.dtype)
+        sin = tf.reshape(sin, [seq_len, self.dim])
+        cos = tf.reshape(cos, [seq_len, self.dim])
+        sin = tf.expand_dims(sin, axis=0)
+        cos = tf.expand_dims(cos, axis=0)
+        sin = tf.tile(sin, [batch_size, 1, 1])
+        cos = tf.tile(cos, [batch_size, 1, 1])
         return sin, cos
+
 
 
 def split_alternate(x):
