@@ -219,8 +219,9 @@ class NewTokenizerLayer(tf.keras.layers.Layer):
         #     inputs = inputs.numpy().astype("U").tolist()
 
         # inputs = [x.decode('utf-8') for x in inputs]
-        inputs = tf.strings.unicode_encode(inputs, 'UTF-8')
-        tokenized = self.tokenizer(inputs,
+        # inputs = tf.strings.unicode_encode(inputs, 'UTF-8')
+        
+        tokenized = self.tokenizer(inputs.numpy().astype("U").tolist(),
             max_length=self.max_seq_length,
             padding='max_length',
             truncation=True,
