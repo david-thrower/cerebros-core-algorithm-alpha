@@ -251,6 +251,8 @@ def rotate_half(x):
     return x[..., d//2:]
 
 def apply_rotary_pos_emb(x, sin, cos):
+    cos = tf.reshape(cos, [tf.shape(cos)[0], tf.shape(cos)[1], -1])
+    sin = tf.reshape(sin, [tf.shape(sin)[0], tf.shape(sin)[1], -1])
     x_rotated = x * cos + rotate_half(x) * sin
     return x_rotated
 
