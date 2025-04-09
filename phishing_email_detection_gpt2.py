@@ -214,9 +214,9 @@ class NewTokenizerLayer(tf.keras.layers.Layer):
         - The tokenized input IDs.
         """
         # Check if inputs is a tensor
-        if isinstance(inputs, tf.Tensor):
-            # Convert tensor to a list of strings
-            inputs = inputs.numpy().astype("U").tolist()
+        # if isinstance(inputs, tf.Tensor):
+        #     # Convert tensor to a list of strings
+        #     inputs = inputs.numpy().astype("U").tolist()
         # Tokenize each input string separately
         tokenized = self.tokenizer(inputs,
             max_length=self.max_seq_length,
