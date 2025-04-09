@@ -74,11 +74,11 @@ train_test_split(X, y, test_size=0.85, shuffle=False)
 #
 
 # Training data for baseline model
-# baseline_train_x = tf.constant(X_train)
+baseline_train_x = tf.constant(X_train)
 baseline_train_y = tf.constant(y_train, dtype=tf.int8)
 
 # Packaged for Cerebros (multimodal, takes inputs as a list)
-training_x   = [X_train.tolist()]
+training_x   = [baseline_train_x]
 train_labels = [baseline_train_y]
 
 #
