@@ -211,7 +211,7 @@ class TokenizerLayer(tf.keras.layers.Layer):
 
 
 
-class RotaryEmbedding(tf.keras.layers.Layer):
+def RotaryEmbedding(tf.keras.layers.Layer):
     def __init__(self, dim, max_seq_len=1024, temperature=10000.0, **kwargs):
         super().__init__(**kwargs)
         self.dim = dim
@@ -225,15 +225,18 @@ class RotaryEmbedding(tf.keras.layers.Layer):
         sinusoid = tf.einsum("i,j->ij", position, inv_freq)
         sin = tf.sin(sinusoid)
         cos = tf.cos(sinusoid)
-        self.sin_cache = tf.concat([sin, sin], axis=-1)
-        self.cos_cache = tf.concat([cos, cos], axis=-1)
+        self.sin_cache = sin
+        self.cos_cache = cos
     
     def call(self, x, seq_len=None):
         batch_size = tf.shape(x)[0]
         seq_len = tf.shape(x)[1] if seq_len is None else seq_len
         sin = self.sin_cache[:seq_len]
         cos = self.cos_cache[:seq_len]
-        return tf.cast(sin, x.dtype), tf.cast(cos, x.dtype)
+        sin = tf.cast(tf.repeat(sin[..., tf.newaxis], self.dim // 2, axis=-1), x.dtype)
+        cos = tf.cast(tf.repeat(cos[..., tf.newaxis], self.dim // 2, axis=-1), x.dtype)
+        return sin, cos
+
 
 def split_alternate(x):
     shape = tf.shape(x)
