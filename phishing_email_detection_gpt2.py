@@ -295,7 +295,7 @@ embedded = tf.keras.layers.Embedding(
 
 position_embedding = InterleavedRoPE(
     dim=EMBEDDING_DIM,
-    max_seq_length=max_seq_length,
+    max_seq_len=max_seq_length,
     # initializer="uniform",
 )(embedded)
 
