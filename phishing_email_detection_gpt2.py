@@ -210,38 +210,64 @@ class TokenizerLayer(tf.keras.layers.Layer):
 
 
 
-class RotaryPositionEmbedding(tf.keras.layers.Layer):
-    def __init__(self, max_seq_length, d_model, **kwargs):
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+
+class RotaryEmbedding(keras.layers.Layer):
+    def __init__(self, dim, max_seq_len=1024, temperature=10000.0, **kwargs):
         super().__init__(**kwargs)
-        self.max_seq_length = max_seq_length
-        self.d_model = d_model
-        assert d_model % 2 == 0, "d_model must be even"
-        
-        # Precompute rotation matrices
-        inv_freq = 1.0 / (10000 ** (tf.range(0, d_model, 2, dtype=tf.float32) / d_model))
-        self.inv_freq = tf.cast(inv_freq, tf.float32)
-        positions = tf.range(max_seq_length, dtype=tf.float32)
-        self.sin = tf.sin(tf.einsum('i,j->ij', positions, inv_freq))
-        self.cos = tf.cos(tf.einsum('i,j->ij', positions, inv_freq))
-        
+        self.dim = dim
+        self.max_seq_len = max_seq_len
+        self.temperature = temperature
+
+    def build(self, input_shape):
+        super().build(input_shape)
+        inv_freq = 1.0 / (self.temperature ** (tf.range(0, self.dim, 2, dtype=tf.float32) / self.dim))
+        position = tf.range(self.max_seq_len, dtype=tf.float32)
+        sinusoid = tf.einsum("i,j->ij", position, inv_freq)
+        self.sin_cache = tf.sin(sinusoid)
+        self.cos_cache = tf.cos(sinusoid)
+    
+    def call(self, x, seq_len=None):
+        batch_size = tf.shape(x)[0]
+        seq_len = tf.shape(x)[1] if seq_len is None else seq_len
+        sin = self.sin_cache[:seq_len]
+        cos = self.cos_cache[:seq_len]
+        return tf.cast(sin, x.dtype), tf.cast(cos, x.dtype)
+
+def split_alternate(x):
+    shape = tf.shape(x)
+    x = tf.reshape(x, [shape[0], shape[1], shape[2] // 2, 2])
+    x = tf.transpose(x, [0, 1, 3, 2])
+    x = tf.reshape(x, [shape[0], shape[1], -1])
+    return x
+
+def rotate_half(x):
+    x = split_alternate(x)
+    d = x.shape[-1]
+    return x[..., d//2:]
+
+def apply_rotary_pos_emb(x, sin, cos):
+    x_rotated = x * cos + rotate_half(x) * sin
+    return x_rotated
+
+class InterleavedRoPE(layers.Layer):
+    def __init__(self, dim, max_seq_len=1024, **kwargs):
+        super().__init__(**kwargs)
+        self.dim = dim
+        self.max_seq_len = max_seq_len
+        self.rotary_emb = RotaryEmbedding(dim, max_seq_len)
+
     def call(self, x):
         batch_size = tf.shape(x)[0]
         seq_len = tf.shape(x)[1]
         
-        # Compute sine and cosine matrices for current sequence length
-        sinusoid = tf.einsum('i,j->ij', tf.range(seq_len, dtype=tf.float32), self.inv_freq)
-        current_sin = tf.sin(sinusoid)
-        current_cos = tf.cos(sinusoid)
-        
-        # Split dimensions and apply rotation using einsum
-        x = tf.reshape(x, [batch_size, seq_len, self.d_model//2, 2])
-        rotated = tf.stack([
-            x[..., 0] * current_cos - x[..., 1] * current_sin,
-            x[..., 0] * current_sin + x[..., 1] * current_cos
-        ], axis=-1)
-        
-        # Reshape back and apply dropout
-        return tf.reshape(rotated, [batch_size, seq_len, self.d_model])
+        sin, cos = self.rotary_emb(x, seq_len)
+        x = apply_rotary_pos_emb(x, sin, cos)
+        return x
+
+
 
 
 
@@ -249,7 +275,7 @@ class RotaryPositionEmbedding(tf.keras.layers.Layer):
 # GPT2 configurables
 
 # Optimal for accuracy thus far:
-max_seq_length = 1024
+max_seq_length = 1024 * 2
 
 inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
 gp2_tokenizer = TokenizerLayer(max_seq_length=max_seq_length)
@@ -267,9 +293,9 @@ embedded = tf.keras.layers.Embedding(
     input_length=max_seq_length,
     mask_zero=True)(tokens)
 
-position_embedding = RotaryPositionEmbedding(
+position_embedding = InterleavedRoPE(
+    dim=EMBEDDING_DIM,
     max_seq_length=max_seq_length,
-    d_model=EMBEDDING_DIM,
     # initializer="uniform",
 )(embedded)
 
