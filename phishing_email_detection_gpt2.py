@@ -74,11 +74,11 @@ train_test_split(X, y, test_size=0.85, shuffle=False)
 #
 
 # Training data for baseline model
-baseline_train_x = tf.constant(X_train)
+# baseline_train_x = tf.constant(X_train)
 baseline_train_y = tf.constant(y_train, dtype=tf.int8)
 
 # Packaged for Cerebros (multimodal, takes inputs as a list)
-training_x   = [baseline_train_x]
+training_x   = [X_train.tolist()]
 train_labels = [baseline_train_y]
 
 #
@@ -218,7 +218,7 @@ class NewTokenizerLayer(tf.keras.layers.Layer):
         #     # Convert tensor to a list of strings
         #     inputs = inputs.numpy().astype("U").tolist()
 
-        inputs = [x.decode('utf-8') for x in inputs]
+        # inputs = [x.decode('utf-8') for x in inputs]
         tokenized = self.tokenizer(inputs,
             max_length=self.max_seq_length,
             padding='max_length',
