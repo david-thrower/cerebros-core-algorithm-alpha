@@ -18,6 +18,7 @@ import tensorflow as tf
 import tensorflow_text
 from keras_nlp.models import GPT2Tokenizer, GPT2Preprocessor, GPT2Backbone
 from keras_nlp.layers import PositionEmbedding
+from transformers import AutoTokenizer
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from tensorflow.keras.utils import to_categorical
@@ -189,27 +190,64 @@ print(hy_df)
 
 ### Cerebros model:
 
-# TokenizerLayer class to handle tokenization and return only token_ids
-class TokenizerLayer(tf.keras.layers.Layer):
-
-    def __init__(self, max_seq_length, **kwargs):
-        super(TokenizerLayer, self).__init__(**kwargs)  # Update this line
-        self.tokenizer = GPT2Tokenizer.from_preset("gpt2_extra_large_en")
-        self.preprocessor = GPT2Preprocessor(self.tokenizer, sequence_length=max_seq_length)
+class NewTokenizerLayer(tf.keras.layers.Layer):
+    """
+    A Keras layer that tokenizes input text using a specified tokenizer.
+    """
+    def __init__(self, max_seq_length, tokenizer_checkpoint, **kwargs):
+        """
+        Initializes the NewTokenizerLayer.
+        Args:
+        - max_seq_length (int): The maximum sequence length for tokenization.
+        - tokenizer_checkpoint (str): The checkpoint for the tokenizer to use.
+        - **kwargs: Additional keyword arguments for the layer.
+        """
+        super(NewTokenizerLayer, self).__init__(**kwargs)
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
         self.max_seq_length = max_seq_length
-
     def call(self, inputs):
-        prep = self.preprocessor([inputs])
-        return prep['token_ids']
-
+        """
+        Tokenizes the input text.
+        Args:
+        - inputs: The input text to tokenize.
+        Returns:
+        - The tokenized input IDs.
+        """
+        # Check if inputs is a tensor
+        if isinstance(inputs, tf.Tensor):
+            # Convert tensor to a list of strings
+            inputs = inputs.numpy().astype("U").tolist()
+        # Tokenize each input string separately
+        tokenized = self.tokenizer(inputs,
+            max_length=self.max_seq_length,
+            padding='max_length',
+            truncation=True,
+            return_tensors='tf',
+            return_overflowing_tokens=False)
+        # Return the tokenized input IDs
+        return tokenized['input_ids']
     def get_config(self):
-        config = super(TokenizerLayer, self).get_config()
-        config.update({'max_seq_length': self.max_seq_length})
+        """
+        Returns the configuration for the layer.
+        Returns:
+        - A dictionary containing the layer's configuration.
+        """
+        config = super(NewTokenizerLayer, self).get_config()
+        config.update({
+            'max_seq_length': self.max_seq_length,
+            'tokenizer_checkpoint': self.tokenizer.name_or_path
+        })
         return config
-
     @classmethod
     def from_config(cls, config):
-        return cls(max_seq_length=config['max_seq_length'])
+        """
+        Creates a new instance of the layer from a configuration.
+        Args:
+        - config: The configuration dictionary.
+        Returns:
+        - A new instance of the layer.
+        """
+        return cls(max_seq_length=config['max_seq_length'], tokenizer_checkpoint=config['tokenizer_checkpoint'])
 
 
 
@@ -294,9 +332,11 @@ class InterleavedRoPE(tf.keras.layers.Layer):
 
 # Optimal for accuracy thus far:
 max_seq_length = 1024
+tokenizer_checkpoint = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
 
 inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
-gp2_tokenizer = TokenizerLayer(max_seq_length=max_seq_length)
+# gp2_tokenizer = TokenizerLayer(max_seq_length=max_seq_length)
+gp2_tokenizer = NewTokenizerLayer(max_seq_length=max_seq_length,tokenizer_checkpoint=tokenizer_checkpoint)
 VOCABULARY_SIZE = gp2_tokenizer.tokenizer.vocabulary_size()
 tokens = gp2_tokenizer(inp)
 
