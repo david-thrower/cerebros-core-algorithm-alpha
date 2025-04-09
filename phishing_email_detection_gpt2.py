@@ -217,7 +217,8 @@ class NewTokenizerLayer(tf.keras.layers.Layer):
         # if isinstance(inputs, tf.Tensor):
         #     # Convert tensor to a list of strings
         #     inputs = inputs.numpy().astype("U").tolist()
-        # Tokenize each input string separately
+
+        inputs = [x.decode('utf-8') for x in inputs.numpy()]
         tokenized = self.tokenizer(inputs,
             max_length=self.max_seq_length,
             padding='max_length',
