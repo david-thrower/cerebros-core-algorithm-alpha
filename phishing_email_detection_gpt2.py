@@ -211,7 +211,7 @@ class TokenizerLayer(tf.keras.layers.Layer):
 
 
 
-def RotaryEmbedding(tf.keras.layers.Layer):
+class RotaryEmbedding(tf.keras.layers.Layer):
     def __init__(self, dim, max_seq_len=1024, temperature=10000.0, **kwargs):
         super().__init__(**kwargs)
         self.dim = dim
