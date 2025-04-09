@@ -252,10 +252,15 @@ def split_alternate(x):
     x = tf.reshape(x, [shape[0], shape[1], -1])
     return x
 
+
 def rotate_half(x):
     x = split_alternate(x)
     d = tf.shape(x)[-1]
-    return x[..., d//2:]
+    x1 = x[..., :d//2]
+    x2 = x[..., d//2:]
+    rotated_x = tf.concat([-x2, x1], axis=-1)
+    return tf.reshape(rotated_x, tf.shape(x)[:-2] + [-1])
+
 
 def apply_rotary_pos_emb(x, sin, cos):
     cos = tf.reshape(cos, [tf.shape(cos)[0], tf.shape(cos)[1], -1])
