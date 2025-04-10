@@ -329,7 +329,7 @@ class InterleavedRoPE(tf.keras.layers.Layer):
 # GPT2 configurables
 
 # Optimal for accuracy thus far:
-max_seq_length = 1024
+max_seq_length = int(1024 * 1.5)
 tokenizer_checkpoint = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
 
 inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
