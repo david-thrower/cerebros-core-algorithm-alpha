@@ -89,7 +89,7 @@ OUTPUT_SHAPES = [1]
 
 """### A custom GPT2 encoder layer for text embedding"""
 
-"""
+
 class GPT2Layer(tf.keras.layers.Layer):
 
     def __init__(self, max_seq_length, **kwargs):
@@ -186,7 +186,7 @@ gpt_time_on_one_model_min =  (gpt_t1 - gpt_t0) / 60
 
 hy_df = pd.DataFrame(history.history)
 print(hy_df)
-"""
+
 
 ### Cerebros model:
 
@@ -329,11 +329,10 @@ class InterleavedRoPE(tf.keras.layers.Layer):
 # GPT2 configurables
 
 # Optimal for accuracy thus far:
-max_seq_length = int(1024 * 1.5)
+max_seq_length = 1536
 tokenizer_checkpoint = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
 
 inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
-# gp2_tokenizer = TokenizerLayer(max_seq_length=max_seq_length)
 gp2_tokenizer = NewTokenizerLayer(max_seq_length=max_seq_length,tokenizer_checkpoint=tokenizer_checkpoint)
 VOCABULARY_SIZE = gp2_tokenizer.tokenizer.vocab_size
 tokens = gp2_tokenizer(inp)
@@ -381,7 +380,7 @@ max_consecutive_lateral_connections = 20
 p_lateral_connection = 30
 num_lateral_connection_tries_per_unit = 25
 learning_rate = 3 * 10 ** -3
-epochs = 15  # [1, 100]
+epochs = 15  #
 batch_size = 17
 minimum_levels = 2
 maximum_levels = 2 # [3,7]
@@ -462,11 +461,10 @@ models_tried = moities_to_try  * tries_per_moity
 cerebros_time_per_model = cerebros_time_all_models_min / models_tried
 
 print(f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
-# print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model for 3 epochs. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
+print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model for 3 epochs. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
 
 
 print(f'Cerebros best accuracy achieved is {result}')
 print(f'val set accuracy')
 
 # """### Testing the best model found"""
-
