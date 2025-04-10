@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "169-use-a-more-scalable-tokenizer" ]
+    branches: [ "main", "checkout 170-try-3x-context-window-from-169" ]
 
 permissions:
   contents: read
