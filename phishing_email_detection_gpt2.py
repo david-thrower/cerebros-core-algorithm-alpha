@@ -255,33 +255,80 @@ class RotaryEmbedding(tf.keras.layers.Layer):
     def __init__(self, dim, max_seq_len=1024, temperature=10000.0, **kwargs):
         super().__init__(**kwargs)
         self.dim = dim
-        self.max_seq_len = max_seq_len
+        self.max_seq_len = max_seq_len # Still useful for potential pre-allocation if needed, but not for caching tensors
         self.temperature = temperature
+        # No caching in __init__ or build anymore
 
     def build(self, input_shape):
+        # Build is primarily for creating weights. We don't have trainable weights here.
+        # We can calculate inv_freq here if desired, as it doesn't depend on input shape directly
+        # and is constant. However, calculating it in call() is also fine.
+        # Let's calculate it once here to avoid recomputing constants.
+        # Ensure dim is even
+        if self.dim % 2 != 0:
+             raise ValueError(f"Embedding dimension `dim` ({self.dim}) must be even for RotaryEmbedding.")
+
+        inv_freq_base = tf.range(0, self.dim, 2, dtype=tf.float32) # Corrected range for pair dimension
+        inv_freq = 1.0 / (self.temperature ** (inv_freq_base / self.dim)) # Corrected calculation
+        self.inv_freq = inv_freq # Store the constant factor
         super().build(input_shape)
-        inv_freq = 1.0 / (self.temperature ** (tf.range(0, self.dim // 2, dtype=tf.float32) / (self.dim // 2)))
-        position = tf.range(self.max_seq_len, dtype=tf.float32)
-        sinusoid = tf.einsum("i,j->ij", position, inv_freq)
-        sin = tf.sin(sinusoid)
-        cos = tf.cos(sinusoid)
-        self.sin_cache = sin
-        self.cos_cache = cos
-    
+
     def call(self, x, seq_len=None):
-        batch_size = tf.shape(x)[0]
-        seq_len = tf.shape(x)[1] if seq_len is None else seq_len
-        sin = self.sin_cache[:seq_len]
-        cos = self.cos_cache[:seq_len]
-        sin = tf.cast(tf.repeat(sin[..., tf.newaxis], 2, axis=-1), x.dtype)
-        cos = tf.cast(tf.repeat(cos[..., tf.newaxis], 2, axis=-1), x.dtype)
-        sin = tf.reshape(sin, [seq_len, self.dim])
-        cos = tf.reshape(cos, [seq_len, self.dim])
-        sin = tf.expand_dims(sin, axis=0)
-        cos = tf.expand_dims(cos, axis=0)
+        shape = tf.shape(x)
+        batch_size = shape[0]
+        # Determine sequence length dynamically from input tensor 'x'
+        actual_seq_len = shape[1]
+
+        # Use actual_seq_len for calculations
+        position = tf.range(actual_seq_len, dtype=tf.float32)
+        # Calculate sinusoid input using einsum or broadcasting
+        # Einsum approach:
+        sinusoid_inp = tf.einsum("i,j->ij", position, self.inv_freq)
+        # Broadcasting approach (might be clearer):
+        # sinusoid_inp = tf.expand_dims(position, axis=-1) * tf.expand_dims(self.inv_freq, axis=0)
+
+        # Calculate sin and cos based on the actual sequence length
+        sin = tf.sin(sinusoid_inp)
+        cos = tf.cos(sinusoid_inp)
+
+        # Repeat sin/cos for interleaving: [a, b] -> [a, a, b, b]
+        # Original code used repeat then reshape, which might be slightly different
+        # from direct interleaving depending on interpretation. Let's stick to the
+        # original logic's apparent intent which leads to pairing.
+        # We need shape [actual_seq_len, dim]
+        # sin/cos currently [actual_seq_len, dim/2]
+        sin = tf.repeat(sin, 2, axis=-1) # Repeat along the last dimension
+        cos = tf.repeat(cos, 2, axis=-1) # Repeat along the last dimension
+
+        # Expand dims for batch and tile
+        # Output shape needs to be [batch_size, actual_seq_len, dim]
+        sin = tf.expand_dims(sin, axis=0) # Shape [1, actual_seq_len, dim]
+        cos = tf.expand_dims(cos, axis=0) # Shape [1, actual_seq_len, dim]
+
+        # Tile to match the batch size
         sin = tf.tile(sin, [batch_size, 1, 1])
         cos = tf.tile(cos, [batch_size, 1, 1])
+
+        # Ensure dtype matches input tensor x
+        sin = tf.cast(sin, x.dtype)
+        cos = tf.cast(cos, x.dtype)
+
+        # Return sin and cos needed by InterleavedRoPE
         return sin, cos
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "dim": self.dim,
+            "max_seq_len": self.max_seq_len,
+            "temperature": self.temperature,
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
 
 
 
