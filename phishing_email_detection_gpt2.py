@@ -190,10 +190,6 @@ print(hy_df)
 ### Cerebros model:
 
 # TokenizerLayer class to handle tokenization and return only token_ids
-
-from transformers import AutoTokenizer
-import tensorflow as tf
-
 class TokenizerLayer(tf.keras.layers.Layer):
 
     def __init__(self, max_seq_length, **kwargs):
@@ -214,8 +210,6 @@ class TokenizerLayer(tf.keras.layers.Layer):
     @classmethod
     def from_config(cls, config):
         return cls(max_seq_length=config['max_seq_length'])
-
-
 
 
 
@@ -437,4 +431,3 @@ print(f'Cerebros best accuracy achieved is {result}')
 print(f'val set accuracy')
 
 # """### Testing the best model found"""
-
