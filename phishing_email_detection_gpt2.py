@@ -190,26 +190,63 @@ print(hy_df)
 ### Cerebros model:
 
 # TokenizerLayer class to handle tokenization and return only token_ids
-class TokenizerLayer(tf.keras.layers.Layer):
 
-    def __init__(self, max_seq_length, **kwargs):
-        super(TokenizerLayer, self).__init__(**kwargs)  # Update this line
-        self.tokenizer = GPT2Tokenizer.from_preset("gpt2_extra_large_en")
-        self.preprocessor = GPT2Preprocessor(self.tokenizer, sequence_length=max_seq_length)
+from transformers import AutoTokenizer
+import tensorflow as tf
+
+class NewTokenizerLayer(tf.keras.layers.Layer):
+    def __init__(self, max_seq_length, tokenizer_checkpoint, **kwargs):
+        super().__init__(**kwargs)
         self.max_seq_length = max_seq_length
+        self.tokenizer_checkpoint = tokenizer_checkpoint
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
+        
+        # Ensure tokenizer has a padding token
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
 
     def call(self, inputs):
-        prep = self.preprocessor([inputs])
-        return prep['token_ids']
+        def tokenize_py_fn(inputs):
+            # Convert TensorFlow bytes to Python strings
+            texts = [text.decode('utf-8') for text in inputs.numpy()]
+            
+            # Tokenize with Hugging Face tokenizer
+            tokenized = self.tokenizer(
+                texts,
+                max_length=self.max_seq_length,
+                padding='max_length',
+                truncation=True,
+                return_tensors='tf'
+            )
+            return tokenized['input_ids'].numpy()
+        
+        # Wrap Python function in TensorFlow operation
+        input_ids = tf.py_function(
+            tokenize_py_fn,
+            [inputs],
+            Tout=tf.int32
+        )
+        
+        # Set shape for downstream layers
+        batch_size = tf.shape(inputs)[0]
+        input_ids.set_shape([None, self.max_seq_length])
+        
+        return input_ids
 
     def get_config(self):
-        config = super(TokenizerLayer, self).get_config()
-        config.update({'max_seq_length': self.max_seq_length})
+        config = super().get_config()
+        config.update({
+            'max_seq_length': self.max_seq_length,
+            'tokenizer_checkpoint': self.tokenizer_checkpoint
+        })
         return config
 
     @classmethod
     def from_config(cls, config):
-        return cls(max_seq_length=config['max_seq_length'])
+        return cls(
+            max_seq_length=config['max_seq_length'],
+            tokenizer_checkpoint=config['tokenizer_checkpoint']
+        )
 
 
 
