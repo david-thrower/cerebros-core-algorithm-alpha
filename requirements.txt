@@ -1,7 +1,7 @@
-jax==0.4.26
-jaxlib==0.4.26
+jax==jax 0.5.3
+jaxlib==jax 0.5.3
 pendulum==3.0.0
-tensorflow==2.15.0
+tensorflow==2.19.0
 numpy==1.26.4
 pandas==2.2.1
 pyvis==0.3.2
