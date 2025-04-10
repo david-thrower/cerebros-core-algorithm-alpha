@@ -251,67 +251,63 @@ class NewTokenizerLayer(tf.keras.layers.Layer):
 
 
 
+# --- Updated RotaryEmbedding ---
 class RotaryEmbedding(tf.keras.layers.Layer):
     def __init__(self, dim, max_seq_len=1024, temperature=10000.0, **kwargs):
         super().__init__(**kwargs)
         self.dim = dim
-        self.max_seq_len = max_seq_len # Still useful for potential pre-allocation if needed, but not for caching tensors
+        # Ensure dim is even right at initialization
+        if self.dim % 2 != 0:
+            raise ValueError(f"Embedding dimension `dim` ({self.dim}) must be even for RotaryEmbedding.")
+        self.max_seq_len = max_seq_len
         self.temperature = temperature
-        # No caching in __init__ or build anymore
+        # *** No calculation or storage of inv_freq here or in build ***
 
     def build(self, input_shape):
-        # Build is primarily for creating weights. We don't have trainable weights here.
-        # We can calculate inv_freq here if desired, as it doesn't depend on input shape directly
-        # and is constant. However, calculating it in call() is also fine.
-        # Let's calculate it once here to avoid recomputing constants.
-        # Ensure dim is even
-        if self.dim % 2 != 0:
-             raise ValueError(f"Embedding dimension `dim` ({self.dim}) must be even for RotaryEmbedding.")
-
-        inv_freq_base = tf.range(0, self.dim, 2, dtype=tf.float32) # Corrected range for pair dimension
-        inv_freq = 1.0 / (self.temperature ** (inv_freq_base / self.dim)) # Corrected calculation
-        self.inv_freq = inv_freq # Store the constant factor
+        # Build should primarily be for creating trainable weights, which we don't have.
+        # Call super().build() for Keras compatibility.
         super().build(input_shape)
 
-    def call(self, x, seq_len=None):
+    def call(self, x): # Removed seq_len argument, calculate from x
         shape = tf.shape(x)
         batch_size = shape[0]
-        # Determine sequence length dynamically from input tensor 'x'
         actual_seq_len = shape[1]
 
+        # *** Calculate inv_freq inside call ***
+        inv_freq_base = tf.range(0, self.dim, 2, dtype=tf.float32)
+        inv_freq = 1.0 / (self.temperature ** (inv_freq_base / self.dim))
+        # Ensure inv_freq has the correct shape [dim/2]
+        inv_freq = tf.cast(inv_freq, dtype=x.dtype) # Match dtype early
+
         # Use actual_seq_len for calculations
-        position = tf.range(actual_seq_len, dtype=tf.float32)
+        position = tf.range(actual_seq_len, dtype=x.dtype) # Match dtype
+
         # Calculate sinusoid input using einsum or broadcasting
-        # Einsum approach:
-        sinusoid_inp = tf.einsum("i,j->ij", position, self.inv_freq)
-        # Broadcasting approach (might be clearer):
-        # sinusoid_inp = tf.expand_dims(position, axis=-1) * tf.expand_dims(self.inv_freq, axis=0)
+        # Einsum approach: Ensure correct dimensions [seq_len, dim/2]
+        sinusoid_inp = tf.einsum("i,j->ij", position, inv_freq)
 
         # Calculate sin and cos based on the actual sequence length
         sin = tf.sin(sinusoid_inp)
         cos = tf.cos(sinusoid_inp)
 
         # Repeat sin/cos for interleaving: [a, b] -> [a, a, b, b]
-        # Original code used repeat then reshape, which might be slightly different
-        # from direct interleaving depending on interpretation. Let's stick to the
-        # original logic's apparent intent which leads to pairing.
-        # We need shape [actual_seq_len, dim]
-        # sin/cos currently [actual_seq_len, dim/2]
-        sin = tf.repeat(sin, 2, axis=-1) # Repeat along the last dimension
-        cos = tf.repeat(cos, 2, axis=-1) # Repeat along the last dimension
+        # Result needs shape [actual_seq_len, dim]
+        sin = tf.repeat(sin, 2, axis=-1)
+        cos = tf.repeat(cos, 2, axis=-1)
 
         # Expand dims for batch and tile
         # Output shape needs to be [batch_size, actual_seq_len, dim]
-        sin = tf.expand_dims(sin, axis=0) # Shape [1, actual_seq_len, dim]
-        cos = tf.expand_dims(cos, axis=0) # Shape [1, actual_seq_len, dim]
+        # Add batch dimension: [1, actual_seq_len, dim]
+        sin = tf.expand_dims(sin, axis=0)
+        cos = tf.expand_dims(cos, axis=0)
 
-        # Tile to match the batch size
+        # Tile to match the batch size: [batch_size, actual_seq_len, dim]
         sin = tf.tile(sin, [batch_size, 1, 1])
         cos = tf.tile(cos, [batch_size, 1, 1])
 
-        # Ensure dtype matches input tensor x
-        sin = tf.cast(sin, x.dtype)
-        cos = tf.cast(cos, x.dtype)
+        # Casting to x.dtype was already done for inv_freq, sin/cos will inherit
+        # sin = tf.cast(sin, x.dtype) # Already done via calculation chain
+        # cos = tf.cast(cos, x.dtype) # Already done via calculation chain
 
         # Return sin and cos needed by InterleavedRoPE
         return sin, cos
@@ -328,6 +324,7 @@ class RotaryEmbedding(tf.keras.layers.Layer):
     @classmethod
     def from_config(cls, config):
         return cls(**config)
+
 
 
 
@@ -357,17 +354,37 @@ def apply_rotary_pos_emb(x, sin, cos):
 class InterleavedRoPE(tf.keras.layers.Layer):
     def __init__(self, dim, max_seq_len=1024, **kwargs):
         super().__init__(**kwargs)
+        if dim % 2 != 0:
+             raise ValueError(f"Embedding dimension `dim` ({dim}) must be even for InterleavedRoPE.")
         self.dim = dim
         self.max_seq_len = max_seq_len
-        self.rotary_emb = RotaryEmbedding(dim, max_seq_len)
+        # Instantiate the RotaryEmbedding layer
+        # Ensure the name is consistent if needed for saving/loading
+        self.rotary_emb = RotaryEmbedding(dim, max_seq_len, name="rotary_embedding")
 
     def call(self, x):
-        batch_size = tf.shape(x)[0]
-        seq_len = tf.shape(x)[1]
-        
-        sin, cos = self.rotary_emb(x, seq_len)
-        x = apply_rotary_pos_emb(x, sin, cos)
-        return x
+        # Get sin and cos from the RotaryEmbedding layer's call method
+        # *** Pass only 'x'. RotaryEmbedding calculates seq_len internally. ***
+        sin, cos = self.rotary_emb(x)
+
+        # Apply the positional embeddings
+        x_embedded = apply_rotary_pos_emb(x, sin, cos)
+        return x_embedded
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "dim": self.dim,
+            "max_seq_len": self.max_seq_len,
+        })
+        # Keras handles nested layer serialization automatically
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        # Keras handles nested layer restoration automatically
+        return cls(**config)
+
 
 
 
