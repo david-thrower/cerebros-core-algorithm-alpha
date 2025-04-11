@@ -35,8 +35,8 @@ jobs:
         # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test distributed random search Ames by running
       run: python3 regression-example-ames-no-preproc.py
-    # - name: Test distributed random search Ames by running - Val set
-    #   run: python3 regression-example-ames-no-preproc-val-set.py
+    - name: Test distributed random search Ames by running - Val set
+      run: python3 regression-example-ames-no-preproc-val-set.py
     # - name: Test text classifier - random search - ham-spam
     #   run: python3 text-class-ham-or-spam.py
     #   timeout-minutes: 90
