@@ -8,11 +8,6 @@ Original file is located at
 
 ## GPT2 + Cerebros for Phishing email detection
 
-Initialization
-def rotate_half(x):
-    x = split_alternate(x)
-    rotated_x = tf.concat([-x[..., x.shape[-1]//2:], x[..., :x.shape[-1]//2]], axis=-1)
-    return tf.reshape(rotated_x, tf.shape(x))"""
 
 import tensorflow as tf
 import tensorflow_text
@@ -89,7 +84,7 @@ OUTPUT_SHAPES = [1]
 
 """### A custom GPT2 encoder layer for text embedding"""
 
-"""
+
 class GPT2Layer(tf.keras.layers.Layer):
 
     def __init__(self, max_seq_length, **kwargs):
@@ -187,7 +182,7 @@ gpt_time_on_one_model_min =  (gpt_t1 - gpt_t0) / 60
 hy_df = pd.DataFrame(history.history)
 print(hy_df)
 
-"""
+
 
 ### Cerebros model:
 
@@ -526,7 +521,7 @@ models_tried = moities_to_try  * tries_per_moity
 cerebros_time_per_model = cerebros_time_all_models_min / models_tried
 
 print(f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
-# print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model for 3 epochs. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
+print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model for 3 epochs. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
 
 
 print(f'Cerebros best accuracy achieved is {result}')
