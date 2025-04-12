@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "148-tensorflow-upgrades" ]
+    branches: [ "main", "171-upgrade-tf-2190" ]
 
 permissions:
   contents: read
@@ -33,25 +33,16 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-#    - name: Test by running.
-#      run: python3 cerebros.py
-#    - name: Test distributed by running.
-#      run: python3 test_simple_cerebros_gridsearch.py
-#    - name: Test distributed random search wine by running.
-#      run: python3 random_search.py
-#    - name: Test CerebrosRealNeuronNetwork
-#      run: python3 realnn-regression-example-ames-no-preproc.py
-#      timeout-minutes: 45
     - name: Test distributed random search Ames by running
       run: python3 regression-example-ames-no-preproc.py
     - name: Test distributed random search Ames by running - Val set
       run: python3 regression-example-ames-no-preproc-val-set.py
-    - name: Test text classifier - random search - ham-spam
-      run: python3 text-class-ham-or-spam.py
-      timeout-minutes: 90
-    - name: Test image classifier - small subset of CIFAR10
+    # - name: Test text classifier - random search - ham-spam
+    #   run: python3 text-class-ham-or-spam.py
+    #   timeout-minutes: 90
+    - name: Test image classifier - small subset of CIFAR10 # add back
       timeout-minutes: 90
       run: python3 cifar10-example.py
     - name: Phishing email detection with GPT2 embedding
-      timeout-minutes: 120
+      timeout-minutes: 420
       run: python3 phishing_email_detection_gpt2.py

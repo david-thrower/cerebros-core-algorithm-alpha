@@ -2,6 +2,7 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from tqdm import tqdm
 from cerebros.denseautomlstructuralcomponent.\
     dense_automl_structural_component \
     import DenseAutoMlStructuralComponent, DenseLateralConnectivity, \
@@ -519,7 +520,10 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
 
     def run_random_search(self):
         processes = []
-        for i in np.arange(self.number_of_architecture_moities_to_try):
+        for i in tqdm(np.arange(self.number_of_architecture_moities_to_try),
+                      desc="Global task progress",
+                      colour="#16ceeb"):
+
             self.parse_neural_network_structural_spec_random()
             spec = self.get_neural_network_spec()
 
