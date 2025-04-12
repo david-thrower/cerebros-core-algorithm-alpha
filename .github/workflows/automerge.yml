@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "173-duplicative-import-on-nlp-proof-of-concept" ]
+    branches: [ "main", "175-remove-lm-mask" ]
 
 permissions:
   contents: read
