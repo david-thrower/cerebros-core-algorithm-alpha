@@ -183,6 +183,9 @@ gpt_time_on_one_model_min =  (gpt_t1 - gpt_t0) / 60
 hy_df = pd.DataFrame(history.history)
 print(hy_df)
 
+# Re import to re-initialize the optimizer...
+from transformers import AutoTokenizer
+import tensorflow as tf
 
 
 ### Cerebros model:
