@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "175-remove-lm-mask" ]
+    branches: [ "main", "176-a-b-test-on-re-importing-tf-after-gpt-baseline" ]
 
 permissions:
   contents: read
