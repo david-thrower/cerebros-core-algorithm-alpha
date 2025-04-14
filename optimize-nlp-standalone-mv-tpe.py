@@ -31,7 +31,12 @@ def objective(trial):
     #         name="embedding_n",choices=[int(n)
     #                                     for n in
     #                                     np.arange(10,18,2).tolist()])
-    embedding_n = trial.suggest_int(low=10,high=18, step=1)
+    embedding_n =\
+            trial.suggest_int(
+                    "embedding_n",
+                    low=10,
+                    high=18,
+                    step=1)
     activation = trial.suggest_categorical(
             name="activation",
             choices=["relu", "gelu", "elu"])
