@@ -35,7 +35,7 @@ def objective(trial):
             trial.suggest_int(
                     "embedding_n",
                     low=10,
-                    high=18,
+                    high=13,
                     step=1)
     activation = trial.suggest_categorical(
             name="activation",
@@ -44,46 +44,46 @@ def objective(trial):
             trial.suggest_float(
                     name="predecessor_level_connection_affinity_factor_first",
                     low=0.1,
-                    high=50.0,
+                    high=40.0,
                     step=0.1)
     predecessor_level_connection_affinity_factor_main =\
             trial.suggest_float(
                     name="predecessor_level_connection_affinity_factor_main",
                     low=0.1,
-                    high=50.0,
+                    high=40.0,
                     step=0.1)
     max_consecutive_lateral_connections =\
             trial.suggest_int(
                     name="max_consecutive_lateral_connections",
                     low=1,
-                    high=50)
+                    high=40)
     p_lateral_connection =\
             trial.suggest_float(
                     name="p_lateral_connection",
                     low=0.1,
-                    high=50.0,
+                    high=40.0,
                     step=0.1)
     num_lateral_connection_tries_per_unit =\
             trial.suggest_int(
                     name="num_lateral_connection_tries_per_unit",
                     low=1,
-                    high=50)
+                    high=40)
     learning_rate =\
             trial.suggest_float(
                     name="learning_rate",
                     low=10**-6,
-                    high=0.7,
+                    high=0.3,
                     log=True)
     epochs =\
             trial.suggest_int(
                     name="epochs",
                     low=1,
-                    high=25)
+                    high=10)
     batch_size =\
             trial.suggest_int(
                     name="batch_size", 
                     low=1, 
-                    high=35)
+                    high=25)
     dropout =\
             trial.suggest_float(
                     name="dropout",
@@ -94,7 +94,7 @@ def objective(trial):
             trial.suggest_int(
                     name="maximum_units_per_level",
                     low=5,
-                    high=10)
+                    high=7)
     maximum_neurons_per_unit =\
             trial.suggest_int(
                     name="maximum_neurons_per_unit",
@@ -105,7 +105,7 @@ def objective(trial):
             trial.suggest_int(
                     name="temperature",
                     low=10 ** 4,
-                    high=10 ** 6,
+                    high= 3 * 10 ** 5,
                     log=True)
 
 
