@@ -509,4 +509,6 @@ study.optimize(
         objective,
         n_trials=15)
 
-print(f"Best parameters: {study.best_params}")
+trial = study.best_trial
+print(f"best result: {trial.value} val_binary_accuracy")
+print(f"Best hyperparameters: {trial.params}")
