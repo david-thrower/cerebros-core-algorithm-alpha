@@ -348,7 +348,11 @@ def apply_rotary_pos_emb(x, sin, cos):
 
 
 class InterleavedRoPE(tf.keras.layers.Layer):
-    def __init__(self, dim, max_seq_len=1024, **kwargs):
+    def __init__(self, 
+                 dim, 
+                 max_seq_len=1024,
+                 temperature=100000,
+                 **kwargs):
         super().__init__(**kwargs)
         if dim % 2 != 0:
              raise ValueError(f"Embedding dimension `dim` ({dim}) must be even for InterleavedRoPE.")
@@ -356,7 +360,11 @@ class InterleavedRoPE(tf.keras.layers.Layer):
         self.max_seq_len = max_seq_len
         # Instantiate the RotaryEmbedding layer
         # Ensure the name is consistent if needed for saving/loading
-        self.rotary_emb = RotaryEmbedding(dim, max_seq_len, name="rotary_embedding")
+        self.rotary_emb =\
+                     RotaryEmbedding(dim,
+                                     max_seq_len,
+                                     temperature=temperature,
+                                     name="rotary_embedding")
 
     def call(self, x):
         # Get sin and cos from the RotaryEmbedding layer's call method
@@ -414,7 +422,7 @@ embedded = tf.keras.layers.Embedding(
 position_embedding = InterleavedRoPE(
     dim=EMBEDDING_DIM,
     max_seq_len=max_seq_length,
-    tepmerature=36912,
+    tepmerature=36_912,
     # initializer="uniform",
 )(embedded)
 
