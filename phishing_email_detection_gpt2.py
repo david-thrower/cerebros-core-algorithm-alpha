@@ -389,6 +389,7 @@ class InterleavedRoPE(tf.keras.layers.Layer):
 
 # GPT2 configurables
 
+
 # Optimal for accuracy thus far:
 max_seq_length = 1536
 tokenizer_checkpoint = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
@@ -402,6 +403,7 @@ tokens = gp2_tokenizer(inp)
 # Probably would improve performance ...
 EMBEDDING_N = 12  # Define EMBEDDING_DIM here, to match your embedding layer.
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
+DROPOUT = 0.6500000000000001
 
 embedded = tf.keras.layers.Embedding(
     input_dim=VOCABULARY_SIZE,
@@ -412,6 +414,7 @@ embedded = tf.keras.layers.Embedding(
 position_embedding = InterleavedRoPE(
     dim=EMBEDDING_DIM,
     max_seq_len=max_seq_length,
+    tepmerature=36912,
     # initializer="uniform",
 )(embedded)
 
@@ -420,7 +423,7 @@ position_embedding = InterleavedRoPE(
 # Just an FYI for anyone trying to apply conventional wisdom
 # to save you the time ...
 x = x = tf.keras.layers.Concatenate()([embedded, position_embedding])
-x = tf.keras.layers.Dropout(0.4)(x)  # AI suggested 0.4
+x = tf.keras.layers.Dropout(DROPOUT)(x)  # AI suggested 0.4
 flattened = tf.keras.layers.Flatten()(x)
 
 cerebros_base_model = tf.keras.Model(
@@ -434,15 +437,15 @@ cerebros_base_model = tf.keras.Model(
 #
 # Cerebros configurables
 #
-activation = "relu"
-predecessor_level_connection_affinity_factor_first = 10
-predecessor_level_connection_affinity_factor_main = 40
-max_consecutive_lateral_connections = 20
-p_lateral_connection = 30
-num_lateral_connection_tries_per_unit = 25
-learning_rate = 3 * 10 ** -3
-epochs = 15  #
-batch_size = 17
+activation = "gelu"
+predecessor_level_connection_affinity_factor_first = 38.7
+predecessor_level_connection_affinity_factor_main = 4.6
+max_consecutive_lateral_connections = 32
+p_lateral_connection = 17.1
+num_lateral_connection_tries_per_unit = 1
+learning_rate = 0.046500145665525995
+epochs = 7  #
+batch_size = 22
 minimum_levels = 2
 maximum_levels = 2 # [3,7]
 
@@ -450,7 +453,7 @@ minimum_units_per_level = 4
 maximum_units_per_level = 7
 
 minimum_neurons_per_unit = 1
-maximum_neurons_per_unit = 2
+maximum_neurons_per_unit = 7
 
 moities_to_try = 5
 tries_per_moity = 1
