@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "171-upgrade-tf-2190" ]
+    branches: [ "main", "178-try-best-params-from-first-pass-tpe-study" ]
 
 permissions:
   contents: read
