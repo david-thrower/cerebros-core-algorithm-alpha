@@ -412,6 +412,7 @@ tokens = gp2_tokenizer(inp)
 EMBEDDING_N = 12  # Define EMBEDDING_DIM here, to match your embedding layer.
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
 DROPOUT = 0.6500000000000001
+TEMPERATURE = 36_912
 
 embedded = tf.keras.layers.Embedding(
     input_dim=VOCABULARY_SIZE,
@@ -422,7 +423,7 @@ embedded = tf.keras.layers.Embedding(
 position_embedding = InterleavedRoPE(
     dim=EMBEDDING_DIM,
     max_seq_len=max_seq_length,
-    tepmerature=36_912,
+    temperature=TEMPERATURE,
     # initializer="uniform",
 )(embedded)
 
