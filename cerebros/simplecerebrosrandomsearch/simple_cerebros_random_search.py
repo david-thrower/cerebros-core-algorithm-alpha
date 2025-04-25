@@ -505,7 +505,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         next_model_name =\
             f"{self.project_name}/models/tr_{str(self.trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}.keras"\
             .lower()
-        neural_network.save(next_model_name)
+        # neural_network.save(next_model_name)
         oracle_0['trial_number'] = self.trial_number
         oracle_0['subtrial_number'] = subtrial_number
         oracle_0['model_name'] = next_model_name
