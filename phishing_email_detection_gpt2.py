@@ -187,9 +187,6 @@ print(hy_df)
 
 ### Cerebros model:
 
-from transformers import AutoTokenizer
-import tensorflow as tf
-
 class NewTokenizerLayer(tf.keras.layers.Layer):
     def __init__(self, max_seq_length, tokenizer_checkpoint, **kwargs):
         super().__init__(**kwargs)
