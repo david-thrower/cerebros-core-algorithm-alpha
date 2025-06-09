@@ -2,6 +2,7 @@ import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from tqdm import tqdm
 from cerebros.denseautomlstructuralcomponent.\
     dense_automl_structural_component \
     import DenseAutoMlStructuralComponent, DenseLateralConnectivity, \
@@ -502,7 +503,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         with open(neural_network_spec_file, 'w') as f:
             f.write(str(spec))
         next_model_name =\
-            f"{self.project_name}/models/tr_{str(self.trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}"\
+            f"{self.project_name}/models/tr_{str(self.trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}.keras"\
             .lower()
         neural_network.save(next_model_name)
         oracle_0['trial_number'] = self.trial_number
@@ -519,7 +520,10 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
 
     def run_random_search(self):
         processes = []
-        for i in np.arange(self.number_of_architecture_moities_to_try):
+        for i in tqdm(np.arange(self.number_of_architecture_moities_to_try),
+                      desc="Global task progress",
+                      colour="#16ceeb"):
+
             self.parse_neural_network_structural_spec_random()
             spec = self.get_neural_network_spec()
 

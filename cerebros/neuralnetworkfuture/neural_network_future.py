@@ -332,8 +332,10 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
         self.materialized_neural_network.compile(
             loss=self.loss,
             metrics=self.metrics,
-            optimizer=tf.keras.optimizers.Adam(
-                    learning_rate=self.learning_rate),
+            optimizer=tf.keras.optimizers.AdamW(
+                learning_rate=self.learning_rate,
+                weight_decay=0.004  # Add weight decay parameter
+            ),
             jit_compile=jit_compile)
 
     def util_parse_connectivity_csv(self):

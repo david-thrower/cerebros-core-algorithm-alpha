@@ -88,8 +88,8 @@ for layer in base_new.layers:
 
 last_relevant_layer = base_new.layers[-2]
 # last_relevant_layer_extracted = last_relevant_layer #.output[0][0][0]
-base_embedding = tf.keras.Model(inputs=base_new.layers[0].input,
-                                outputs=last_relevant_layer.output)
+base_embedding = tf.keras.Model(inputs=base_new.input,
+                               outputs=last_relevant_layer.output)
 
 
 image_input_0 = tf.keras.layers.Input(shape=INPUT_SHAPES[0])

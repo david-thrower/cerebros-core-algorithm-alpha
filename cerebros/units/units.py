@@ -83,8 +83,13 @@ class InputUnit(Unit):
                  train_data_dtype=tf.float32,
                  *args,
                  **kwargs):
-
-        self.input_shape = input_shape
+        if isinstance(input_shape, int):
+            self.input_shape = (input_shape,)
+        elif isinstance(input_shape, str):
+            self.input_shape = (int(input_shape),)
+        else:
+            _input_shape = [int(ax) for ax in input_shape]
+            self.input_shape = tuple(_input_shape)
         self.neural_network_layer = []
         self.base_models = base_models
         self.train_data_dtype = train_data_dtype
