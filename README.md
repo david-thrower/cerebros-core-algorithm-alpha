@@ -6,7 +6,7 @@ The Cerebros package is an ultra-precise Neural Architecture Search (NAS) / Auto
 
 ## Cerebros Community Edition and Cerebros Enterprise
 
-The Cerebros community edition provides an open-source minimum viable single parameter set NAS and also also provides an example manifest for an exhaustive Neural Architecture Search to run on Kubeflow/Katib. This is licensed for free use provided that the use is consistent with the ethical use provisions in the license described at the bottom of this page. You can easily reproduce this with the Jupyter notebook in the directory `/kubeflow-pipeline`, using the Kale Jupyter notebook extension. For a robust managed neural architecture search experience hosted on Google Cloud Platform and supported by our SLA, we recommend Cerebros Enterprise, our commercial version. Soon you will be able to sign up and immediately start using it at `https://www.cerebros.one`. In the meantime, we can set up your own Cerbros managed neural architecture search pipeline for you with a one business day turnaround. We offer consulting, demos, full service machine learning service and can provision you with your own full neural architecture search pipeline complete with automated Bayesian hyperparameter search. Contact David Thrower:`david@cerebros.one` or call us at (US country code 1) `(650) 789-4375`. Additionally, we can complete machine learning tasks for your organization. Give us a call.
+The Cerebros community edition provides an open-source minimum viable single parameter set NAS and also provides an example manifest for an exhaustive Neural Architecture Search to run on Kubeflow/Katib. This is licensed for free use provided that the use is consistent with the ethical use provisions in the license described at the bottom of this page. You can easily reproduce this with the Jupyter notebook in the directory `/kubeflow-pipeline`, using the Kale Jupyter notebook extension. For a robust managed neural architecture search experience hosted on Google Cloud Platform and supported by our SLA, we recommend Cerebros Enterprise, our commercial version. Soon you will be able to sign up and immediately start using it at `https://www.cerebros.one`. In the meantime, we can set up your own Cerebros managed neural architecture search pipeline for you with a one business day turnaround. We offer consulting, demos, full service machine learning service and can provision you with your own full neural architecture search pipeline complete with automated Bayesian hyperparameter search. Contact David Thrower:`david@cerebros.one` or call us at (US country code 1) `(650) 789-4375`. Additionally, we can complete machine learning tasks for your organization. Give us a call.
 
 
 
@@ -26,7 +26,7 @@ In a biological brain, neurons connect in a multi-dimensional lattice of vertica
 
 That is what we did here. We built a neural architecture search that connects Dense layers in this manner.
 
-What if we made a multi-layer pereceptron that looks like this: (Green triangles are Keras Input layers. Blue Squares are Keras Concatenate layers. The Pink stretched ovals are Keras Dense layers. The one stretched red oval is the network's Output layer. It is presumed that there is a batch normaliation layer between each Concatenate layer and the Dense layer it feeds into.)
+What if we made a multi-layer perceptron that looks like this: (Green triangles are Keras Input layers. Blue Squares are Keras Concatenate layers. The Pink stretched ovals are Keras Dense layers. The one stretched red oval is the network's Output layer. It is presumed that there is a batch normalisation layer between each Concatenate layer and the Dense layer it feeds into.)
 
 ![assets/Brain-lookalike1.png](assets/Brain-lookalike1.png)
 
@@ -77,7 +77,7 @@ Best model name: 2023_01_12_23_42_cerebros_auto_ml_test_meta_0/models/tr_0000000
 ...
 
 ```
-
+---
 ## Summary of Results
 
 - Ames housing data set, not pre-processed or scaled, non-numerical columns dropped:
@@ -87,6 +87,24 @@ Best model name: 2023_01_12_23_42_cerebros_auto_ml_test_meta_0/models/tr_0000000
 - There was no pre-trained base model used. The data in [ames.csv](ames.csv) which was selected for training is the only data any of the model's weights have ever seen.
 
 For further details, see ![documentation/examples/use-example-detailed.md](documentation/examples/use-example-detailed.md)
+
+### Practical O(n) timing with increasing sequence length
+
+Recent updates replaced the text embedding base model with an interleaved Rotary Positional Embedding (iRoPE) in the text-classification proof of concept. This change allows the model to handle longer sequences without the quadratic slow-down common to many transformer architectures.
+
+Benchmarks show that training time grows in proportion to sequence length, while validation accuracy stays stable:
+
+| seq_len | val_binary_accuracy | min/model | total_min | timing_relative_to_1024 | commit |
+|---:|:---:|---:|---:|---:|:--|
+| 3072 | 0.955 | 65.942 | 329.715 | 2.817 | [`4bc217b`](https://github.com/david-thrower/cerebros-core-algorithm-alpha/commit/4bc217b36d1baf8b9a81fe53000e9e13e6e87801) |
+| 1536 | 0.960 | 37.270 | 186.360 | 1.591 | [`286ba81`](https://github.com/david-thrower/cerebros-core-algorithm-alpha/commit/286ba81a1e51493d748ded727bd602a4398248a8) |
+| 1024 | 0.952 | 23.420 | 117.080 | 1.000 | [`9893bfc`](https://github.com/david-thrower/cerebros-core-algorithm-alpha/commit/9893bfc55d4f7b753eff79e0c5c70e4992c61085) |
+
+
+The `timing_relative_to_1024` column is calculated as `min/model(seq_len) / min/model(1024)`.  
+For examale, 1024 to 3072 tokens is roughly x3 in sequence length and x2.82 in time, which is close to linear scaling once fixed overhead is considered.
+
+This outcome follows earlier work on more scalable tokenisation, RoPE/iRoPE integration, and related performance fixes.
 
 # Documentation
 
