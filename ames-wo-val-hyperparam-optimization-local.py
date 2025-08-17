@@ -117,7 +117,7 @@ def objective(trial):
 
 def main():
     study = optuna.create_study(direction='minimize')
-    study.optimize(objective, n_trials=NUMBER_OF_TRAILS_PER_BATCH * NUMBER_OF_BATCHES_OF_TRIALS)
+    study.optimize(objective, n_trials=20)
     print('Best trial:')
     best_trial = study.best_trial
     print('  Value: ', best_trial.value)
