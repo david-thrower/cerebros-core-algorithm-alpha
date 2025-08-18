@@ -3,6 +3,11 @@
 Hyperparameter optimization script for the updated Ames script
 
 """
+from shutil import rmtree
+from ast import literal_eval
+from copy import copy
+from gc import collect
+
 
 import numpy as np
 import optuna
@@ -10,10 +15,6 @@ import pendulum
 import pandas as pd
 import tensorflow as tf
 
-from ast import literal_eval
-
-from copy import copy
-from gc import collect
 
 # Define constants
 LABEL_COLUMN = 'price'
@@ -118,8 +119,12 @@ def objective(trial):
 
     result = cerebros.run_random_search()
 
-    # Make a copy of the result so it isn't lost in garbage collection.
+    # Delete artifacts so we don't deplete disk space:
 
+    rmtree(project_name)
+    
+    # Make a copy of the result so it isn't lost in garbage collection.
+    
     result_0 = copy(result)
     
     # Garbage collection to create a clen state for 
