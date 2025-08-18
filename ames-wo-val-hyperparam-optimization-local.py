@@ -72,6 +72,8 @@ def objective(trial):
         .replace(':', '_')\
         .replace('-', '_')
     PROJECT_NAME = f'{TIME}_cerebros_auto_ml_test'
+    project_name_full =\
+        f"{PROJECT_NAME}_meta_{meta_trial_number}"
 
     cerebros = SimpleCerebrosRandomSearch(
         unit_type=DenseUnit,
@@ -112,7 +114,7 @@ def objective(trial):
         metrics=[tf.keras.metrics.RootMeanSquaredError()],
         epochs=epochs,
         patience=7,
-        project_name=f"{PROJECT_NAME}_meta_{meta_trial_number}",
+        project_name=project_name_full,
         model_graphs='model_graphs',
         batch_size=batch_size,
         meta_trial_number=meta_trial_number)
@@ -121,7 +123,7 @@ def objective(trial):
 
     # Delete artifacts so we don't deplete disk space:
 
-    rmtree(project_name)
+    rmtree(project_name_full)
     
     # Make a copy of the result so it isn't lost in garbage collection.
     
