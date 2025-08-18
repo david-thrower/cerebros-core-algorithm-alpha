@@ -58,9 +58,9 @@ def objective(trial):
     predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 0.1, 40.0, log=True)
     predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 0.1, 40.0, log=True)
     max_consecutive_lateral_connections = trial.suggest_int('max_consecutive_lateral_connections', 1, 35)
-    p_lateral_connection = trial.trial.suggest_float('p_lateral_connection', 0.1, 35, log=True)
+    p_lateral_connection = trial.suggest_float('p_lateral_connection', 0.1, 35, log=True)
     num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 1, 35)
-    learning_rate = trial.trial.suggest_float('learning_rate', 10**-6, 0.6, log=True)
+    learning_rate = trial.suggest_float('learning_rate', 10**-6, 0.6, log=True)
     epochs = trial.suggest_int('epochs', 1, 150)
     batch_size = trial.suggest_int('batch_size', 1, 800)
 
