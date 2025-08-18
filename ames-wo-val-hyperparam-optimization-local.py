@@ -9,12 +9,11 @@ import optuna
 import pendulum
 import pandas as pd
 import tensorflow as tf
-from cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search\
-    import SimpleCerebrosRandomSearch
-from cerebros.units.units import DenseUnit
-from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
-    import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
+
 from ast import literal_eval
+
+from copy import copy
+from gc import collect
 
 # Define constants
 LABEL_COLUMN = 'price'
@@ -43,20 +42,25 @@ train_labels = [tf.constant(label.values.astype(float))]
 OUTPUT_SHAPES = [1]  
 
 def objective(trial):
+    from cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search\
+        import SimpleCerebrosRandomSearch
+    from cerebros.units.units import DenseUnit
+    from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
+        import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
     # Define hyperparameter space
-    minimum_levels = trial.suggest_int('minimum_levels', 1, 5)
-    maximum_levels = trial.suggest_int('maximum_levels', minimum_levels, 5)
+    minimum_levels = trial.suggest_int('minimum_levels', 1, 4)
+    maximum_levels = trial.suggest_int('maximum_levels', minimum_levels, 4)
     minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 1, 5)
     maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 5)
     minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 1, 5)
     maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 5)
     activation = trial.suggest_categorical('activation', ['relu', 'elu', 'gelu', 'swish', 'softplus'])
-    predecessor_level_connection_affinity_factor_first = trial.suggest_loguniform('predecessor_level_connection_affinity_factor_first', 0.1, 40.0)
-    predecessor_level_connection_affinity_factor_main = trial.suggest_loguniform('predecessor_level_connection_affinity_factor_main', 0.1, 40.0)
+    predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 0.1, 40.0, log=True)
+    predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 0.1, 40.0, log=True)
     max_consecutive_lateral_connections = trial.suggest_int('max_consecutive_lateral_connections', 1, 35)
-    p_lateral_connection = trial.suggest_loguniform('p_lateral_connection', 0.1, 35)
+    p_lateral_connection = trial.trial.suggest_float('p_lateral_connection', 0.1, 35, log=True)
     num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 1, 35)
-    learning_rate = trial.suggest_loguniform('learning_rate', 10**-6, 0.6)
+    learning_rate = trial.trial.suggest_float('learning_rate', 10**-6, 0.6, log=True)
     epochs = trial.suggest_int('epochs', 1, 150)
     batch_size = trial.suggest_int('batch_size', 1, 800)
 
@@ -113,7 +117,23 @@ def objective(trial):
         meta_trial_number=meta_trial_number)
 
     result = cerebros.run_random_search()
-    return result
+
+    # Make a copy of the result so it isn't lost in garbage collection.
+
+    result_0 = copy(result)
+    
+    # Garbage collection to create a clen state for 
+    # the next run and to prevent memory leakage
+    del(result)
+    del(cerebros)
+    del(SimpleCerebrosRandomSearch)
+    del(DenseUnit)
+    del(zero_7_exp_decay) 
+    del(zero_95_exp_decay) 
+    del(simple_sigmoid)
+    collect()
+    
+    return result_0
 
 def main():
     study = optuna.create_study(direction='minimize')
