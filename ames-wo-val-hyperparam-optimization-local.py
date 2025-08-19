@@ -49,21 +49,21 @@ def objective(trial):
     from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
         import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
     # Define hyperparameter space
-    minimum_levels = trial.suggest_int('minimum_levels', 1, 4)
+    minimum_levels = trial.suggest_int('minimum_levels', 3, 4)
     maximum_levels = trial.suggest_int('maximum_levels', minimum_levels, 4)
-    minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 1, 5)
-    maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 5)
-    minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 1, 5)
+    minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 1, 3)
+    maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 3)
+    minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 3, 5)
     maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 5)
-    activation = trial.suggest_categorical('activation', ['relu', 'elu', 'gelu', 'swish', 'softplus'])
+    activation = trial.suggest_categorical('activation', ['relu', 'gelu', 'swish', 'softplus'])
     predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 0.5, 7.0)
     predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 0.5, 7.0)
-    max_consecutive_lateral_connections = trial.suggest_int('max_consecutive_lateral_connections', 15, 35)
-    p_lateral_connection = trial.suggest_float('p_lateral_connection', 0.15, 15)
+    max_consecutive_lateral_connections = trial.suggest_int('max_consecutive_lateral_connections', 25, 35)
+    p_lateral_connection = trial.suggest_float('p_lateral_connection', 1.0, 10.0)
     num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 7, 15)
-    learning_rate = trial.suggest_float('learning_rate', 10**-4, 0.1, log=True)
-    epochs = trial.suggest_int('epochs', 1, 150)
-    batch_size = trial.suggest_int('batch_size', 50, 700)
+    learning_rate = trial.suggest_float('learning_rate', 0.004, 0.06, log=True)
+    epochs = trial.suggest_int('epochs', 20, 120)
+    batch_size = trial.suggest_int('batch_size', 20, 250)
 
     meta_trial_number = 0  
 
