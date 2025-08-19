@@ -16,7 +16,7 @@ NUMBER_OF_BATCHES_OF_TRIALS = 2
 
 ###
 
-## your data:
+LABEL_COLUMN = 'price'
 
 
 TIME = pendulum.now().__str__()[:16]\
