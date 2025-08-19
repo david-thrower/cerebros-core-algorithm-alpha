@@ -16,6 +16,8 @@ NUMBER_OF_BATCHES_OF_TRIALS = 2
 
 ###
 
+LABEL_COLUMN = 'price'
+
 ## your data:
 
 
@@ -30,9 +32,11 @@ PROJECT_NAME = f'{TIME}_cerebros_auto_ml_test'
 
 raw_data = pd.read_csv('ames.csv')
 needed_cols = [
-    col for col in raw_data.columns if raw_data[col].dtype != 'object']
+    col for col in raw_data.columns 
+    if raw_data[col].dtype != 'object' 
+    and col != LABEL_COLUMN]
 data_numeric = raw_data[needed_cols].fillna(0).astype(float)
-label = raw_data.pop('price')
+label = raw_data.pop(LABEL_COLUMN)
 
 data_np = data_numeric.values
 
