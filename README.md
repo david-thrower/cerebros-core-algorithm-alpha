@@ -82,10 +82,10 @@ Best model name: 2025_08_19 20_31_cerebros_auto_ml_test_meta_0/models/tr_0000000
 ---
 ### Summary of Results
   - Ames housing data set, not pre-processed or scaled, non-numerical columns dropped:
-  - House sell price predictions, val_rmse $23,864.65.
+  - House sell price predictions, val_rmse $24,866.93.
   - The mean sale price in the data was $180,796.06.
-  - Val set RMSE was 13.20% of the mean sale price.
-  - In other words, on average, the model’s predictions were within about 13% of the actual sale price.
+  - Val set RMSE was 13.7% of the mean sale price.
+  - In other words, on average, the model’s predictions were within about 14% of the actual sale price.
   - There was no pre-trained base model used. The data in [ames.csv](https://github.com/david-thrower/cerebros-core-algorithm-alpha/blob/main/ames.csv) which was selected for training is the only data any of the model's weights have ever seen.
 
 
