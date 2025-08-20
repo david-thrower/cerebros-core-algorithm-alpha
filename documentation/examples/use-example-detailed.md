@@ -288,7 +288,6 @@ Best result this trial was: 24866.931640625
 Type of best result: <class 'float'>
 Best model name: 2025_08_19 20_31_cerebros_auto_ml_test_meta_0/models/tr_0000000000000001_subtrial_0000000000000000.keras
 SimpleCerebrosRandomSearch.input_shapes: [38]
-```
 
-Final result was (val_root_mean_squared_error): 169.04592895507812
+Final result was (val_root_mean_squared_error): 24866.931640625
 ```
