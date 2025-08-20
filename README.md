@@ -6,7 +6,7 @@ The Cerebros package is an ultra-precise Neural Architecture Search (NAS) / Auto
 
 ## Cerebros Community Edition and Cerebros Enterprise
 
-The Cerebros community edition provides an open-source minimum viable single parameter set NAS and also provides an example manifest for an exhaustive Neural Architecture Search to run on Kubeflow/Katib. This is licensed for free use provided that the use is consistent with the ethical use provisions in the license described at the bottom of this page. You can easily reproduce this with the Jupyter notebook in the directory `/kubeflow-pipeline`, using the Kale Jupyter notebook extension. For a robust managed neural architecture search experience hosted on Google Cloud Platform and supported by our SLA, we recommend Cerebros Enterprise, our commercial version. Soon you will be able to sign up and immediately start using it at `https://www.cerebros.one`. In the meantime, we can set up your own Cerebros managed neural architecture search pipeline for you with a one business day turnaround. We offer consulting, demos, full service machine learning service and can provision you with your own full neural architecture search pipeline complete with automated Bayesian hyperparameter search. Contact David Thrower:`david@cerebros.one` or call us at (US country code 1) `(650) 789-4375`. Additionally, we can complete machine learning tasks for your organization. Give us a call.
+The Cerebros community edition provides an open-source minimum viable single parameter set NAS and also provides an example manifest for an exhaustive Neural Architecture Search to run on Kubeflow/Katib. This is licensed for free use provided that the use is consistent with the ethical use provisions in the license described at the bottom of this page. You can easily reproduce this with the Jupyter notebook in the directory `/kubeflow-pipeline`, using the Kale Jupyter notebook extension. For a robust managed neural architecture search experience hosted on Google Cloud Platform and supported by our SLA, we recommend Cerebros Enterprise, our commercial version. Soon you will be able to sign up and immediately start using it at `https://www.cerebros.one`. In the meantime, we can set up your own Cerebros managed neural architecture search pipeline for you with a one business day turnaround. We offer consulting, demos, full service machine learning service and can provision you with your own full neural architecture search pipeline complete with automated Bayesian hyperparameter search. Contact David Thrower:`david@cerebros.one` or call us at (US country code 1) `(239) 645-3585`. Additionally, we can complete machine learning tasks for your organization. Give us a call.
 
 
 
@@ -71,20 +71,23 @@ python3 regression-example-ames-no-preproc.py
 ... # lots of summaries of training trials
 ...
 
-Best result this trial was: 169.04592895507812
+metric_to_rank_by is: 'val_root_mean_squared_error'
+Type of metric_to_rank_by is: <class 'str'>
+Best result this trial was: 24866.931640625
 Type of best result: <class 'float'>
-Best model name: 2023_01_12_23_42_cerebros_auto_ml_test_meta_0/models/tr_0000000000000006_subtrial_0000000000000000
+Best model name: 2025_08_19 20_31_cerebros_auto_ml_test_meta_0/models/tr_0000000000000001_subtrial_0000000000000000.keras
 ...
 
 ```
 ---
-## Summary of Results
+### Summary of Results
+  - Ames housing data set, not pre-processed or scaled, non-numerical columns dropped:
+  - House sell price predictions, val_rmse $23,864.65.
+  - The mean sale price in the data was $180,796.06.
+  - Val set RMSE was 13.20% of the mean sale price.
+  - In other words, on average, the model’s predictions were within about 13% of the actual sale price.
+  - There was no pre-trained base model used. The data in [ames.csv](https://github.com/david-thrower/cerebros-core-algorithm-alpha/blob/main/ames.csv) which was selected for training is the only data any of the model's weights have ever seen.
 
-- Ames housing data set, not pre-processed or scaled, non-numerical columns dropped:
-- House sell price predictions, val_rmse $169.04592895507812.
-- The mean sale price in the data was $180,796.06.
-- Val set RMSE was 0.0935% of the mean sale price. In other words, on average, the model predicted the sale price accurate to less than 0.1% of the actual sale price. Yes, you are reading it right. Less than 1/10 of a percent off on average.
-- There was no pre-trained base model used. The data in [ames.csv](ames.csv) which was selected for training is the only data any of the model's weights have ever seen.
 
 For further details, see ![documentation/examples/use-example-detailed.md](documentation/examples/use-example-detailed.md)
 
