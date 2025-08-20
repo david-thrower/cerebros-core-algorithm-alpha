@@ -16,6 +16,8 @@ NUMBER_OF_BATCHES_OF_TRIALS = 2
 
 ###
 
+LABEL_COLUMN = 'price'
+
 ## your data:
 
 
@@ -30,9 +32,11 @@ PROJECT_NAME = f'{TIME}_cerebros_auto_ml_test'
 
 raw_data = pd.read_csv('ames.csv')
 needed_cols = [
-    col for col in raw_data.columns if raw_data[col].dtype != 'object']
+    col for col in raw_data.columns 
+    if raw_data[col].dtype != 'object' 
+    and col != LABEL_COLUMN]
 data_numeric = raw_data[needed_cols].fillna(0).astype(float)
-label = raw_data.pop('price')
+label = raw_data.pop(LABEL_COLUMN)
 
 data_np = data_numeric.values
 
@@ -52,18 +56,18 @@ OUTPUT_SHAPES = [1]  # [train_labels[i].shape[1]
 # discovered in a bayesian tuning study done on Katib)
 
 meta_trial_number = 0  # In distributed training set this to a random number
-activation = "gelu"
-predecessor_level_connection_affinity_factor_first = 19.613
-predecessor_level_connection_affinity_factor_main = 0.5518
-max_consecutive_lateral_connections = 34
-p_lateral_connection = 0.36014
-num_lateral_connection_tries_per_unit = 11
-learning_rate = 0.095
-epochs = 145
-batch_size = 634
-maximum_levels = 5
-maximum_units_per_level = 5
-maximum_neurons_per_unit = 25
+activation = 'swish'
+predecessor_level_connection_affinity_factor_first = 0.506486683067576
+predecessor_level_connection_affinity_factor_main = 1.6466748663373876
+max_consecutive_lateral_connections = 35
+p_lateral_connection = 3.703218275217572
+num_lateral_connection_tries_per_unit = 12
+learning_rate = 0.02804912925494706
+epochs = 130
+batch_size = 78
+maximum_levels = 4
+maximum_units_per_level = 3
+maximum_neurons_per_unit = 3
 
 
 cerebros =\
@@ -76,11 +80,11 @@ cerebros =\
         validation_split=0.35,
         direction='minimize',
         metric_to_rank_by='val_root_mean_squared_error',
-        minimum_levels=1,
+        minimum_levels=4,
         maximum_levels=maximum_levels,
-        minimum_units_per_level=1,
+        minimum_units_per_level=2,
         maximum_units_per_level=maximum_units_per_level,
-        minimum_neurons_per_unit=1,
+        minimum_neurons_per_unit=3,
         maximum_neurons_per_unit=maximum_neurons_per_unit,
         activation=activation,
         final_activation=None,
