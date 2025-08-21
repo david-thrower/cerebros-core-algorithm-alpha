@@ -598,9 +598,8 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
             for i in np.arange(
                     self.number_of_tries_per_architecture_moity):
                 # Fix Process target: do not call function immediately; pass args
-                p = Process(target=self.run_moity_permutations,
-                            args=(spec, int(subtrial_number), lock))
-                processes.append(p)
+                processes.append(
+                    Process(target=self.run_moity_permutations(spec=spec, subtrial_number=subtrial_number, lock=lock)))
                 subtrial_number += 1
                 self.seed += 1
             for p in processes:
