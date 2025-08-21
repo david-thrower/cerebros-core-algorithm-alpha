@@ -2,7 +2,7 @@ name: Keras Persistence Round-Trip
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 195-model-to-file-to-reconstituted-model-serailization ]
   pull_request:
     branches: [ main ]
 
