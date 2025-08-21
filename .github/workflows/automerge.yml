@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "180-question-leakage-potentially-causing-the-extraordinarily-low-rmse-for-ames-dataset" ]
+    branches: [ "main", "195-model-to-file-to-reconstituted-model-serailization" ]
 
 permissions:
   contents: read
