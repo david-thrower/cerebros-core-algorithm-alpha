@@ -1,2 +1,6 @@
 *.pyc
 .ropeproject
+
+# Local AI agent and Copilot config (ignore these)
+.claude/
+copilot-instructions.md

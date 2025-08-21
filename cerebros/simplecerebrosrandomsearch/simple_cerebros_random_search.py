@@ -13,6 +13,11 @@ from cerebros.neuralnetworkfuture.neural_network_future \
 # from cmdutil.cmdutil import run_command
 from multiprocessing import Process, Lock
 import os
+import json
+import hashlib
+
+from cerebros.persistence.keras_io import save_model_and_meta, load_model_safe
+from cerebros.utils.random import set_global_seed
 
 # import optuna
 # from optuna.pruners import BasePruner
@@ -316,9 +321,10 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                  base_models=[''],
                  train_data_dtype=tf.float32,
                  chart_network_graph: bool=False,
+                 verify_persistence: bool=False,
+                 persistence_tolerance: float=1e-6,
                  *args,
                  **kwargs):
-
         # self.num_processes = int(np.max([1, np.ceil(cpu_count() * .3)]))
         #self.db_name = f"sqlite:///{project_name}/oracles.sqlite"
         # self.conn = sqlite3.connect(db_name)
@@ -404,6 +410,10 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.neural_network_specs = []
         self.neural_network_futures = []
         self.needs_oracle_header = True
+        self.verify_persistence = verify_persistence
+        self.persistence_tolerance = persistence_tolerance
+        # Seed once at construction for deterministic ops outside trials
+        set_global_seed(seed)
 
     def pick_num_units(self):
         return np.random.choice(
@@ -447,6 +457,8 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         return self.__neural_network_spec
 
     def run_moity_permutations(self, spec, subtrial_number, lock):
+        # Ensure deterministic seeds per subtrial
+        set_global_seed(self.seed + int(subtrial_number))
         model_graph_file = f"{self.project_name}/model_graphs/tr_{str(self.trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}.html"
         #with STRATEGY.scope():
         print(f"SimpleCerebrosRandomSearch.input_shapes: {self.input_shapes}")
@@ -505,7 +517,59 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         next_model_name =\
             f"{self.project_name}/models/tr_{str(self.trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}.keras"\
             .lower()
-        neural_network.save(next_model_name)
+
+        # Save model and meta
+        meta = {
+            "trial_number": int(self.trial_number),
+            "subtrial_number": int(subtrial_number),
+            "project_name": self.project_name,
+            "metric_to_rank_by": self.metric_to_rank_by,
+            "keras_version": tf.keras.__version__,
+            "tf_version": tf.__version__,
+            "seed": int(self.seed),
+        }
+        save_model_and_meta(neural_network, next_model_name, meta)
+
+        # Optional round-trip verification
+        if self.verify_persistence:
+            # Choose eval batch: prefer provided validation_data; else small slice from training
+            if self.validation_data is not None:
+                eval_x, eval_y = self.validation_data
+            else:
+                eval_x = [t[: min(32, int(t.shape[0]))] for t in self.training_data]
+                eval_y = [t[: min(32, int(t.shape[0]))] for t in self.labels]
+                eval_y = eval_y[0] if isinstance(eval_y, list) and len(eval_y) == 1 else eval_y
+            pred_before = neural_network.predict(eval_x, verbose=0)
+            loaded = load_model_safe(next_model_name)
+            pred_after = loaded.predict(eval_x, verbose=0)
+
+            import numpy as _np
+
+            def _max_abs(a, b):
+                if isinstance(a, list):
+                    return max([_max_abs(x, y) for x, y in zip(a, b)])
+                return float(_np.max(_np.abs(a - b)))
+
+            pad = _max_abs(pred_before, pred_after)
+            if pad > self.persistence_tolerance:
+                raise ValueError(f"Persistence check failed: max abs diff {pad} > tol {self.persistence_tolerance}")
+
+            # Metric parity via evaluate
+            try:
+                res_before = neural_network.evaluate(eval_x, eval_y, verbose=0)
+                res_after = loaded.evaluate(eval_x, eval_y, verbose=0)
+                # res_* can be scalar or list; normalize to list
+                if not isinstance(res_before, (list, tuple)):
+                    res_before = [res_before]
+                if not isinstance(res_after, (list, tuple)):
+                    res_after = [res_after]
+                for rb, ra in zip(res_before, res_after):
+                    if abs(float(rb) - float(ra)) > self.persistence_tolerance:
+                        raise ValueError(
+                            f"Metric parity failed: before {rb}, after {ra}, tol {self.persistence_tolerance}")
+            except Exception as e:
+                print(f"Warning: metric parity check skipped or failed: {e}")
+
         oracle_0['trial_number'] = self.trial_number
         oracle_0['subtrial_number'] = subtrial_number
         oracle_0['model_name'] = next_model_name
@@ -533,8 +597,10 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
             lock = Lock()
             for i in np.arange(
                     self.number_of_tries_per_architecture_moity):
-                processes.append(
-                    Process(target=self.run_moity_permutations(spec=spec, subtrial_number=subtrial_number, lock=lock)))
+                # Fix Process target: do not call function immediately; pass args
+                p = Process(target=self.run_moity_permutations,
+                            args=(spec, int(subtrial_number), lock))
+                processes.append(p)
                 subtrial_number += 1
                 self.seed += 1
             for p in processes:

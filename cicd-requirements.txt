@@ -1,6 +1,6 @@
-matplotlib==3.8.4
-tensorflow-text==2.19.0
-keras-nlp==0.9.1
-scikit-learn==1.4.1.post1
-tensorflow-hub==0.16.1
-transformers==4.54.0
+matplotlib>=3.10.5
+# tensorflow-text>=2.20.0  # No Python 3.13 support yet
+# keras-nlp>=0.22.1  # Install separately with --no-deps
+scikit-learn>=1.7.1
+tensorflow-hub>=0.16.1
+transformers>=4.54.0
