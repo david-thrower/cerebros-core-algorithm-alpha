@@ -1,8 +1,8 @@
 # Ensure the repository root is on sys.path so `import cerebros` works when
 # running tests without installing the package.
-from os.path import abspath
+from os.path import abspath, dirname
 from sys import path
 
-ROOT = abspath(os.path.join(os.path.dirname(__file__), ".."))
+ROOT = abspath(os.path.join(dirname(__file__), ".."))
 if ROOT not in path:
     path.insert(0, ROOT)
