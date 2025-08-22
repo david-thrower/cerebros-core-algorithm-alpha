@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "180-question-leakage-potentially-causing-the-extraordinarily-low-rmse-for-ames-dataset" ]
+    branches: [ "main", "201-fix-out-of-range-values-for-p_lateral_connection" ]
 
 permissions:
   contents: read
