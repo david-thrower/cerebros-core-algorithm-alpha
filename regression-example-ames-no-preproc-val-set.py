@@ -152,18 +152,18 @@ print(f"Shape of val labels: {val_labels_pd.shape}")
 
 
 meta_trial_number = 0  # In distributed training set this to a random number
-activation = 'swish'
-predecessor_level_connection_affinity_factor_first = 0.506486683067576
-predecessor_level_connection_affinity_factor_main = 1.6466748663373876
-max_consecutive_lateral_connections = 35
-p_lateral_connection = 3.703218275217572
-num_lateral_connection_tries_per_unit = 12
-learning_rate = 0.02804912925494706
-epochs = 130
-batch_size = 78
+activation = 'relu'
+predecessor_level_connection_affinity_factor_first = 3.458608634090366
+predecessor_level_connection_affinity_factor_main = 3.020897950280901
+max_consecutive_lateral_connections = 29
+p_lateral_connection = 0.4724567916748979
+num_lateral_connection_tries_per_unit = 7
+learning_rate = 0.04143817317646551
+epochs = 85
+batch_size = 97
 maximum_levels = 4
 maximum_units_per_level = 3
-maximum_neurons_per_unit = 3
+maximum_neurons_per_unit = 5
 
 
 cerebros =\
@@ -176,11 +176,11 @@ cerebros =\
         validation_split=0.0,
         direction='minimize',
         metric_to_rank_by='val_root_mean_squared_error',
-        minimum_levels=4,
+        minimum_levels=3,
         maximum_levels=maximum_levels,
         minimum_units_per_level=2,
         maximum_units_per_level=maximum_units_per_level,
-        minimum_neurons_per_unit=3,
+        minimum_neurons_per_unit=4,
         maximum_neurons_per_unit=maximum_neurons_per_unit,
         validation_data=(val_x, val_labels),
         activation=activation,
