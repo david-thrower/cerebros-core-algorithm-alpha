@@ -86,6 +86,7 @@ OUTPUT_SHAPES = [1]
 """### A custom GPT2 encoder layer for text embedding"""
 
 
+@tf.keras.utils.register_keras_serializable()
 class GPT2Layer(tf.keras.layers.Layer):
 
     def __init__(self, max_seq_length, **kwargs):
@@ -190,6 +191,7 @@ print(hy_df)
 from transformers import AutoTokenizer
 import tensorflow as tf
 
+@tf.keras.utils.register_keras_serializable()
 class NewTokenizerLayer(tf.keras.layers.Layer):
     def __init__(self, max_seq_length, tokenizer_checkpoint, **kwargs):
         super().__init__(**kwargs)
@@ -248,6 +250,7 @@ class NewTokenizerLayer(tf.keras.layers.Layer):
 
 
 # --- Updated RotaryEmbedding ---
+@tf.keras.utils.register_keras_serializable()
 class RotaryEmbedding(tf.keras.layers.Layer):
     def __init__(self, dim, max_seq_len=1024, temperature=10000.0, **kwargs):
         super().__init__(**kwargs)
@@ -347,6 +350,7 @@ def apply_rotary_pos_emb(x, sin, cos):
     return x_rotated
 
 
+@tf.keras.utils.register_keras_serializable()
 class InterleavedRoPE(tf.keras.layers.Layer):
     def __init__(self, dim, max_seq_len=1024, **kwargs):
         super().__init__(**kwargs)
@@ -419,7 +423,7 @@ position_embedding = InterleavedRoPE(
 # LayerNorm ... It degraded accuracy
 # Just an FYI for anyone trying to apply conventional wisdom
 # to save you the time ...
-x = x = tf.keras.layers.Concatenate()([embedded, position_embedding])
+x = tf.keras.layers.Concatenate()([embedded, position_embedding])
 x = tf.keras.layers.Dropout(0.4)(x)  # AI suggested 0.4
 flattened = tf.keras.layers.Flatten()(x)
 
@@ -529,3 +533,15 @@ print(f'Cerebros best accuracy achieved is {result}')
 print(f'val set accuracy')
 
 # """### Testing the best model found"""
+
+# Register custom objects for serialization
+custom_objects = {
+    'GPT2Layer': GPT2Layer,
+    'NewTokenizerLayer': NewTokenizerLayer,
+    'RotaryEmbedding': RotaryEmbedding,
+    'InterleavedRoPE': InterleavedRoPE
+}
+
+# Save the model with custom objects
+gpt_baseline_model.save('gpt_baseline_model.h5', save_format='h5', custom_objects=custom_objects)
+cerebros_base_model.save('cerebros_base_model.h5', save_format='h5', custom_objects=custom_objects)
