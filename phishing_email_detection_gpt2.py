@@ -31,7 +31,7 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 from ast import literal_eval
 import time
-
+from gc import collect
 
 #
 # Load the email data
@@ -76,6 +76,14 @@ baseline_train_y = tf.constant(y_train, dtype=tf.int8)
 # Packaged for Cerebros (multimodal, takes inputs as a list)
 training_x   = [baseline_train_x]
 train_labels = [baseline_train_y]
+
+# Package test set:
+test_x_tf = tf.constant(X_test, dtype=tf.string)
+test_y_tf = tf.constant(y_test, dtype=tf.int8)
+
+test_x_packaged = [test_x_tf]
+test_y_packaged = [test_y_tf]
+
 
 #
 # Input and output shapes
@@ -532,53 +540,25 @@ print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINE
 print(f'Cerebros best accuracy achieved is {result}')
 print(f'val set accuracy')
 
-# """### Testing the best model found"""
+"""### Testing the best model found"""
 
-# Register custom objects for serialization
-custom_objects = {
-    'GPT2Layer': GPT2Layer,
-    'NewTokenizerLayer': NewTokenizerLayer,
-    'RotaryEmbedding': RotaryEmbedding,
-    'InterleavedRoPE': InterleavedRoPE
-}
+MODEL_FILE_NAME = "cerebros-foundation-model.keras"
 
-# Save the model with custom objects
-gpt_baseline_model.save('gpt_baseline_model.h5', save_format='h5', custom_objects=custom_objects)
-cerebros_base_model.save('cerebros_base_model.h5', save_format='h5', custom_objects=custom_objects)
+best_model_found = cerebros_automl.get_best_model()
+best_model_found.save(MODEL_FILE_NAME)
+del(best_model_found)
+del(cerebros_automl)
+collect()
 
-# Test loading the models back
-print("Testing model loading...")
-try:
-    # Load GPT baseline model
-    loaded_gpt_model = tf.keras.models.load_model('gpt_baseline_model.h5', custom_objects=custom_objects)
-    print("✓ GPT baseline model loaded successfully!")
-    
-    # Verify GPT model structure
-    print("GPT Model Summary:")
-    print(loaded_gpt_model.summary())
-    
-    # Test GPT model prediction
-    test_input = tf.constant(["This is a test email for phishing detection."])
-    gpt_prediction = loaded_gpt_model.predict(test_input)
-    print(f"GPT Model prediction shape: {gpt_prediction.shape}")
-    print(f"GPT Model prediction sample: {gpt_prediction[0]}")
-    
-    # Load Cerebros base model
-    loaded_cerebros_model = tf.keras.models.load_model('cerebros_base_model.h5', custom_objects=custom_objects)
-    print("✓ Cerebros base model loaded successfully!")
-    
-    # Verify Cerebros model structure
-    print("Cerebros Model Summary:")
-    print(loaded_cerebros_model.summary())
-    
-    # Test Cerebros model prediction
-    cerebros_prediction = loaded_cerebros_model.predict(test_input)
-    print(f"Cerebros Model prediction shape: {cerebros_prediction.shape}")
-    print(f"Cerebros Model prediction sample shape: {cerebros_prediction[0].shape}")
-    
-    print("✓ All models loaded and validated successfully!")
-    
-except Exception as e:
-    print(f"✗ Error loading models: {e}")
-    raise
+reconstituted_model = tf.keras.models.load_model(MODEL_FILE_NAME)
+test_x_packaged = [test_x_tf]
+test_y_packaged = [test_y_tf]
 
+reconstituted_model.compile(
+    loss='binary_crossentropy',
+    metrics=['accuracy']
+)
+
+results = reconstituted_model.evaluate(test_x_packaged, test_y_packaged)
+print("Test loss:", results[0])
+print("Test accuracy:", results[-1])
