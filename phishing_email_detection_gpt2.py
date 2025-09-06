@@ -31,7 +31,7 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 from ast import literal_eval
 import time
-
+from gc import collect
 
 #
 # Load the email data
@@ -77,6 +77,14 @@ baseline_train_y = tf.constant(y_train, dtype=tf.int8)
 training_x   = [baseline_train_x]
 train_labels = [baseline_train_y]
 
+# Package test set:
+test_x_tf = tf.constant(X_test, dtype=tf.string)
+test_y_tf = tf.constant(y_test, dtype=tf.int8)
+
+test_x_packaged = [test_x_tf]
+test_y_packaged = [test_y_tf]
+
+
 #
 # Input and output shapes
 #
@@ -86,6 +94,7 @@ OUTPUT_SHAPES = [1]
 """### A custom GPT2 encoder layer for text embedding"""
 
 
+@tf.keras.utils.register_keras_serializable()
 class GPT2Layer(tf.keras.layers.Layer):
 
     def __init__(self, max_seq_length, **kwargs):
@@ -190,6 +199,7 @@ print(hy_df)
 from transformers import AutoTokenizer
 import tensorflow as tf
 
+@tf.keras.utils.register_keras_serializable()
 class NewTokenizerLayer(tf.keras.layers.Layer):
     def __init__(self, max_seq_length, tokenizer_checkpoint, **kwargs):
         super().__init__(**kwargs)
@@ -248,6 +258,7 @@ class NewTokenizerLayer(tf.keras.layers.Layer):
 
 
 # --- Updated RotaryEmbedding ---
+@tf.keras.utils.register_keras_serializable()
 class RotaryEmbedding(tf.keras.layers.Layer):
     def __init__(self, dim, max_seq_len=1024, temperature=10000.0, **kwargs):
         super().__init__(**kwargs)
@@ -347,6 +358,7 @@ def apply_rotary_pos_emb(x, sin, cos):
     return x_rotated
 
 
+@tf.keras.utils.register_keras_serializable()
 class InterleavedRoPE(tf.keras.layers.Layer):
     def __init__(self, dim, max_seq_len=1024, **kwargs):
         super().__init__(**kwargs)
@@ -419,7 +431,7 @@ position_embedding = InterleavedRoPE(
 # LayerNorm ... It degraded accuracy
 # Just an FYI for anyone trying to apply conventional wisdom
 # to save you the time ...
-x = x = tf.keras.layers.Concatenate()([embedded, position_embedding])
+x = tf.keras.layers.Concatenate()([embedded, position_embedding])
 x = tf.keras.layers.Dropout(0.4)(x)  # AI suggested 0.4
 flattened = tf.keras.layers.Flatten()(x)
 
@@ -528,4 +540,25 @@ print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINE
 print(f'Cerebros best accuracy achieved is {result}')
 print(f'val set accuracy')
 
-# """### Testing the best model found"""
+"""### Testing the best model found"""
+
+MODEL_FILE_NAME = "cerebros-foundation-model.keras"
+
+best_model_found = cerebros_automl.get_best_model()
+best_model_found.save(MODEL_FILE_NAME)
+del(best_model_found)
+del(cerebros_automl)
+collect()
+
+reconstituted_model = tf.keras.models.load_model(MODEL_FILE_NAME)
+test_x_packaged = [test_x_tf]
+test_y_packaged = [test_y_tf]
+
+reconstituted_model.compile(
+    loss='binary_crossentropy',
+    metrics=['accuracy']
+)
+
+results = reconstituted_model.evaluate(test_x_packaged, test_y_packaged)
+print("Test loss:", results[0])
+print("Test accuracy:", results[-1])
