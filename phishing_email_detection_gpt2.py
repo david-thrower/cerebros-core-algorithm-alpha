@@ -197,7 +197,7 @@ print(hy_df)
 
 def tokenize_texts(texts, tokenizer, max_seq_length):
     tokenized = []
-    texts_as_list = [str(s) for s in text.tolist()] 
+    texts_as_list = [str(s) for s in texts.tolist()] 
     for text in texts_as_list:
         
         tokens = tokenizer(
