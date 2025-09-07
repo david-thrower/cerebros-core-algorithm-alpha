@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "207-test-smollm-v3-tokenizer" ]
+    branches: [ "main", "208-refactor-nlp-example-to-tokenize-first" ]
 
 permissions:
   contents: read
@@ -40,9 +40,10 @@ jobs:
     # - name: Test text classifier - random search - ham-spam
     #   run: python3 text-class-ham-or-spam.py
     #   timeout-minutes: 90
-    - name: Test image classifier - small subset of CIFAR10 # add back
-      timeout-minutes: 90
-      run: python3 cifar10-example.py
+    # Add back !!!!
+    # - name: Test image classifier - small subset of CIFAR10 # add back
+    #   timeout-minutes: 90
+    #   run: python3 cifar10-example.py
     - name: Phishing email detection with GPT2 embedding
       timeout-minutes: 420
       run: python3 phishing_email_detection_gpt2.py
