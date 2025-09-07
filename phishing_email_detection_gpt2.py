@@ -378,11 +378,6 @@ class InterleavedRoPE(tf.keras.layers.Layer):
         return cls(**config)
 
 
-
-
-
-
-
 # GPT2 configurables
 
 # Optimal for accuracy thus far:
@@ -391,8 +386,8 @@ tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B"
 
 # Modified: Input now matches tokenized text (max_seq_len,)
 inp = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32)
-tokenizer_instance = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
-VOCABULARY_SIZE = len(tokenizer_instance)
+
+VOCABULARY_SIZE = len(tokenizer)
 
 # Modified: Start with embeddings, removing tokenization step from model
 EMBEDDING_N = 12  # Define EMBEDDING_DIM here, to match your embedding layer.
