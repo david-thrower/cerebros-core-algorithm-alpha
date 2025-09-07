@@ -195,10 +195,11 @@ print(hy_df)
 
 ### Cerebros model:
 
-# Function to pre-tokenize data
 def tokenize_texts(texts, tokenizer, max_seq_length):
     tokenized = []
-    for text in texts:
+    texts_as_list = [str(s) for s in text.tolist()] 
+    for text in texts_as_list:
+        
         tokens = tokenizer(
             text,
             max_length=max_seq_length,
