@@ -70,15 +70,9 @@ train_test_split(X, y, test_size=0.85, shuffle=False)
 # Tensors for training data and labels
 #
 
-"""
-
 # Training data for baseline model
 baseline_train_x = tf.constant(X_train, dtype=tf.string)
 baseline_train_y = tf.constant(y_train, dtype=tf.int8)
-
-# Packaged for Cerebros (multimodal, takes inputs as a list)
-training_x   = [baseline_train_x]
-train_labels = [baseline_train_y]
 
 # Package test set:
 test_x_tf = tf.constant(X_test, dtype=tf.string)
@@ -86,14 +80,6 @@ test_y_tf = tf.constant(y_test, dtype=tf.int8)
 
 test_x_packaged = [test_x_tf]
 test_y_packaged = [test_y_tf]
-
-"""
-
-
-
-
-
-
 
 
 #
@@ -207,13 +193,52 @@ print(hy_df)
 
 ### Cerebros model:
 
+# Function to pre-tokenize data
+def tokenize_texts(texts, tokenizer, max_seq_length):
+    tokenized = []
+    for text in texts:
+        tokens = tokenizer(
+            text,
+            max_length=max_seq_length,
+            padding='max_length',
+            truncation=True,
+            return_tensors='np'
+        )
+        tokenized.append(tokens['input_ids'][0])
+    return tokenized
+
+# Pre-tokenize train and test data using out-of-the-box tokenizer
 tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B"
+max_seq_length = 1536
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
 
-## To Complete: Tokenize text and build model without tokenizer ...
+# Ensure tokenizer has a padding token
+if tokenizer.pad_token is None:
+    tokenizer.pad_token = tokenizer.eos_token
 
+# Pre-tokenize training data
+train_tokenized = tokenize_texts(X_train, tokenizer, max_seq_length)
 
+# Pre-tokenize test data
+test_tokenized = tokenize_texts(X_test, tokenizer, max_seq_length)
 
+# Convert to tensors and package for Cerebros
+train_X_tokenized = tf.constant(np.array(train_tokenized), dtype=tf.int32)
+train_y_tensor = tf.constant(y_train, dtype=tf.int8)
+
+# Packaged for Cerebros (multimodal, takes inputs as a list)
+training_x = [train_X_tokenized]
+train_labels = [train_y_tensor]
+
+# Package test set:
+test_X_tokenized = tf.constant(np.array(test_tokenized), dtype=tf.int32)
+test_y_tensor = tf.constant(y_test, dtype=tf.int8)
+
+test_x_packaged = [test_X_tokenized]
+test_y_packaged = [test_y_tensor]
+
+# Update input shapes to match tokenized input
+INPUT_SHAPES = [(max_seq_length,)]
 
 
 # --- Updated RotaryEmbedding ---
@@ -362,15 +387,14 @@ class InterleavedRoPE(tf.keras.layers.Layer):
 
 # Optimal for accuracy thus far:
 max_seq_length = 1536
+tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B"
 
+# Modified: Input now matches tokenized text (max_seq_len,)
+inp = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32)
+tokenizer_instance = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
+VOCABULARY_SIZE = len(tokenizer_instance)
 
-inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
-gp2_tokenizer = NewTokenizerLayer(max_seq_length=max_seq_length,tokenizer_checkpoint=tokenizer_checkpoint)
-VOCABULARY_SIZE = len(gp2_tokenizer.tokenizer)
-tokens = gp2_tokenizer(inp)
-
-# On larger hardware, this could probably be increased considerably and
-# Probably would improve performance ...
+# Modified: Start with embeddings, removing tokenization step from model
 EMBEDDING_N = 12  # Define EMBEDDING_DIM here, to match your embedding layer.
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
@@ -378,7 +402,7 @@ embedded = tf.keras.layers.Embedding(
     input_dim=VOCABULARY_SIZE,
     output_dim=EMBEDDING_DIM,
     input_length=max_seq_length,
-    mask_zero=True)(tokens)
+    mask_zero=True)(inp)
 
 position_embedding = InterleavedRoPE(
     dim=EMBEDDING_DIM,
@@ -483,7 +507,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     batch_size=batch_size,
     meta_trial_number=meta_trial_number,
     base_models=[cerebros_base_model],
-    train_data_dtype=tf.string)
+    train_data_dtype=tf.int32)  # Changed from tf.string to tf.int32
 
 cerebros_t0 = time.time()
 result = cerebros_automl.run_random_search()
@@ -513,8 +537,8 @@ file_size_bytes = getsize(MODEL_FILE_NAME)
 print(f"Model size on disk: {file_size_bytes / (1024*1024):.2f} MB")
 
 reconstituted_model = tf.keras.models.load_model(MODEL_FILE_NAME)
-test_x_packaged = [test_x_tf]
-test_y_packaged = [test_y_tf]
+test_x_packaged = [test_X_tokenized]
+test_y_packaged = [test_y_tensor]
 
 reconstituted_model.compile(
     loss='binary_crossentropy',
