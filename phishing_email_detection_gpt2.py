@@ -32,6 +32,7 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
 from ast import literal_eval
 import time
 from gc import collect
+from os.path import getsize
 
 #
 # Load the email data
@@ -403,7 +404,7 @@ class InterleavedRoPE(tf.keras.layers.Layer):
 
 # Optimal for accuracy thus far:
 max_seq_length = 1536
-tokenizer_checkpoint = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B"
 
 inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
 gp2_tokenizer = NewTokenizerLayer(max_seq_length=max_seq_length,tokenizer_checkpoint=tokenizer_checkpoint)
@@ -549,6 +550,9 @@ best_model_found.save(MODEL_FILE_NAME)
 del(best_model_found)
 del(cerebros_automl)
 collect()
+
+file_size_bytes = getsize(MODEL_FILE_NAME)
+print(f"Model size on disk: {file_size_bytes / (1024*1024):.2f} MB")
 
 reconstituted_model = tf.keras.models.load_model(MODEL_FILE_NAME)
 test_x_packaged = [test_x_tf]
