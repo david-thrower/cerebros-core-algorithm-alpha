@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "205-new-branch-for-testing-searialization" ]
+    branches: [ "main", "207-test-smollm-v3-tokenizer" ]
 
 permissions:
   contents: read
