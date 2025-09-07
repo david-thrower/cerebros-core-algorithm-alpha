@@ -70,6 +70,8 @@ train_test_split(X, y, test_size=0.85, shuffle=False)
 # Tensors for training data and labels
 #
 
+"""
+
 # Training data for baseline model
 baseline_train_x = tf.constant(X_train, dtype=tf.string)
 baseline_train_y = tf.constant(y_train, dtype=tf.int8)
@@ -84,6 +86,14 @@ test_y_tf = tf.constant(y_test, dtype=tf.int8)
 
 test_x_packaged = [test_x_tf]
 test_y_packaged = [test_y_tf]
+
+"""
+
+
+
+
+
+
 
 
 #
@@ -197,63 +207,11 @@ print(hy_df)
 
 ### Cerebros model:
 
-from transformers import AutoTokenizer
-import tensorflow as tf
+tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B"
+tokenizer = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
 
-@tf.keras.utils.register_keras_serializable()
-class NewTokenizerLayer(tf.keras.layers.Layer):
-    def __init__(self, max_seq_length, tokenizer_checkpoint, **kwargs):
-        super().__init__(**kwargs)
-        self.max_seq_length = max_seq_length
-        self.tokenizer_checkpoint = tokenizer_checkpoint
-        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
-        
-        # Ensure tokenizer has a padding token
-        if self.tokenizer.pad_token is None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
+## To Complete: Tokenize text and build model without tokenizer ...
 
-    def call(self, inputs):
-        def tokenize_py_fn(inputs):
-            # Convert TensorFlow bytes to Python strings
-            texts = [text.decode('utf-8') for text in inputs.numpy()]
-            
-            # Tokenize with Hugging Face tokenizer
-            tokenized = self.tokenizer(
-                texts,
-                max_length=self.max_seq_length,
-                padding='max_length',
-                truncation=True,
-                return_tensors='tf'
-            )
-            return tokenized['input_ids'].numpy()
-        
-        # Wrap Python function in TensorFlow operation
-        input_ids = tf.py_function(
-            tokenize_py_fn,
-            [inputs],
-            Tout=tf.int32
-        )
-        
-        # Set shape for downstream layers
-        batch_size = tf.shape(inputs)[0]
-        input_ids.set_shape([None, self.max_seq_length])
-        
-        return input_ids
-
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'max_seq_length': self.max_seq_length,
-            'tokenizer_checkpoint': self.tokenizer_checkpoint
-        })
-        return config
-
-    @classmethod
-    def from_config(cls, config):
-        return cls(
-            max_seq_length=config['max_seq_length'],
-            tokenizer_checkpoint=config['tokenizer_checkpoint']
-        )
 
 
 
@@ -404,7 +362,7 @@ class InterleavedRoPE(tf.keras.layers.Layer):
 
 # Optimal for accuracy thus far:
 max_seq_length = 1536
-tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B"
+
 
 inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
 gp2_tokenizer = NewTokenizerLayer(max_seq_length=max_seq_length,tokenizer_checkpoint=tokenizer_checkpoint)
