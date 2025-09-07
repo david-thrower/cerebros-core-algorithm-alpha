@@ -408,7 +408,7 @@ tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B"
 
 inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
 gp2_tokenizer = NewTokenizerLayer(max_seq_length=max_seq_length,tokenizer_checkpoint=tokenizer_checkpoint)
-VOCABULARY_SIZE = gp2_tokenizer.tokenizer.vocab_size
+VOCABULARY_SIZE = len(gp2_tokenizer.tokenizer)
 tokens = gp2_tokenizer(inp)
 
 # On larger hardware, this could probably be increased considerably and
