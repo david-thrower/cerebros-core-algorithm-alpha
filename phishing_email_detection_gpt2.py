@@ -425,10 +425,11 @@ position_embedding = InterleavedRoPE(
 x = tf.keras.layers.Concatenate()([embedded, position_embedding])
 x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT)(x)  # AI suggested 0.4 
 flattened = tf.keras.layers.Flatten()(x)
+projected = tf.keras.layers.Dense(EMBEDDING_DIM)(flattened) # Dimensionality reduction
 
 cerebros_base_model = tf.keras.Model(
     inputs=inp,
-    outputs=flattened  # Output enhanced embeddings now
+    outputs=projected  # Output enhanced embeddings now
 )
 
 
