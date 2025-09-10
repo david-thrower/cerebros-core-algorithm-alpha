@@ -400,17 +400,17 @@ class InterleavedRoPE(tf.keras.layers.Layer):
 
 # Text embedding base model
 
-inp = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32)
+inp = tf.keras.layers.Input(shape=(MAX_SEQ_LENGTH,), dtype=tf.int32)
 
 embedded = tf.keras.layers.Embedding(
     input_dim=VOCABULARY_SIZE,
     output_dim=EMBEDDING_DIM,
-    input_length=max_seq_length,
+    input_length=MAX_SEQ_LENGTH,
     mask_zero=True)(inp)
 
 position_embedding = InterleavedRoPE(
     dim=EMBEDDING_DIM,
-    max_seq_len=max_seq_length,
+    max_seq_len=MAX_SEQ_LENGTH,
     # initializer="uniform",
 )(embedded)
 
