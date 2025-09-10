@@ -223,9 +223,6 @@ data = [
 
 ]
 
-# Remove:
-
-data = data[:8]
 
 x, y, vocab_size = prepare_data(data)
 
