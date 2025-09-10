@@ -662,17 +662,13 @@ class CerebrosAutoregressiveTextGenerator(tf.keras.Model):
         
         # Autoregressive generation loop
         for _ in range(max_new_tokens):
-            # Pad or truncate to max_sequence_length using tokenizer
+            # Pad or truncate to max_sequence_length (CORRECTED PADDING LOGIC)
             if len(current_tokens) > self.max_sequence_length:
                 input_tokens = current_tokens[:self.max_sequence_length]
             else:
-                # Use tokenizer's padding functionality
-                padded = tokenizer(
-                    [],
-                    max_length=self.max_sequence_length - len(current_tokens),
-                    padding='max_length'
-                )
-                input_tokens = current_tokens + padded['input_ids']
+                # Manual padding with padding token
+                padding_needed = self.max_sequence_length - len(current_tokens)
+                input_tokens = current_tokens + [self.padding_token] * padding_needed
             
             # Convert to tensor and get model prediction
             input_tensor = tf.constant([input_tokens], dtype=tf.int32)
@@ -699,17 +695,11 @@ class CerebrosAutoregressiveTextGenerator(tf.keras.Model):
             if len(current_tokens) >= self.max_sequence_length:
                 break
         
-        # Pad the result to the required length if necessary
+        # Pad the result to the required length if necessary (CORRECTED PADDING LOGIC)
         total_tokens = token_ids + generated_tokens
         if len(total_tokens) < len(token_ids) + max_new_tokens:
             padding_needed = len(token_ids) + max_new_tokens - len(total_tokens)
-            # Use tokenizer's padding
-            padded = tokenizer(
-                [],
-                max_length=padding_needed,
-                padding='max_length'
-            )
-            total_tokens.extend(padded['input_ids'][:padding_needed])
+            total_tokens.extend([self.padding_token] * padding_needed)
             
         return total_tokens
 
@@ -720,7 +710,7 @@ class CerebrosAutoregressiveTextGenerator(tf.keras.Model):
 # Replace the generation code block with this:
 
 print("\n" + "="*50)
-print("GENERATED TEXT SAMPLES")
+print("GENERATED TEXT SAMPLES USING WRAPPER")
 print("="*50)
 
 # Create config and generator
@@ -793,7 +783,7 @@ print("GENERATED TEXT SAMPLES FROM ALL DATA")
 print("="*50)
 
 generated_texts_all = []
-for i, text in enumerate(data[:5]):  # Process first 5 for demo
+for i, text in enumerate(data[:3]):  # Process first 3 for demo
     # Split such that everything before </prompt> or the entire text if </prompt> is not present
     if '</prompt>' in text:
         prompt_text = text.split('</prompt>')[0] + '</prompt>'
