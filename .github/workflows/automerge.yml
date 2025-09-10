@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "208-refactor-nlp-example-to-tokenize-first" ]
+    branches: [ "main", "210-create-a-minimum-viable-proof-of-concept-on-nas-based-auto-regressive-generation" ]
 
 permissions:
   contents: read
