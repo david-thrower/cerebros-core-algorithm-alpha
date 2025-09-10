@@ -525,6 +525,78 @@ print(f"Model size on disk: {file_size_bytes / (1024*1024):.2f} MB")
 
 reconstituted_model = tf.keras.models.load_model(MODEL_FILE_NAME)
 
+# Generate text from test samples
+print("\n" + "="*50)
+print("GENERATED TEXT SAMPLES")
+print("="*50)
+
+# Get pad token id
+pad_token_id = tokenizer.pad_token_id
+end_prompt_token_id = tokenizer.encode("</prompt>", add_special_tokens=False)[0]
+
+# Generate text for first 5 test samples
+generated_texts = []
+for i in range(min(5, len(x_test_packaged[0]))):
+    original_input = x_test_packaged[0][i].numpy()
+    
+    # Find the end of the prompt
+    try:
+        end_prompt_index = list(original_input).index(end_prompt_token_id)
+    except ValueError:
+        end_prompt_index = 0
+    
+    # Extract the prompt part
+    prompt_tokens = original_input[:end_prompt_index+1].tolist()
+    
+    # Generate tokens sequentially
+    generated_tokens = []
+    current_input = prompt_tokens.copy()
+    
+    # Generate up to 100 tokens or until pad token
+    for _ in range(100):
+        # Pad or truncate to MAX_SEQ_LENGTH
+        input_tensor = tf.constant([current_input + [pad_token_id] * (MAX_SEQ_LENGTH - len(current_input))], dtype=tf.int32)
+        
+        # Get prediction
+        prediction = reconstituted_model(input_tensor)
+        next_token_id = int(tf.argmax(prediction[0], axis=-1).numpy())
+        
+        # Stop if pad token generated
+        if next_token_id == pad_token_id:
+            break
+            
+        generated_tokens.append(next_token_id)
+        current_input.append(next_token_id)
+        
+        # Stop if we exceed max length
+        if len(current_input) >= MAX_SEQ_LENGTH:
+            break
+    
+    generated_texts.append((prompt_tokens, generated_tokens))
+
+# Decode and print with proper formatting
+for idx, (prompt_tokens, generated_tokens) in enumerate(generated_texts):
+    # Decode prompt
+    prompt_text = tokenizer.decode(prompt_tokens, skip_special_tokens=False)
+    
+    # Extract original prompt content
+    if '<prompt>' in prompt_text and '</prompt>' in prompt_text:
+        original_prompt = prompt_text.split('<prompt>')[-1].split('</prompt>')[0]
+    else:
+        original_prompt = prompt_text[:50] + "..." if len(prompt_text) > 50 else prompt_text
+    
+    # Decode generated text
+    generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False) if generated_tokens else ""
+    
+    print(f"\nGenerated text from sample {idx+1}:")
+    print(f"<prompt>{original_prompt}</prompt>{generated_text}")
+
+print("\n" + "="*50)
+print("MODEL EVALUATION WITH TEST SET")
+print("="*50)
+
+## Model validation
+
 reconstituted_model.compile(
     loss='categorical_crossentropy',
     metrics=['accuracy']
