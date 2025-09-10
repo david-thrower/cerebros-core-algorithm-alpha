@@ -479,7 +479,9 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     num_lateral_connection_tries_per_unit=num_lateral_connection_tries_per_unit,
     learning_rate=learning_rate,
     loss=tf.keras.losses.CategoricalCrossentropy(),
-    metrics=[tf.keras.metrics.Accuracy()],
+    metrics=[tf.keras.metrics.CategoricalAccuracy,
+        # tf.keras.metrics.Accuracy()
+            ],
     epochs=epochs,
     project_name=f"{PROJECT_NAME}_meta_{meta_trial_number}",
     model_graphs='model_graphs',
