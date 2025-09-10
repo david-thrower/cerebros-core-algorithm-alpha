@@ -534,7 +534,7 @@ print("="*50)
 pad_token_id = tokenizer.pad_token_id
 end_prompt_token_id = tokenizer.encode("</prompt>", add_special_tokens=False)[0]
 
-# Generate text for first 5 test samples
+# Generate text for first 5 test samples (Working)
 generated_texts = []
 for i in range(min(5, len(x_test_packaged[0]))):
     original_input = x_test_packaged[0][i].numpy()
@@ -594,6 +594,265 @@ for idx, (prompt_tokens, generated_tokens) in enumerate(generated_texts):
 print("\n" + "="*50)
 print("MODEL EVALUATION WITH TEST SET")
 print("="*50)
+
+## Proper model wrapper and generation method (under development):
+
+print("###### Output of the model wrapper (under development) ########### ")
+
+# Register the config and model wrapper as serializable
+@tf.keras.utils.register_keras_serializable()
+class CerebrosAutoregressiveTextGeneratorConfig:
+    def __init__(self, max_sequence_length=1536, padding_token=None):
+        self.max_sequence_length = max_sequence_length
+        self.padding_token = padding_token
+    
+    def get_config(self):
+        return {
+            'max_sequence_length': self.max_sequence_length,
+            'padding_token': self.padding_token
+        }
+    
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
+@tf.keras.utils.register_keras_serializable()
+class CerebrosAutoregressiveTextGenerator(tf.keras.Model):
+    def __init__(self, config, **kwargs):
+        super().__init__(**kwargs)
+        self.config = config
+        self.max_sequence_length = config.max_sequence_length
+        self.padding_token = config.padding_token
+        # Make self.model = the reconstituted model (constant)
+        self.model = reconstituted_model
+    
+    def get_config(self):
+        return {
+            'config': self.config.get_config()
+        }
+    
+    @classmethod
+    def from_config(cls, config):
+        config_obj = CerebrosAutoregressiveTextGeneratorConfig.from_config(config['config'])
+        return cls(config=config_obj)
+    
+    def generate(self, token_ids, do_sample=False, max_new_tokens=None):
+        """
+        Generate text autoregressively from token IDs.
+        
+        Args:
+            token_ids: Iterable of integers representing token IDs
+            do_sample: Boolean, if True use sampling, if False use greedy argmax
+            max_new_tokens: Maximum number of new tokens to generate
+            
+        Returns:
+            List of token IDs including original tokens and generated tokens
+        """
+        # Convert token_ids to list if it's not already
+        if not isinstance(token_ids, list):
+            token_ids = list(token_ids)
+            
+        # Determine the actual maximum number of new tokens
+        if max_new_tokens is None:
+            max_new_tokens = self.max_sequence_length - len(token_ids)
+        else:
+            max_new_tokens = min(max_new_tokens, self.max_sequence_length - len(token_ids))
+            
+        # Initialize the generated tokens list
+        generated_tokens = []
+        current_tokens = token_ids.copy()
+        
+        # Autoregressive generation loop
+        for _ in range(max_new_tokens):
+            # Pad or truncate to max_sequence_length
+            if len(current_tokens) > self.max_sequence_length:
+                input_tokens = current_tokens[:self.max_sequence_length]
+            else:
+                input_tokens = current_tokens + [self.padding_token] * (self.max_sequence_length - len(current_tokens))
+            
+            # Convert to tensor and get model prediction
+            input_tensor = tf.constant([input_tokens], dtype=tf.int32)
+            logits = self.model(input_tensor)  # Shape: (batch_size, VOCABULARY_SIZE)
+            
+            # Get next token based on sampling strategy
+            if do_sample:
+                # Sample from the distribution
+                probabilities = tf.nn.softmax(logits[0], axis=-1)
+                next_token_id = tf.random.categorical(tf.math.log(probabilities)[None, :], 1)[0, 0].numpy()
+            else:
+                # Greedy sampling (argmax)
+                next_token_id = int(tf.argmax(logits[0], axis=-1).numpy())
+            
+            # Check for termination condition
+            if next_token_id == self.padding_token:
+                break
+                
+            # Add to generated tokens and update current tokens
+            generated_tokens.append(int(next_token_id))
+            current_tokens.append(int(next_token_id))
+            
+            # Check if we've reached max sequence length
+            if len(current_tokens) >= self.max_sequence_length:
+                break
+        
+        # Pad the result to the required length if necessary
+        total_tokens = token_ids + generated_tokens
+        if len(total_tokens) < len(token_ids) + max_new_tokens:
+            padding_needed = len(token_ids) + max_new_tokens - len(total_tokens)
+            total_tokens.extend([self.padding_token] * padding_needed)
+            
+        return total_tokens
+
+    def call(self, inputs):
+        # This is just for compatibility, the main logic is in generate()
+        return self.model(inputs)
+
+# Instantiate config and model wrapper
+config = CerebrosAutoregressiveTextGeneratorConfig(
+    max_sequence_length=MAX_SEQ_LENGTH,
+    padding_token=tokenizer.pad_token_id
+)
+
+# Create the generator instance
+generator_model = CerebrosAutoregressiveTextGenerator(config)
+
+# Test that it works on data[:2]
+print("Testing generator on first 2 samples...")
+test_samples = data[:2]
+test_generated_texts = []
+
+for i, text in enumerate(test_samples):
+    # Split such that everything before </prompt> or the entire text if </prompt> is not present
+    if '</prompt>' in text:
+        prompt_text = text.split('</prompt>')[0] + '</prompt>'
+    else:
+        prompt_text = text
+    
+    # Tokenize the prompt
+    prompt_tokens = tokenizer.encode(prompt_text, add_special_tokens=False)
+    
+    # Pad to MAX_SEQ_LEN
+    if len(prompt_tokens) < MAX_SEQ_LENGTH:
+        prompt_tokens.extend([tokenizer.pad_token_id] * (MAX_SEQ_LENGTH - len(prompt_tokens)))
+    else:
+        prompt_tokens = prompt_tokens[:MAX_SEQ_LENGTH]
+    
+    # Generate using the wrapper
+    generated_tokens = generator_model.generate(
+        token_ids=prompt_tokens[:50],  # Use first 50 tokens as starting point
+        do_sample=False,
+        max_new_tokens=50
+    )
+    
+    # Decode and store
+    generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)
+    test_generated_texts.append(generated_text)
+    print(f"Sample {i+1} processed")
+
+print("Test generation completed successfully!")
+
+# Serialize and save the model
+model_save_path = f"{TIME}_cerebros-autoregressive-text-generator.keras"
+generator_model.save(model_save_path)
+print(f"Model saved as '{model_save_path}'")
+
+# Garbage collect
+del generator_model
+collect()
+print("Garbage collection completed.")
+
+# Reconstitute the model
+print("Reconstituting model...")
+reconstituted_generator = tf.keras.models.load_model(model_save_path)
+print("Model reconstituted successfully!")
+
+# Simple text generation example using the entire data variable
+print("\n" + "="*50)
+print("GENERATED TEXT SAMPLES FROM ALL DATA")
+print("="*50)
+
+generated_texts = []
+for i, text in enumerate(data[:5]):  # Process first 5 for demo
+    # Split such that everything before </prompt> or the entire text if </prompt> is not present
+    if '</prompt>' in text:
+        prompt_text = text.split('</prompt>')[0] + '</prompt>'
+    else:
+        prompt_text = text
+    
+    # Tokenize with proper padding using tokenizer's built-in functionality
+    tokenized = tokenizer(
+        prompt_text,
+        max_length=MAX_SEQ_LENGTH,
+        padding='max_length',
+        truncation=True,
+        add_special_tokens=False
+    )
+    token_ids = tokenized['input_ids']
+    
+    # Pass through the model using generate method
+    generated_token_ids = reconstituted_generator.generate(
+        token_ids=token_ids,
+        do_sample=False,
+        max_new_tokens=100
+    )
+    
+    # Decode generated text
+    generated_text = tokenizer.decode(generated_token_ids, skip_special_tokens=False)
+    generated_texts.append(generated_text)
+    
+    # Extract and print prompt for display
+    if '<prompt>' in text and '</prompt>' in text:
+        display_prompt = text.split('<prompt>')[1].split('</prompt>')[0]
+    else:
+        display_prompt = text[:100] + "..." if len(text) > 100 else text
+        
+    print(f"\nSample {i+1}:")
+    print(f"Prompt: {display_prompt}")
+    print(f"Generated: {generated_text[len(prompt_text):][:200]}...")  # Show first 200 generated chars
+
+print("\nAll samples processed!")
+
+
+# Replace the generation code block with this:
+
+print("\n" + "="*50)
+print("GENERATED TEXT SAMPLES")
+print("="*50)
+
+# Create config and generator
+config = CerebrosAutoregressiveTextGeneratorConfig(
+    max_sequence_length=MAX_SEQ_LENGTH,
+    padding_token=tokenizer.pad_token_id
+)
+generator = CerebrosAutoregressiveTextGenerator(reconstituted_model, config)
+
+end_prompt_token_id = tokenizer.encode("</prompt>", add_special_tokens=False)[0]
+
+# Generate text for first 5 test samples
+generated_texts = []
+for i in range(min(5, len(x_test_packaged[0]))):
+    original_input = x_test_packaged[0][i].numpy()
+    
+    # Find the end of the prompt
+    try:
+        end_prompt_index = list(original_input).index(end_prompt_token_id)
+    except ValueError:
+        end_prompt_index = 0
+    
+    # Extract the prompt part
+    prompt_tokens = original_input[:end_prompt_index+1].tolist()
+    
+    # Generate tokens using the wrapper class
+    generated_tokens = generator.generate(
+        token_ids=prompt_tokens,
+        do_sample=False,
+        max_new_tokens=100
+    )[len(prompt_tokens):]  # Only keep the newly generated tokens
+    
+    generated_texts.append((prompt_tokens, generated_tokens))
+
+
+
 
 ## Model validation
 
