@@ -28,7 +28,7 @@ from os.path import getsize
 
 MAX_SEQ_LENGTH = 1536
 
-tokenizer_checkpoint = "HuggingFaceTB/SmolLM2-1.7B-Instruct" # "HuggingFaceTB/SmolLM3-3B"
+tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B" # "HuggingFaceTB/SmolLM2-1.7B-Instruct" 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
 
 # Step 1: Add special tokens
