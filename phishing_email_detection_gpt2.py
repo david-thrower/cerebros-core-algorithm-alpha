@@ -223,6 +223,10 @@ data = [
 
 ]
 
+# Remove:
+
+data = data[:8]
+
 x, y, vocab_size = prepare_data(data)
 
 print("Input IDs shape:", len(x), "x", len(x[0]) if x else 0)
