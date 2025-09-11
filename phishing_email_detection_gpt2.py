@@ -820,7 +820,7 @@ for i, text in enumerate(data):
         
     print(f"\nSample {i+1}:")
     print(f"Prompt: {text}")
-    print(f"Generated: {generated_text}" 
+    print(f"Generated: {generated_text}")
     # [len(prompt_text):][:200]}...")
 
 print("\nAll samples processed!")
@@ -840,7 +840,6 @@ print("Garbage collection completed.")
 print("Reconstituting model...")
 reconstituted_generator = tf.keras.models.load_model(model_save_path)
 print("Model reconstituted successfully!")
-
 
 
 # Test with all original data samples
@@ -884,8 +883,8 @@ for i, text in enumerate(data[:3]):  # Process first 3 for demo
         display_prompt = text[:100] + "..." if len(text) > 100 else text
         
     print(f"\nSample {i+1}:")
-    print(f"Prompt: {display_prompt}")
-    print(f"Generated: {generated_text[len(prompt_text):][:200]}...")
+    print(f"Prompt: {text}")
+    print(f"Generated: {generated_text}") # [len(prompt_text):][:200]}...")
 
 print("\nAll samples processed!")
 
