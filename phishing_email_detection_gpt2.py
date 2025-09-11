@@ -757,7 +757,7 @@ for i, original_text in enumerate(data[:5]):  # Process first 5 samples
     
     generated_texts.append((prompt_part, generated_part))
     
-    print(f"Generated response: {generated_part[:200]}...")
+    print(f"Generated response: {generated_part}...")
 
 # Display results with proper formatting
 print("\n" + "="*50)
@@ -766,7 +766,8 @@ print("="*50)
 
 for idx, (original_prompt, generated_response) in enumerate(generated_texts):
     print(f"\nSample {idx+1}:")
-    print(f"{original_prompt}{generated_response}")
+    print(f"Prompt:{original_prompt}")
+    print(f"Response: {generated_response}")
 
 # Save the model
 model_save_path = f"{TIME}_cerebros-autoregressive-text-generator.keras"
@@ -785,7 +786,7 @@ print("Model reconstituted successfully!")
 
 # Test with all original data samples - REAL WORLD DEMO (reconstituted)
 print("\n" + "="*50)
-print("GENERATED TEXT SAMPLES FROM ALL DATA - REAL WORLD USAGE")
+print("GENERATED TEXT SAMPLES FROM ALL DATA - REAL WORLD USAGE (reconstituted)")
 print("="*50)
 
 generated_texts_all = []
@@ -819,7 +820,7 @@ for i, text in enumerate(data):
     
         
     print(f"\nSample {i+1}:")
-    print(f"Prompt: {text}")
+    print(f"Prompt: {prompt_text}")
     print(f"Generated: {generated_text}")
     # [len(prompt_text):][:200]}...")
 
