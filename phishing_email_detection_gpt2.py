@@ -62,24 +62,24 @@ y = df["Binary Label"].to_numpy()
 #
 X, y = shuffle(X, y)
 
-# # Train / test split : we give 85% of the data for *testing*
-# X_train, X_test, y_train, y_test = \
-# train_test_split(X, y, test_size=0.85, shuffle=False)
+# Train / test split : we give 85% of the data for *testing*
+X_train, X_test, y_train, y_test = \
+        train_test_split(X, y, test_size=0.85, shuffle=False)
 
-#
+
 # Tensors for training data and labels
-#
 
-# # Training data for baseline model
-# baseline_train_x = tf.constant(X_train, dtype=tf.string)
-# baseline_train_y = tf.constant(y_train, dtype=tf.int8)
 
-# # Package test set:
-# test_x_tf = tf.constant(X_test, dtype=tf.string)
-# test_y_tf = tf.constant(y_test, dtype=tf.int8)
+# Training data for baseline model
+baseline_train_x = tf.constant(X_train, dtype=tf.string)
+baseline_train_y = tf.constant(y_train, dtype=tf.int8)
 
-# test_x_packaged = [test_x_tf]
-# test_y_packaged = [test_y_tf]
+# Package test set:
+test_x_tf = tf.constant(X_test, dtype=tf.string)
+test_y_tf = tf.constant(y_test, dtype=tf.int8)
+
+test_x_packaged = [test_x_tf]
+test_y_packaged = [test_y_tf]
 
 
 #
