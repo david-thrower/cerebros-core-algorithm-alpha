@@ -62,24 +62,24 @@ y = df["Binary Label"].to_numpy()
 #
 X, y = shuffle(X, y)
 
-# Train / test split : we give 85% of the data for *testing*
-X_train, X_test, y_train, y_test = \
-train_test_split(X, y, test_size=0.85, shuffle=False)
+# # Train / test split : we give 85% of the data for *testing*
+# X_train, X_test, y_train, y_test = \
+# train_test_split(X, y, test_size=0.85, shuffle=False)
 
 #
 # Tensors for training data and labels
 #
 
-# Training data for baseline model
-baseline_train_x = tf.constant(X_train, dtype=tf.string)
-baseline_train_y = tf.constant(y_train, dtype=tf.int8)
+# # Training data for baseline model
+# baseline_train_x = tf.constant(X_train, dtype=tf.string)
+# baseline_train_y = tf.constant(y_train, dtype=tf.int8)
 
-# Package test set:
-test_x_tf = tf.constant(X_test, dtype=tf.string)
-test_y_tf = tf.constant(y_test, dtype=tf.int8)
+# # Package test set:
+# test_x_tf = tf.constant(X_test, dtype=tf.string)
+# test_y_tf = tf.constant(y_test, dtype=tf.int8)
 
-test_x_packaged = [test_x_tf]
-test_y_packaged = [test_y_tf]
+# test_x_packaged = [test_x_tf]
+# test_y_packaged = [test_y_tf]
 
 
 #
@@ -227,7 +227,7 @@ test_tokenized = tokenize_texts(X_test, tokenizer, max_seq_length)
 
 # Convert to tensors and package for Cerebros
 train_X_tokenized = tf.constant(np.array(train_tokenized), dtype=tf.int32)
-train_y_tensor = tf.constant(y_train, dtype=tf.int8)
+train_y_tensor = tf.constant(y_train, dtype=tf.float32)
 
 # Packaged for Cerebros (multimodal, takes inputs as a list)
 training_x = [train_X_tokenized]
@@ -235,7 +235,7 @@ train_labels = [train_y_tensor]
 
 # Package test set:
 test_X_tokenized = tf.constant(np.array(test_tokenized), dtype=tf.int32)
-test_y_tensor = tf.constant(y_test, dtype=tf.int8)
+test_y_tensor = tf.constant(y_test, dtype=tf.float32)
 
 test_x_packaged = [test_X_tokenized]
 test_y_packaged = [test_y_tensor]
