@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "209-add-garbage-collection-between-models/cerebros/simplecerebrosrandomsearch" ]
+    branches: [ "main", "209-add-garbage-collection-between-models" ]
 
 permissions:
   contents: read
