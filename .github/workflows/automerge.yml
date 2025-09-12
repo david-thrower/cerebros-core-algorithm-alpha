@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "205-new-branch-for-testing-searialization" ]
+    branches: [ "main", "209-add-garbage-collection-between-models/cerebros/simplecerebrosrandomsearch" ]
 
 permissions:
   contents: read
