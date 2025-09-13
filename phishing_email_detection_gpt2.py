@@ -231,7 +231,7 @@ def package_non_instruct_text(text: str, desired_samples: int, max_length_tokens
 
 non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=60, max_length_tokens=1500)
 
-print(f"Samples from KJV bible consisting of {len(samples)} look like this (sub-sample of 3): {samples[:3]}") 
+print(f"Samples from KJV bible consisting of {len(non_instruct_samples)} look like this (sub-sample of 3): {non_instruct_samples[:3]}") 
 
 
 # Replace with imported text
@@ -302,6 +302,9 @@ data = [
 
     """In the beginning God created the heaven and the earth. And the earth was without form, and void;\nand darkness was upon the face of the deep. And\nthe Spirit of God moved upon the face of the waters.\nAnd God said, Let there be light: and there was light. And God saw the\nlight, that it was good: and God divided the light from the darkness. And\nGod called the light Day, and the darkness he called Night. And the evening\nand the morning were the ﬁrst day.\nAnd God said, Let there be a ﬁrmament in the midst of the waters, and\nlet it divide the waters from the waters. And God made the ﬁrmament, and let it divide the waters from the waters. And God made the ﬁrmament, and\ndivided the waters which were under the ﬁrmament from the waters which\nwere above the ﬁrmament: and it was so. And God called the ﬁrmament\nHeaven. And the evening and the morning were the second day."""
 ]
+
+# Add non-instruct samples
+data += non_instruct_samples
 
 
 x, y, vocab_size = prepare_data(data)
