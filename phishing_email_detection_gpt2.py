@@ -43,8 +43,10 @@ VOCABULARY_SIZE = len(tokenizer)
 # embedding output dim must be an even number
 # Maximize EMBEDDING_N based on available RAM and CPU / GPU
 
-EMBEDDING_N = 18
+EMBEDDING_N = 12
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
+
+PROJECTION_N = 2
 
 ## Parameters to Optimize with Hyperparam Optimization
 
@@ -102,7 +104,7 @@ def prepare_data(data, max_seq_length: int = MAX_SEQ_LENGTH):
             end_prompt_index = sample_tokens.index(end_prompt_token_id)
         except ValueError:
             # If </prompt> not found, skip this sample
-            continue
+            end_prompt_index = 0
             
         # Find first pad token after </prompt>
         first_pad_index = None
@@ -220,7 +222,9 @@ data = [
     # Sample 20: Instructional guide with Thinking
     "<prompt>How do I write a clear mission statement for a nonprofit?</prompt><tool_call>A mission statement should be concise, purpose-driven, and audience-focused. Use active verbs and avoid jargon.<response>Your mission statement should answer: Who do you serve? What do you do? Why does it matter?\n\nExample structure: '[Organization] empowers [target group] to [action] through [method], creating [impact].'\n\nFor a literacy nonprofit: 'ReadTogether empowers underserved children to become confident readers through free tutoring and book access, creating a future where every child can learn.'\n\nKeep it under 25 words. Test it: Does it inspire? Is it clear to a 12-year-old? If yes, you’ve got it.</response>"
 
+    # No prompt (simple text completion)
 
+    """In the beginning God created the heaven and the earth. And the earth was without form, and void;\nand darkness was upon the face of the deep. And\nthe Spirit of God moved upon the face of the waters.\nAnd God said, Let there be light: and there was light. And God saw the\nlight, that it was good: and God divided the light from the darkness. And\nGod called the light Day, and the darkness he called Night. And the evening\nand the morning were the ﬁrst day.\nAnd God said, Let there be a ﬁrmament in the midst of the waters, and\nlet it divide the waters from the waters. And God made the ﬁrmament, and let it divide the waters from the waters. And God made the ﬁrmament, and\ndivided the waters which were under the ﬁrmament from the waters which\nwere above the ﬁrmament: and it was so. And God called the ﬁrmament\nHeaven. And the evening and the morning were the second day."""
 ]
 
 
@@ -422,7 +426,7 @@ position_embedding = InterleavedRoPE(
 x = tf.keras.layers.Concatenate()([embedded, position_embedding])
 x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT)(x)  # AI suggested 0.4 
 flattened = tf.keras.layers.Flatten()(x)
-projected = tf.keras.layers.Dense(EMBEDDING_DIM)(flattened) # Dimensionality reduction
+projected = tf.keras.layers.Dense(EMBEDDING_DIM * PROJECTION_N)(flattened) # Dimensionality reduction
 
 cerebros_base_model = tf.keras.Model(
     inputs=inp,
