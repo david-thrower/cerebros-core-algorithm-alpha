@@ -43,7 +43,7 @@ VOCABULARY_SIZE = len(tokenizer)
 # embedding output dim must be an even number
 # Maximize EMBEDDING_N based on available RAM and CPU / GPU
 
-EMBEDDING_N = 12  
+EMBEDDING_N = 18
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
 ## Parameters to Optimize with Hyperparam Optimization
