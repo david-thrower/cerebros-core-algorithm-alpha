@@ -342,7 +342,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
                         gradient_accumulation_steps=self.gradient_accumulation_steps
                     ),
                     jit_compile=jit_compile)
-        elif gself.gradient_accumulation_steps == 1:
+        elif self.gradient_accumulation_steps == 1:
             self.materialized_neural_network.compile(
                     loss=self.loss,
                     metrics=self.metrics,
