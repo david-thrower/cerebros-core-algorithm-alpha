@@ -56,6 +56,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
              metrics=[tf.keras.metrics.RootMeanSquaredError()],
              model_graph_file='test_model_graph.html',
              train_data_dtype=tf.float32,
+             gradient_accumulation_steps=1,
              *args,
              **kwargs):
         print(level_number)
@@ -76,6 +77,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
         self.compiled_materialized_neural_network = []
         self.model_graph_file = model_graph_file
         self.train_data_dtype = train_data_dtype
+        self.gradient_accumulation_steps = gradient_accumulation_steps    
 
         # super().__init__(self,
         #                 *args,
@@ -334,7 +336,8 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
             metrics=self.metrics,
             optimizer=tf.keras.optimizers.AdamW(
                 learning_rate=self.learning_rate,
-                weight_decay=0.004  # Add weight decay parameter
+                weight_decay=0.004,  # Add weight decay parameter
+                gradient_accumulation_steps=self.gradient_accumulation_steps
             ),
             jit_compile=jit_compile)
 
