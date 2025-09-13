@@ -503,7 +503,8 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     batch_size=batch_size,
     meta_trial_number=meta_trial_number,
     base_models=[cerebros_base_model],
-    train_data_dtype=tf.int32)  # Changed from tf.string to tf.int32
+    train_data_dtype=tf.int32,
+    gradient_accumulation_steps=5)
 
 cerebros_t0 = time.time()
 result = cerebros_automl.run_random_search()
