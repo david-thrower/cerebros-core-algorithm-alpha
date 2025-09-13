@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "212-vanilla-greedy-sampling-to-look-at-generated-results-in-pico-scale-poc" ]
+    branches: [ "main", "214-first-pass-optimization-of-pico-scale-generative-model-0001" ]
 
 permissions:
   contents: read
