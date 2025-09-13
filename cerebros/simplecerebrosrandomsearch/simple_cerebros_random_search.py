@@ -482,7 +482,8 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
             loss=self.loss,
             metrics=self.metrics,
             model_graph_file=model_graph_file,
-            train_data_dtype=self.train_data_dtype
+            train_data_dtype=self.train_data_dtype,
+            gradient_accumulation_steps=self.gradient_accumulation_steps
             )
         tf.keras.backend.clear_session()
         collect()
