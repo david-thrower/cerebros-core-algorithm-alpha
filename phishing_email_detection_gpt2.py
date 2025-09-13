@@ -77,6 +77,9 @@ maximum_neurons_per_unit = 2
 moities_to_try = 5
 tries_per_moity = 1
 
+####### DO NOT FORGET TO MERGE IN THE WORK THAT ADDED GRADIENT
+####### ACCUMULATION STEPS AND ADD THAT AS A TUNABLE PARAMETER
+
 # Data Preprocessing:
 
 def prepare_data(data, max_seq_length: int = MAX_SEQ_LENGTH):
@@ -157,8 +160,81 @@ def prepare_data(data, max_seq_length: int = MAX_SEQ_LENGTH):
     
     return all_input_ids, all_labels, VOCABULARY_SIZE
 
-# Replace with imported text
 
+## Only add re, tokenizer already in script
+
+import re
+
+from transformers import AutoTokenizer
+
+tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B" # "HuggingFaceTB/SmolLM2-1.7B-Instruct" 
+tokenizer = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
+
+
+with open('king-james-bible.txt', 'r') as kjv:
+    bible = kjv.read()
+
+
+def package_non_instruct_text(text: str, desired_samples: int, max_length_tokens: int) -> list[str]:
+    """
+    Package a block of text into samples of approximately max_length_tokens.
+    
+    Args:
+        text: Block of text to process (e.g., entire book)
+        desired_samples: Number of samples to generate
+        max_length_tokens: Maximum number of tokens per sample
+        
+    Returns:
+        List of text samples, each approximately max_length_tokens long
+    """
+    # Split text into sentences using regex to handle various sentence endings
+    sentences = re.split(r'[.!?]+', text)
+    sentences = [sentence.strip() for sentence in sentences if sentence.strip()]
+    
+    samples = []
+    current_sample_sentences = []
+    current_token_count = 0
+    
+    sentence_index = 0
+    
+    while len(samples) < desired_samples and sentence_index < len(sentences):
+        sentence = sentences[sentence_index]
+        
+        # Estimate token count for this sentence
+        sentence_tokens = len(tokenizer.encode(sentence))
+        
+        # Check if adding this sentence would exceed the token limit
+        if current_token_count + sentence_tokens <= max_length_tokens:
+            current_sample_sentences.append(sentence)
+            current_token_count += sentence_tokens
+            sentence_index += 1
+        else:
+            # If we have accumulated sentences, create a sample
+            if current_sample_sentences:
+                sample = " ".join(current_sample_sentences)
+                samples.append(sample)
+            
+            # Reset for next sample
+            current_sample_sentences = []
+            current_token_count = 0
+            
+            # If this single sentence is too long, skip it
+            if sentence_tokens > max_length_tokens:
+                sentence_index += 1
+    
+    # Add the final sample if we have any remaining sentences
+    if current_sample_sentences and len(samples) < desired_samples:
+        sample = " ".join(current_sample_sentences)
+        samples.append(sample)
+    
+    return samples
+
+non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=60, max_length_tokens=1500)
+
+print(f"Samples from KJV bible consisting of {len(samples)} look like this (sub-sample of 3): {samples[:3]}") 
+
+
+# Replace with imported text
 
 data = [
     # Sample 1: Wiki-style summary (no thinking/code)
