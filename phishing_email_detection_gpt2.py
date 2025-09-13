@@ -229,7 +229,11 @@ def package_non_instruct_text(text: str, desired_samples: int, max_length_tokens
     
     return samples
 
-non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=60, max_length_tokens=1500)
+# Separate into samples
+non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=20, max_length_tokens=1200)
+
+del(bible)
+collect()
 
 print(f"Samples from KJV bible consisting of {len(non_instruct_samples)} look like this (sub-sample of 3): {non_instruct_samples[:3]}") 
 
