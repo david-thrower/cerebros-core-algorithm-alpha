@@ -488,7 +488,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         tf.keras.backend.clear_session()
         collect()
         nnf.materialize()
-        nnf.compile_neural_network(gradient_accumulation_steps=self.gradient_accumulation_steps)
+        nnf.compile_neural_network()
         neural_network = nnf.materialized_neural_network
         print(nnf.materialized_neural_network.summary())
         if self.chart_network_graph:
