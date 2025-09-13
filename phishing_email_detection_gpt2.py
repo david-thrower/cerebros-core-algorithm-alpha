@@ -135,7 +135,6 @@ class GPT2Layer(tf.keras.layers.Layer):
         #
         return cls(max_seq_length=config['max_seq_length'])
 
-""" ADD BACK
 
 # GPT2 configurables
 max_seq_length = 96
@@ -191,7 +190,6 @@ gpt_time_on_one_model_min =  (gpt_t1 - gpt_t0) / 60
 hy_df = pd.DataFrame(history.history)
 print(hy_df)
 
-"""
 
 ### Cerebros model:
 
@@ -517,12 +515,8 @@ cerebros_time_per_model = cerebros_time_all_models_min / models_tried
 
 
 print(f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
-""" ADD BACK
-
-
 print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model for 3 epochs. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
 
-"""
 
 print(f'Cerebros best accuracy achieved is {result}')
 print(f'val set accuracy')
