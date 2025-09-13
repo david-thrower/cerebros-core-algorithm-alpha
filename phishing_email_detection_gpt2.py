@@ -46,7 +46,7 @@ VOCABULARY_SIZE = len(tokenizer)
 EMBEDDING_N = 12
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
-PROJECTION_N = 2
+PROJECTION_N = 1
 
 ## Parameters to Optimize with Hyperparam Optimization
 
