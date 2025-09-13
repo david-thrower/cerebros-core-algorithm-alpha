@@ -314,6 +314,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                  patience=7,
                  project_name='cerebros-auto-ml-test',
                  batch_size=200,
+                 gradient_accumulation_steps=1,
                  meta_trial_number=0,
                  base_models=[''],
                  train_data_dtype=tf.float32,
@@ -373,6 +374,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.metrics = metrics
         self.epochs = epochs
         self.batch_size = batch_size
+        self.gradient_accumulation_steps=gradient_accumulation_steps
         self.meta_trial_number = meta_trial_number
         self.base_models = base_models
         self.best_model_path = ""
@@ -485,7 +487,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         tf.keras.backend.clear_session()
         collect()
         nnf.materialize()
-        nnf.compile_neural_network()
+        nnf.compile_neural_network(gradient_accumulation_steps=self.gradient_accumulation_steps)
         neural_network = nnf.materialized_neural_network
         print(nnf.materialized_neural_network.summary())
         if self.chart_network_graph:
