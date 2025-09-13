@@ -13,6 +13,8 @@ from cerebros.neuralnetworkfuture.neural_network_future \
 # from cmdutil.cmdutil import run_command
 from multiprocessing import Process, Lock
 import os
+from gc import collect
+
 
 # import optuna
 # from optuna.pruners import BasePruner
@@ -480,6 +482,8 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
             model_graph_file=model_graph_file,
             train_data_dtype=self.train_data_dtype
             )
+        tf.keras.backend.clear_session()
+        collect()
         nnf.materialize()
         nnf.compile_neural_network()
         neural_network = nnf.materialized_neural_network
@@ -515,7 +519,11 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                         index=False,
                         header=self.needs_oracle_header,
                         mode='a')
+        
         self.needs_oracle_header = False
+        neural_network = None
+        tf.keras.backend.clear_session()
+        collect()
         return 0
 
     def run_random_search(self):
