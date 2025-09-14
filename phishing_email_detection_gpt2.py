@@ -1149,7 +1149,7 @@ generator = CerebrosAutoregressiveTextGenerator(config)
 
 # Process ALL original samples from data - REAL WORLD USAGE
 generated_texts = []
-for i, original_text in enumerate(data[:5]):  # Process first 5 samples
+for i, original_text in enumerate(train_samples_list_text[:5]):  # Process first 5 samples
     print(f"\nProcessing sample {i+1}...")
     
     # Extract prompt part (everything up to and including </prompt>)
@@ -1217,7 +1217,7 @@ print("GENERATED TEXT SAMPLES FROM ALL DATA - REAL WORLD USAGE (reconstituted)")
 print("="*50)
 
 generated_texts_all = []
-for i, text in enumerate(data):
+for i, text in enumerate(train_samples_list_text):
     # Extract prompt part (everything up to and including </prompt>)
     if '</prompt>' in text:
         prompt_text = text.split('</prompt>')[0] + '</prompt>'
@@ -1260,7 +1260,7 @@ print("GENERATED TEXT SAMPLES FROM ALL DATA")
 print("="*50)
 
 # generated_texts_all = []
-# for i, text in enumerate(data[:3]):  # Process first 3 for demo
+# for i, text in enumerate(train_samples_list_text[:3]):  # Process first 3 for demo
 #     # Split such that everything before </prompt> or the entire text if </prompt> is not present
 #     if '</prompt>' in text:
 #         prompt_text = text.split('</prompt>')[0] + '</prompt>'
