@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cerebros-nlp-poc
+description: Tokenize-first NLP POC jobs (prepare and train) using shared PVC
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

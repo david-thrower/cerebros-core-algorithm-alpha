@@ -1,0 +1,29 @@
+image:
+  repository: thunder/poc
+  tag: tf2.19
+  pullPolicy: IfNotPresent
+
+mlflow:
+  trackingUri: "http://mlflow-tracking:5000"
+
+data:
+  pvcName: cerebros-poc-data
+  mountPath: /app
+  storageClass: ""
+  size: 2Gi
+
+prepare:
+  enabled: true
+  input: Phishing_Email.csv
+  output: data/train_tokens.npz
+  maxLen: 128
+  tokenizer: HuggingFaceTB/SmolLM3-3B
+
+train:
+  enabled: true
+  cache: data/train_tokens.npz
+  epochs: 1
+  batch: 8
+  printScoreOnly: true
+
+resources: {}

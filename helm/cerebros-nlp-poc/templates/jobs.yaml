@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.data.pvcName }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- if .Values.data.storageClass }}
+  storageClassName: {{ .Values.data.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.data.size }}
+---
+{{- if .Values.prepare.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cerebros-prepare
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: prepare
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: MLFLOW_TRACKING_URI
+              value: {{ .Values.mlflow.trackingUri | quote }}
+          command: ["python", "phishing_email_detection_gpt2.py"]
+          args:
+            - "--mode"; "prepare"
+            - "--in"; "{{ .Values.prepare.input }}"
+            - "--out"; "{{ .Values.prepare.output }}"
+            - "--max_len"; "{{ .Values.prepare.maxLen }}"
+            - "--tokenizer_checkpoint"; "{{ .Values.prepare.tokenizer }}"
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.data.mountPath }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Values.data.pvcName }}
+{{- end }}
+---
+{{- if .Values.train.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cerebros-train
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: train
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: MLFLOW_TRACKING_URI
+              value: {{ .Values.mlflow.trackingUri | quote }}
+          command: ["python", "phishing_email_detection_gpt2.py"]
+          args:
+            - "--mode"; "train"
+            - "--cache"; "{{ .Values.train.cache }}"
+            - "--epochs"; "{{ .Values.train.epochs }}"
+            - "--batch"; "{{ .Values.train.batch }}"
+            {{- if .Values.train.printScoreOnly }}
+            - "--print-score-only"
+            {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.data.mountPath }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Values.data.pvcName }}
+{{- end }}

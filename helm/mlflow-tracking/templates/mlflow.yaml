@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mlflow-tracking.fullname" . }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "mlflow-tracking.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: mlflow
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mlflow-tracking.fullname" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "mlflow-tracking.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: mlflow
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "mlflow-tracking.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: mlflow
+    spec:
+      containers:
+        - name: mlflow
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.mlflow.port }}
+              name: http
+          env:
+            - name: BACKEND_STORE_URI
+              value: postgresql+psycopg2://{{ .Values.postgres.username }}:{{ .Values.postgres.password }}@{{ include "mlflow-tracking.fullname" . }}-postgres:5432/{{ .Values.postgres.database }}
+            - name: ARTIFACT_ROOT
+              value: {{ .Values.mlflow.defaultArtifactRoot }}
+          command: ["mlflow", "server"]
+          args:
+            - "--host"
+            - "{{ .Values.mlflow.host }}"
+            - "--port"
+            - "{{ .Values.mlflow.port }}"
+            - "--backend-store-uri"
+            - "$(BACKEND_STORE_URI)"
+            - "--default-artifact-root"
+            - "$(ARTIFACT_ROOT)"
+          volumeMounts:
+            - name: artifacts
+              mountPath: {{ .Values.mlflow.defaultArtifactRoot }}
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: artifacts
+          persistentVolumeClaim:
+            claimName: {{ include "mlflow-tracking.fullname" . }}-artifacts
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "mlflow-tracking.fullname" . }}-artifacts
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- if .Values.artifacts.storageClass }}
+  storageClassName: {{ .Values.artifacts.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.artifacts.size }}

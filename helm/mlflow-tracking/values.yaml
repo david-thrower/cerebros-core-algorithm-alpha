@@ -1,0 +1,27 @@
+image:
+  repository: ghcr.io/mlflow/mlflow
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+mlflow:
+  host: 0.0.0.0
+  port: 5000
+  defaultArtifactRoot: /mlflow_artifacts
+
+postgres:
+  image: postgres:15-alpine
+  username: mlflow
+  password: mlflow
+  database: mlflow
+  storage:
+    size: 5Gi
+
+artifacts:
+  storageClass: ""
+  size: 10Gi
+
+service:
+  type: ClusterIP
+  port: 5000
+
+resources: {}

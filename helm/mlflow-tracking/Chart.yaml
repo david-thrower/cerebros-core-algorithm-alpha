@@ -1,0 +1,6 @@
+apiVersion: v2
+name: mlflow-tracking
+description: MLflow Tracking Server backed by Postgres
+type: application
+version: 0.1.0
+appVersion: "2.14.1"
