@@ -15,7 +15,7 @@ spec:
           - |
             set -eu
             apt-get update && apt-get install -y git
-            mkdir -p /app && cd /app
+            mkdir -p /app/repo && cd /app/repo
             git clone https://github.com/david-thrower/cerebros-core-algorithm-alpha.git .
             git fetch origin 208-refactor-nlp-example-to-tokenize-first
             git checkout 208-refactor-nlp-example-to-tokenize-first
@@ -34,7 +34,7 @@ spec:
           value: "1"
         volumeMounts:
         - name: data-storage
-          mountPath: /app/data
+          mountPath: /app/repo/data
         resources:
           requests:
             memory: "6Gi"
