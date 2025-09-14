@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "216-add-support-for-gradient-accumulation-steps" ]
+    branches: [ "main", "218-fix-padding-token-mismatch-and-logging-tokenization-metadata" ]
 
 
 permissions:
