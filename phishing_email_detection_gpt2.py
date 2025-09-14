@@ -90,7 +90,6 @@ OUTPUT_SHAPES = [1]
 
 """### A custom GPT2 encoder layer for text embedding"""
 
-""" Add Back !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 @tf.keras.utils.register_keras_serializable()
 class GPT2Layer(tf.keras.layers.Layer):
@@ -191,7 +190,6 @@ gpt_time_on_one_model_min =  (gpt_t1 - gpt_t0) / 60
 hy_df = pd.DataFrame(history.history)
 print(hy_df)
 
-""" # end add back
 
 ### Cerebros model:
 
@@ -518,13 +516,7 @@ cerebros_time_per_model = cerebros_time_all_models_min / models_tried
 
 
 print(f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
-
-""" # Add back
-
 print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model for 3 epochs. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
-
-""" # end add back
-
 print(f'Cerebros best accuracy achieved is {result}')
 print(f'val set accuracy')
 
