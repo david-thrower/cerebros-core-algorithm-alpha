@@ -583,9 +583,16 @@ collect()
 
 # Step 3 Train test split
 
-train_samples_list_text, test_samples_list_text = train_test_split(
+train_samples_list_text, val_plus_test_samples_list_text = train_test_split(
         non_instruct_samples,
-        test_size=0.2,
+        test_size=0.3,
+        shuffle=True)
+
+# Val and test set split
+
+val_samples_list_text, test_samples_list_text  = train_test_split(
+        val_plus_test_samples_list_text,
+        test_size=0.3,
         shuffle=True)
 
 del(non_instruct_samples)
@@ -596,6 +603,13 @@ print(f"Samples from KJV bible consisting of {len(train_samples_list_text)} look
 # Set up step 4 iterator for train set:
 x_train_packaged, y_train_packaged = create_streaming_training_data(
     text_samples=train_samples_list_text,  # Your full dataset of text samples
+    text_expansion_batch_size=2  # Expand 2 text samples at a time (~1GB memory)
+)
+
+
+# Set up step 4 iterator for val set:
+x_val_packaged, y_val_packaged = create_streaming_training_data(
+    text_samples=val_samples_list_text,  # Your full dataset of text samples
     text_expansion_batch_size=2  # Expand 2 text samples at a time (~1GB memory)
 )
 
@@ -876,7 +890,8 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     output_shapes=OUTPUT_SHAPES,
     training_data=x_train_packaged,
     labels=y_train_packaged,
-    validation_split=0.2,
+    validation_split=0.0,
+    validation_data=(x_val_packaged, y_val_packaged),
     direction='maximize',
     metric_to_rank_by="val_categorical_accuracy",
     minimum_levels=minimum_levels,
