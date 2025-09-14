@@ -11,7 +11,8 @@ spec:
     spec:
       containers:
       - name: cerebros-prepare
-        image: tensorflow/tensorflow:2.19.0-gpu
+        image: cerebros-runner:pi
+        imagePullPolicy: IfNotPresent
         command: ["/bin/sh"]
         args:
           - -c
@@ -28,7 +29,7 @@ spec:
             PIP_BREAK_SYSTEM_PACKAGES=1 python -m pip install --no-cache-dir --break-system-packages --ignore-installed blinker
             PIP_BREAK_SYSTEM_PACKAGES=1 python -m pip install --no-cache-dir --break-system-packages mlflow transformers
             python tokenize_first_runner.py --mode prepare \
-              --input /data/train.jsonl --output /data/train_tokens.npz --max_len 128 \
+              --output /data/train_tokens.npz --max_len 1536 \
               --tokenizer_checkpoint HuggingFaceTB/SmolLM3-3B
         env:
         - name: MLFLOW_TRACKING_URI

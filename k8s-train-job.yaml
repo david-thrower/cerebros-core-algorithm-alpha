@@ -11,7 +11,8 @@ spec:
     spec:
       containers:
       - name: cerebros-train
-        image: tensorflow/tensorflow:2.19.0-gpu
+        image: cerebros-runner:pi
+        imagePullPolicy: IfNotPresent
         command: ["/bin/sh"]
         args:
           - -c
