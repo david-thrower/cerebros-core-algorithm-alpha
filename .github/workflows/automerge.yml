@@ -5,7 +5,9 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "209-add-garbage-collection-between-models" ]
+
+    branches: [ "main", "208-refactor-nlp-example-to-tokenize-first" ]
+
 
 permissions:
   contents: read

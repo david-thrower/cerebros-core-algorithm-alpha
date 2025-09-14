@@ -32,6 +32,7 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
 from ast import literal_eval
 import time
 from gc import collect
+from os.path import getsize
 
 #
 # Load the email data
@@ -63,19 +64,15 @@ X, y = shuffle(X, y)
 
 # Train / test split : we give 85% of the data for *testing*
 X_train, X_test, y_train, y_test = \
-train_test_split(X, y, test_size=0.85, shuffle=False)
+        train_test_split(X, y, test_size=0.85, shuffle=False)
 
-#
+
 # Tensors for training data and labels
-#
+
 
 # Training data for baseline model
 baseline_train_x = tf.constant(X_train, dtype=tf.string)
 baseline_train_y = tf.constant(y_train, dtype=tf.int8)
-
-# Packaged for Cerebros (multimodal, takes inputs as a list)
-training_x   = [baseline_train_x]
-train_labels = [baseline_train_y]
 
 # Package test set:
 test_x_tf = tf.constant(X_test, dtype=tf.string)
@@ -138,6 +135,7 @@ class GPT2Layer(tf.keras.layers.Layer):
         #
         return cls(max_seq_length=config['max_seq_length'])
 
+
 # GPT2 configurables
 max_seq_length = 96
 
@@ -193,68 +191,55 @@ hy_df = pd.DataFrame(history.history)
 print(hy_df)
 
 
-
 ### Cerebros model:
 
-from transformers import AutoTokenizer
-import tensorflow as tf
-
-@tf.keras.utils.register_keras_serializable()
-class NewTokenizerLayer(tf.keras.layers.Layer):
-    def __init__(self, max_seq_length, tokenizer_checkpoint, **kwargs):
-        super().__init__(**kwargs)
-        self.max_seq_length = max_seq_length
-        self.tokenizer_checkpoint = tokenizer_checkpoint
-        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
+def tokenize_texts(texts, tokenizer, max_seq_length):
+    tokenized = []
+    texts_as_list = [str(s) for s in texts.tolist()] 
+    for text in texts_as_list:
         
-        # Ensure tokenizer has a padding token
-        if self.tokenizer.pad_token is None:
-            self.tokenizer.pad_token = self.tokenizer.eos_token
-
-    def call(self, inputs):
-        def tokenize_py_fn(inputs):
-            # Convert TensorFlow bytes to Python strings
-            texts = [text.decode('utf-8') for text in inputs.numpy()]
-            
-            # Tokenize with Hugging Face tokenizer
-            tokenized = self.tokenizer(
-                texts,
-                max_length=self.max_seq_length,
-                padding='max_length',
-                truncation=True,
-                return_tensors='tf'
-            )
-            return tokenized['input_ids'].numpy()
-        
-        # Wrap Python function in TensorFlow operation
-        input_ids = tf.py_function(
-            tokenize_py_fn,
-            [inputs],
-            Tout=tf.int32
+        tokens = tokenizer(
+            text,
+            max_length=max_seq_length,
+            padding='max_length',
+            truncation=True,
+            return_tensors='np'
         )
-        
-        # Set shape for downstream layers
-        batch_size = tf.shape(inputs)[0]
-        input_ids.set_shape([None, self.max_seq_length])
-        
-        return input_ids
+        tokenized.append(tokens['input_ids'][0])
+    return tokenized
 
-    def get_config(self):
-        config = super().get_config()
-        config.update({
-            'max_seq_length': self.max_seq_length,
-            'tokenizer_checkpoint': self.tokenizer_checkpoint
-        })
-        return config
+# Pre-tokenize train and test data using out-of-the-box tokenizer
+tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B"
+max_seq_length = 1536
+tokenizer = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
 
-    @classmethod
-    def from_config(cls, config):
-        return cls(
-            max_seq_length=config['max_seq_length'],
-            tokenizer_checkpoint=config['tokenizer_checkpoint']
-        )
+# Ensure tokenizer has a padding token
+if tokenizer.pad_token is None:
+    tokenizer.pad_token = tokenizer.eos_token
 
+# Pre-tokenize training data
+train_tokenized = tokenize_texts(X_train, tokenizer, max_seq_length)
 
+# Pre-tokenize test data
+test_tokenized = tokenize_texts(X_test, tokenizer, max_seq_length)
+
+# Convert to tensors and package for Cerebros
+train_X_tokenized = tf.constant(np.array(train_tokenized), dtype=tf.int32)
+train_y_tensor = tf.constant(y_train, dtype=tf.float32)
+
+# Packaged for Cerebros (multimodal, takes inputs as a list)
+training_x = [train_X_tokenized]
+train_labels = [train_y_tensor]
+
+# Package test set:
+test_X_tokenized = tf.constant(np.array(test_tokenized), dtype=tf.int32)
+test_y_tensor = tf.constant(y_test, dtype=tf.float32)
+
+test_x_packaged = [test_X_tokenized]
+test_y_packaged = [test_y_tensor]
+
+# Update input shapes to match tokenized input
+INPUT_SHAPES = [(max_seq_length,)]
 
 
 # --- Updated RotaryEmbedding ---
@@ -394,24 +379,18 @@ class InterleavedRoPE(tf.keras.layers.Layer):
         return cls(**config)
 
 
-
-
-
-
-
 # GPT2 configurables
 
 # Optimal for accuracy thus far:
 max_seq_length = 1536
-tokenizer_checkpoint = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B"
 
-inp = tf.keras.layers.Input(shape=(), dtype=tf.string)
-gp2_tokenizer = NewTokenizerLayer(max_seq_length=max_seq_length,tokenizer_checkpoint=tokenizer_checkpoint)
-VOCABULARY_SIZE = gp2_tokenizer.tokenizer.vocab_size
-tokens = gp2_tokenizer(inp)
+# Modified: Input now matches tokenized text (max_seq_len,)
+inp = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int32)
 
-# On larger hardware, this could probably be increased considerably and
-# Probably would improve performance ...
+VOCABULARY_SIZE = len(tokenizer)
+
+# Modified: Start with embeddings, removing tokenization step from model
 EMBEDDING_N = 12  # Define EMBEDDING_DIM here, to match your embedding layer.
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
@@ -419,7 +398,7 @@ embedded = tf.keras.layers.Embedding(
     input_dim=VOCABULARY_SIZE,
     output_dim=EMBEDDING_DIM,
     input_length=max_seq_length,
-    mask_zero=True)(tokens)
+    mask_zero=True)(inp)
 
 position_embedding = InterleavedRoPE(
     dim=EMBEDDING_DIM,
@@ -524,7 +503,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     batch_size=batch_size,
     meta_trial_number=meta_trial_number,
     base_models=[cerebros_base_model],
-    train_data_dtype=tf.string)
+    train_data_dtype=tf.int32)  # Changed from tf.string to tf.int32
 
 cerebros_t0 = time.time()
 result = cerebros_automl.run_random_search()
@@ -532,6 +511,8 @@ cerebros_t1 = time.time()
 cerebros_time_all_models_min = (cerebros_t1 - cerebros_t0) / 60
 models_tried = moities_to_try  * tries_per_moity
 cerebros_time_per_model = cerebros_time_all_models_min / models_tried
+
+
 
 print(f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
 print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model for 3 epochs. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
@@ -550,9 +531,12 @@ del(best_model_found)
 del(cerebros_automl)
 collect()
 
+file_size_bytes = getsize(MODEL_FILE_NAME)
+print(f"Model size on disk: {file_size_bytes / (1024*1024):.2f} MB")
+
 reconstituted_model = tf.keras.models.load_model(MODEL_FILE_NAME)
-test_x_packaged = [test_x_tf]
-test_y_packaged = [test_y_tf]
+test_x_packaged = [test_X_tokenized]
+test_y_packaged = [test_y_tensor]
 
 reconstituted_model.compile(
     loss='binary_crossentropy',
