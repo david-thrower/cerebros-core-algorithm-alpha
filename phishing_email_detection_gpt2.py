@@ -494,7 +494,7 @@ embedded = tf.keras.layers.Embedding(
     input_dim=VOCABULARY_SIZE,
     output_dim=EMBEDDING_DIM,
     input_length=MAX_SEQ_LENGTH,
-    mask_zero=True)(inp)
+    mask_zero=False)(inp)
 
 position_embedding = InterleavedRoPE(
     dim=EMBEDDING_DIM,
