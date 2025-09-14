@@ -56,6 +56,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
              metrics=[tf.keras.metrics.RootMeanSquaredError()],
              model_graph_file='test_model_graph.html',
              train_data_dtype=tf.float32,
+             gradient_accumulation_steps=1,
              *args,
              **kwargs):
         print(level_number)
@@ -76,6 +77,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
         self.compiled_materialized_neural_network = []
         self.model_graph_file = model_graph_file
         self.train_data_dtype = train_data_dtype
+        self.gradient_accumulation_steps = gradient_accumulation_steps    
 
         # super().__init__(self,
         #                 *args,
@@ -328,15 +330,30 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
             jit_compile = True
         else:
             jit_compile = False
+        if not isinstance(self.gradient_accumulation_steps, int):     
+            raise ValueError("gradient_accumulation_steps must be an int >= 0. You set it as {self.gradient_accumulation_steps} type {type(self.gradient_accumulation_steps)}")
+        if self.gradient_accumulation_steps > 1:
+            self.materialized_neural_network.compile(
+                    loss=self.loss,
+                    metrics=self.metrics,
+                    optimizer=tf.keras.optimizers.AdamW(
+                        learning_rate=self.learning_rate,
+                        weight_decay=0.004,  # Add weight decay parameter
+                        gradient_accumulation_steps=self.gradient_accumulation_steps
+                    ),
+                    jit_compile=jit_compile)
+        elif self.gradient_accumulation_steps == 1:
+            self.materialized_neural_network.compile(
+                    loss=self.loss,
+                    metrics=self.metrics,
+                    optimizer=tf.keras.optimizers.AdamW(
+                        learning_rate=self.learning_rate,
+                        weight_decay=0.004,  # Add weight decay parameter
+                    ),
+                    jit_compile=jit_compile)
+        else:
+            raise ValueError("gradient_accumulation_steps must be an int >= 0. You set it as {self.gradient_accumulation_steps} type {type(self.gradient_accumulation_steps)}")
 
-        self.materialized_neural_network.compile(
-            loss=self.loss,
-            metrics=self.metrics,
-            optimizer=tf.keras.optimizers.AdamW(
-                learning_rate=self.learning_rate,
-                weight_decay=0.004  # Add weight decay parameter
-            ),
-            jit_compile=jit_compile)
 
     def util_parse_connectivity_csv(self):
 
