@@ -11,7 +11,7 @@ spec:
     spec:
       containers:
       - name: cerebros-train
-        image: cerebros-runner:pi
+        image: tensorflow/tensorflow:2.19.0
         imagePullPolicy: IfNotPresent
         command: ["/bin/sh"]
         args:
@@ -44,11 +44,9 @@ spec:
           requests:
             memory: "6Gi"
             cpu: "1500m"
-            nvidia.com/gpu: 1
           limits:
             memory: "12Gi"
             cpu: "3000m"
-            nvidia.com/gpu: 1
       restartPolicy: Never
       volumes:
       - name: data-storage
