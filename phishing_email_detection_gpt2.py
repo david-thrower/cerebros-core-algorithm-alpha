@@ -335,7 +335,7 @@ class StreamingInputIdsGenerator:
         
         # Cleanup
         del batch_samples, batch_input_ids
-        gc.collect()
+        collect()
         
         return sequences_generated
     
@@ -360,7 +360,7 @@ class StreamingInputIdsGenerator:
         
         # Periodic cleanup
         if self.sequences_returned % 100 == 0:
-            gc.collect()
+            collect()
             print(f"Returned {self.sequences_returned} sequences")
         
         return tensor_sequence
@@ -463,7 +463,7 @@ class StreamingLabelsGenerator:
         
         # Cleanup
         del batch_samples, batch_labels
-        gc.collect()
+        collect()
         
         return labels_generated
     
@@ -488,7 +488,7 @@ class StreamingLabelsGenerator:
         
         # Periodic cleanup
         if self.labels_returned % 100 == 0:
-            gc.collect()
+            collect()
             print(f"Returned {self.labels_returned} labels")
         
         return tensor_label
