@@ -503,7 +503,8 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     batch_size=batch_size,
     meta_trial_number=meta_trial_number,
     base_models=[cerebros_base_model],
-    train_data_dtype=tf.int32)  # Changed from tf.string to tf.int32
+    train_data_dtype=tf.int32,
+    gradient_accumulation_steps=2)
 
 cerebros_t0 = time.time()
 result = cerebros_automl.run_random_search()
@@ -516,8 +517,6 @@ cerebros_time_per_model = cerebros_time_all_models_min / models_tried
 
 print(f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
 print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model for 3 epochs. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
-
-
 print(f'Cerebros best accuracy achieved is {result}')
 print(f'val set accuracy')
 

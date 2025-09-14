@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "208-refactor-nlp-example-to-tokenize-first" ]
+    branches: [ "main", "216-add-support-for-gradient-accumulation-steps" ]
 
 
 permissions:
