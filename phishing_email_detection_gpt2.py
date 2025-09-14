@@ -21,6 +21,8 @@ from ast import literal_eval
 import time
 from gc import collect
 from os.path import getsize
+import re
+from typing import List, Iterator, Tuple
 
 
 # Text encoding / embedding related constants
@@ -78,11 +80,110 @@ maximum_neurons_per_unit = 2
 moities_to_try = 5
 tries_per_moity = 1
 
-####### DO NOT FORGET TO MERGE IN THE WORK THAT ADDED GRADIENT
-####### ACCUMULATION STEPS AND ADD THAT AS A TUNABLE PARAMETER
 
-# Data Preprocessing:
+# Data preprocessing pipeline for Phase 1 training described:
 
+"""
+
+# 0. Load / import plain text data or list / JSONL delineated data ...
+# 1. Package plain text: -> list[str]
+# 1.1. For non-instruct / non-reasoning: Split into sentances. Combine sentances into string until the next sentance won't fit max_sequence_len, start the next sample. Ideally deleniate at a natural stopping point...
+# 1.2. SImply package in the format: "<promprt>foo</prompt><think>bar</think><reponse></response>"
+# 2. [optional] merge instruct and non instruct samples (probably will not be relevant in phase I training): input: list[str], list[str] -> list[str]
+# 3. Train test split: input: list[str] -> list[str]
+# 4. Streaming sample / label expansion: An iterator that generates expanded samples one at a time for autoregressive training or in batches of BATCH_SIZE and expands the samples in batches of 2, to limit memory pressure.
+# 4.1 Input: list[str] -> tf.constant([tf.int32, tf.int32]) (each time __iter__) is called
+# 4.2. EXAMPLE:
+
+DATA: 'Mary had a little lamb':
+
+internally tokenized to: [21, 55, 52, 98, pad_token, pad_token, ... pad_token] # padded to max_seq_len
+
+Expands to: (starts expanding about 1/3 of the way through)
+ALL_EXPANEDED_DATA_FROM_FIRST_SAMPLE = [
+[21, 55, pad_token, pad_token, pad_token, pad_token, ... pad_token]
+[21, 55, 52, pad_token, pad_token, pad_token, ... pad_token]
+[21, 55, 52, 98, pad_token, pad_token, ... pad_token]
+]
+
+LABELS:
+
+Expands to:
+
+ALL_EXPANEDED_LABELS_FROM_FIRST_SAMPLE = [
+    52, 
+    98,
+    PAD_TOKEN
+]
+
+Iterate over StreamingInputIdsGenerator -> ALL_EXPANEDED_DATA_FROM_FIRST_SAMPLE [i] 
+Iterate over the StreamingLabelsGenerator -> ALL_EXPANEDED_LABELS_FROM_FIRST_SAMPLE[i]
+
+"""
+
+
+# Data Preprocessing utils for the task at hand:
+
+# Takes care of 1.1. in a very MVP / prototype fashion:
+def package_non_instruct_text(text: str, desired_samples: int, max_length_tokens: int) -> list[str]:
+    """
+    Package a block of text into samples of approximately max_length_tokens.
+    
+    Args:
+        text: Block of text to process (e.g., entire book)
+        desired_samples: Number of samples to generate
+        max_length_tokens: Maximum number of tokens per sample
+        
+    Returns:
+        List of text samples, each approximately max_length_tokens long
+    """
+    # Split text into sentences using regex to handle various sentence endings
+    sentences = re.split(r'[.!?]+', text)
+    sentences = [sentence.strip() for sentence in sentences if sentence.strip()]
+    
+    samples = []
+    current_sample_sentences = []
+    current_token_count = 0
+    
+    sentence_index = 0
+    
+    while len(samples) < desired_samples and sentence_index < len(sentences):
+        sentence = sentences[sentence_index]
+        
+        # Estimate token count for this sentence
+        sentence_tokens = len(tokenizer.encode(sentence))
+        
+        # Check if adding this sentence would exceed the token limit
+        if current_token_count + sentence_tokens <= max_length_tokens:
+            current_sample_sentences.append(sentence)
+            current_token_count += sentence_tokens
+            sentence_index += 1
+        else:
+            # If we have accumulated sentences, create a sample
+            if current_sample_sentences:
+                sample = " ".join(current_sample_sentences)
+                samples.append(sample)
+            
+            # Reset for next sample
+            current_sample_sentences = []
+            current_token_count = 0
+            
+            # If this single sentence is too long, skip it
+            if sentence_tokens > max_length_tokens:
+                sentence_index += 1
+    
+    # Add the final sample if we have any remaining sentences
+    if current_sample_sentences and len(samples) < desired_samples:
+        sample = " ".join(current_sample_sentences)
+        samples.append(sample)
+    
+    return samples
+
+# 1.2. and 2.0. are a manual process, desole
+
+# 3.0. Is taken care of with sklearn.model_selection.train_test_split
+
+# Takes care of 4 for a single batch of samples.
 def prepare_data(data, max_seq_length: int = MAX_SEQ_LENGTH):
     all_input_ids = []
     all_labels = []
@@ -162,81 +263,336 @@ def prepare_data(data, max_seq_length: int = MAX_SEQ_LENGTH):
     return all_input_ids, all_labels, VOCABULARY_SIZE
 
 
-## Only add re, tokenizer already in script
+# Straw - Man iterator for the expanded DATA set for Input IDs (would be terabytes in size. Don't have terrabytes of RAM, so this BATCHES 4.0. within the training loop)
+class StreamingInputIdsGenerator:
+    """
+    Straw man for x_train_tf that behaves exactly like tf.constant([[int, int, ... int], [int, int, ... int]])
+    but generates data on-demand. When iterated over, it expands text samples in batches and returns
+    one sequence at a time as tf.constant([int, int, ... int]).
+    """
+    
+    def __init__(self, text_samples: List[str], 
+                 text_expansion_batch_size: int = 2,
+                 max_seq_length: int = 1536):
+        """
+        Initialize the streaming generator.
+        
+        Args:
+            text_samples: List of text samples to process
+            text_expansion_batch_size: Number of text samples to expand at once
+            max_seq_length: Maximum sequence length for padding/truncation
+        """
+        self.text_samples = text_samples.copy()
+        self.text_expansion_batch_size = text_expansion_batch_size
+        self.max_seq_length = max_seq_length
+        
+        # Iterator state
+        self.text_sample_indices = list(range(len(text_samples)))
+        self.current_text_idx = 0
+        self.rng = np.random.default_rng(42)
+        self.rng.shuffle(self.text_sample_indices)
+        
+        # Buffer for expanded sequences
+        self.sequence_buffer = []
+        
+        # Stats
+        self.sequences_returned = 0
+        
+        # Pre-compute shape for compatibility
+        self._shape = (len(text_samples) * 600, max_seq_length)  # Approximate
+        
+    def _expand_next_text_batch(self) -> int:
+        """Expand the next batch of text samples and add to buffer."""
+        if self.current_text_idx >= len(self.text_sample_indices):
+            # Reset iterator if we've processed all samples
+            self.current_text_idx = 0
+            self.rng.shuffle(self.text_sample_indices)
+        
+        # Get next batch of text samples
+        start_idx = self.current_text_idx
+        end_idx = min(start_idx + self.text_expansion_batch_size, len(self.text_sample_indices))
+        batch_indices = self.text_sample_indices[start_idx:end_idx]
+        batch_samples = [self.text_samples[i] for i in batch_indices]
+        
+        print(f"Expanding {len(batch_samples)} text samples for input_ids")
+        
+        # Expand samples into token sequences (only input_ids)
+        batch_input_ids, _, _ = prepare_data(batch_samples)
+        
+        # Add to buffer
+        self.sequence_buffer.extend(batch_input_ids)
+        
+        sequences_generated = len(batch_input_ids)
+        self.current_text_idx = end_idx
+        
+        print(f"  Generated {sequences_generated} input sequences")
+        
+        # Cleanup
+        del batch_samples, batch_input_ids
+        gc.collect()
+        
+        return sequences_generated
+    
+    def __iter__(self) -> Iterator[tf.Tensor]:
+        """Make this iterable."""
+        return self
+    
+    def __next__(self) -> tf.Tensor:
+        """Return next sequence as tf.constant([int, int, ... int])."""
+        # Ensure we have sequences in buffer
+        while len(self.sequence_buffer) == 0:
+            sequences_added = self._expand_next_text_batch()
+            if sequences_added == 0:
+                raise StopIteration
+        
+        # Take one sequence from buffer
+        sequence = self.sequence_buffer.pop(0)
+        self.sequences_returned += 1
+        
+        # Convert to TensorFlow tensor
+        tensor_sequence = tf.constant(sequence, dtype=tf.int32)
+        
+        # Periodic cleanup
+        if self.sequences_returned % 100 == 0:
+            gc.collect()
+            print(f"Returned {self.sequences_returned} sequences")
+        
+        return tensor_sequence
+    
+    def __getitem__(self, index: int) -> tf.Tensor:
+        """
+        Support indexing like a tensor - used by Cerebros.
+        This is a simplified implementation for compatibility.
+        """
+        # For compatibility, we'll generate sequences on-demand
+        # This is a simplified approach - in practice, you might want to cache
+        if index >= self._shape[0]:
+            raise IndexError("Index out of range")
+        
+        # Generate sequences until we reach the requested index
+        while len(self.sequence_buffer) <= index:
+            self._expand_next_text_batch()
+        
+        # Return the sequence at index
+        sequence = self.sequence_buffer[index]
+        return tf.constant(sequence, dtype=tf.int32)
+    
+    def __len__(self) -> int:
+        """Return approximate length."""
+        return self._shape[0]
+    
+    @property
+    def shape(self) -> Tuple[int, int]:
+        """Mimic tensor shape property."""
+        return self._shape
+    
+    @property
+    def dtype(self) -> tf.DType:
+        """Mimic tensor dtype property."""
+        return tf.int32
 
-import re
 
-from transformers import AutoTokenizer
+# Straw - Man iterator for the expanded DATA set for Input IDs (would be terabytes in size. Don't have terrabytes of RAM, so this BATCHES 4.0. within the training loop)
+class StreamingLabelsGenerator:
+    """
+    Straw man for y_train_tf that behaves exactly like tf.constant([[float, float, ... float], [float, float, ... float]])
+    but generates data on-demand and stays synchronized with StreamingInputIdsGenerator.
+    """
+    
+    def __init__(self, text_samples: List[str], 
+                 text_expansion_batch_size: int = 2,
+                 vocabulary_size: int = VOCABULARY_SIZE):
+        """
+        Initialize the streaming labels generator.
+        
+        Args:
+            text_samples: List of text samples to process (same as input generator)
+            text_expansion_batch_size: Number of text samples to expand at once
+            vocabulary_size: Size of vocabulary for one-hot encoding
+        """
+        self.text_samples = text_samples.copy()
+        self.text_expansion_batch_size = text_expansion_batch_size
+        self.vocabulary_size = vocabulary_size
+        
+        # Iterator state (must be synchronized with input generator)
+        self.text_sample_indices = list(range(len(text_samples)))
+        self.current_text_idx = 0
+        self.rng = np.random.default_rng(42)
+        self.rng.shuffle(self.text_sample_indices)
+        
+        # Buffer for expanded labels
+        self.label_buffer = []
+        
+        # Stats
+        self.labels_returned = 0
+        
+        # Pre-compute shape for compatibility
+        self._shape = (len(text_samples) * 600, vocabulary_size)  # Approximate
+        
+    def _expand_next_text_batch(self) -> int:
+        """Expand the next batch of text samples and add labels to buffer."""
+        if self.current_text_idx >= len(self.text_sample_indices):
+            # Reset iterator if we've processed all samples
+            self.current_text_idx = 0
+            self.rng.shuffle(self.text_sample_indices)
+        
+        # Get next batch of text samples
+        start_idx = self.current_text_idx
+        end_idx = min(start_idx + self.text_expansion_batch_size, len(self.text_sample_indices))
+        batch_indices = self.text_sample_indices[start_idx:end_idx]
+        batch_samples = [self.text_samples[i] for i in batch_indices]
+        
+        print(f"Expanding {len(batch_samples)} text samples for labels")
+        
+        # Expand samples into token sequences (only labels)
+        _, batch_labels, _ = prepare_data(batch_samples)
+        
+        # Add to buffer
+        self.label_buffer.extend(batch_labels)
+        
+        labels_generated = len(batch_labels)
+        self.current_text_idx = end_idx
+        
+        print(f"  Generated {labels_generated} label sequences")
+        
+        # Cleanup
+        del batch_samples, batch_labels
+        gc.collect()
+        
+        return labels_generated
+    
+    def __iter__(self) -> Iterator[tf.Tensor]:
+        """Make this iterable."""
+        return self
+    
+    def __next__(self) -> tf.Tensor:
+        """Return next label as tf.constant([float, float, ... float])."""
+        # Ensure we have labels in buffer
+        while len(self.label_buffer) == 0:
+            labels_added = self._expand_next_text_batch()
+            if labels_added == 0:
+                raise StopIteration
+        
+        # Take one label from buffer
+        label = self.label_buffer.pop(0)
+        self.labels_returned += 1
+        
+        # Convert to TensorFlow tensor
+        tensor_label = tf.constant(label, dtype=tf.float32)
+        
+        # Periodic cleanup
+        if self.labels_returned % 100 == 0:
+            gc.collect()
+            print(f"Returned {self.labels_returned} labels")
+        
+        return tensor_label
+    
+    def __getitem__(self, index: int) -> tf.Tensor:
+        """
+        Support indexing like a tensor - used by Cerebros.
+        """
+        if index >= self._shape[0]:
+            raise IndexError("Index out of range")
+        
+        # Generate labels until we reach the requested index
+        while len(self.label_buffer) <= index:
+            self._expand_next_text_batch()
+        
+        # Return the label at index
+        label = self.label_buffer[index]
+        return tf.constant(label, dtype=tf.float32)
+    
+    def __len__(self) -> int:
+        """Return approximate length."""
+        return self._shape[0]
+    
+    @property
+    def shape(self) -> Tuple[int, int]:
+        """Mimic tensor shape property."""
+        return self._shape
+    
+    @property
+    def dtype(self) -> tf.DType:
+        """Mimic tensor dtype property."""
+        return tf.float32
+
+
+# Factory function to create the streaming data objects (Nests the iterator as a list in the multi-modal input format Cerebros expects)
+def create_streaming_training_data(text_samples: List[str], 
+                                 text_expansion_batch_size: int = 2) -> Tuple[List, List]: # Tuple[List[2d tensor], List[2d tensor]]
+    """
+    Create streaming data objects that can be passed directly to Cerebros.
+    
+    Args:
+        text_samples: List of text samples to process
+        text_expansion_batch_size: Number of text samples to expand at once (2 for ~1GB memory usage)
+        
+    Returns:
+        Tuple of (x_train_packaged, y_train_packaged) ready for Cerebros
+    """
+    print(f"Setting up streaming data for {len(text_samples)} text samples")
+    print(f"Text expansion batch size: {text_expansion_batch_size}")
+    
+    # Create streaming generators
+    x_train_streaming = StreamingInputIdsGenerator(
+        text_samples=text_samples,
+        text_expansion_batch_size=text_expansion_batch_size,
+        max_seq_length=MAX_SEQ_LENGTH
+    )
+    
+    y_train_streaming = StreamingLabelsGenerator(
+        text_samples=text_samples,
+        text_expansion_batch_size=text_expansion_batch_size,
+        vocabulary_size=VOCABULARY_SIZE
+    )
+    
+    # Package as lists for Cerebros compatibility
+    x_train_packaged = [x_train_streaming]
+    y_train_packaged = [y_train_streaming]
+    
+    return x_train_packaged, y_train_packaged
+
+
+#  Setup of the preprocessing:
 
 tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B" # "HuggingFaceTB/SmolLM2-1.7B-Instruct" 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
 
+# Step 0 :  Load / import data
 
 with open('king-james-bible.txt', 'r') as kjv:
     bible = kjv.read()
 
-
-def package_non_instruct_text(text: str, desired_samples: int, max_length_tokens: int) -> list[str]:
-    """
-    Package a block of text into samples of approximately max_length_tokens.
-    
-    Args:
-        text: Block of text to process (e.g., entire book)
-        desired_samples: Number of samples to generate
-        max_length_tokens: Maximum number of tokens per sample
-        
-    Returns:
-        List of text samples, each approximately max_length_tokens long
-    """
-    # Split text into sentences using regex to handle various sentence endings
-    sentences = re.split(r'[.!?]+', text)
-    sentences = [sentence.strip() for sentence in sentences if sentence.strip()]
-    
-    samples = []
-    current_sample_sentences = []
-    current_token_count = 0
-    
-    sentence_index = 0
-    
-    while len(samples) < desired_samples and sentence_index < len(sentences):
-        sentence = sentences[sentence_index]
-        
-        # Estimate token count for this sentence
-        sentence_tokens = len(tokenizer.encode(sentence))
-        
-        # Check if adding this sentence would exceed the token limit
-        if current_token_count + sentence_tokens <= max_length_tokens:
-            current_sample_sentences.append(sentence)
-            current_token_count += sentence_tokens
-            sentence_index += 1
-        else:
-            # If we have accumulated sentences, create a sample
-            if current_sample_sentences:
-                sample = " ".join(current_sample_sentences)
-                samples.append(sample)
-            
-            # Reset for next sample
-            current_sample_sentences = []
-            current_token_count = 0
-            
-            # If this single sentence is too long, skip it
-            if sentence_tokens > max_length_tokens:
-                sentence_index += 1
-    
-    # Add the final sample if we have any remaining sentences
-    if current_sample_sentences and len(samples) < desired_samples:
-        sample = " ".join(current_sample_sentences)
-        samples.append(sample)
-    
-    return samples
-
-# Separate into samples
+# Step 1 Separate into samples
 non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=7, max_length_tokens=1200)
 
 del(bible)
 collect()
 
-print(f"Samples from KJV bible consisting of {len(non_instruct_samples)} look like this (sub-sample of 3): {non_instruct_samples[:3]}") 
+# Step 2 N/A no instruct samples to merge for this test ....
+
+# Step 3 Train test split
+
+train_samples_list_text, test_samples_list_text = train_test_split(
+        non_instruct_samples,
+        test_size=0.2,
+        shuffle=True)
+
+del(non_instruct_samples)
+collect()
+
+print(f"Samples from KJV bible consisting of {len(train_samples_list_text)} look like this (sub-sample of 3): {train_samples_list_text[:3]}")
+
+# Set up step 4 iterator for train set:
+x_train_packaged, y_train_packaged = create_streaming_training_data(
+    text_samples=train_samples_list_text,  # Your full dataset of text samples
+    text_expansion_batch_size=2  # Expand 2 text samples at a time (~1GB memory)
+)
+
+# Set up step 4 iterator for test set:
+# [ADD]
+
+# val_samples_list_text
 
 
 # Replace with imported text
