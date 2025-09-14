@@ -1,0 +1,21 @@
+FROM tensorflow/tensorflow:2.20.0
+
+WORKDIR /app
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    HF_HOME=/root/.cache/huggingface \
+    PYTHONUNBUFFERED=1
+
+# Copy only manifests and requirements first for better layer caching
+COPY requirements.txt cicd-requirements.txt /app/
+
+RUN python -m pip install --upgrade pip \
+ && PIP_BREAK_SYSTEM_PACKAGES=1 pip install --no-cache-dir -r cicd-requirements.txt -r requirements.txt \
+ && PIP_BREAK_SYSTEM_PACKAGES=1 pip install --no-cache-dir mlflow transformers \
+ && PIP_BREAK_SYSTEM_PACKAGES=1 pip install --no-cache-dir --ignore-installed blinker
+
+# Copy the rest of the repo
+COPY . /app
+
+ENTRYPOINT ["python", "tokenize_first_runner.py"]

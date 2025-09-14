@@ -3,6 +3,9 @@ kind: Job
 metadata:
   name: cerebros-train
   namespace: cerebros
+  labels:
+    app: cerebros
+    phase: train
 spec:
   template:
     spec:
@@ -22,9 +25,10 @@ spec:
             python -m pip install --upgrade pip
             PIP_BREAK_SYSTEM_PACKAGES=1 python -m pip install --no-cache-dir --break-system-packages -r requirements.txt
             PIP_BREAK_SYSTEM_PACKAGES=1 python -m pip install --no-cache-dir --break-system-packages -r cicd-requirements.txt
+            PIP_BREAK_SYSTEM_PACKAGES=1 python -m pip install --no-cache-dir --break-system-packages --ignore-installed blinker
             PIP_BREAK_SYSTEM_PACKAGES=1 python -m pip install --no-cache-dir --break-system-packages mlflow transformers
             python tokenize_first_runner.py --mode train \
-              --cache /data/train_tokens.npz --epochs 1 --batch 8 --print-score-only
+              --cache /data/train_tokens.npz --epochs 1 --batch 8 --grad_accum 5 --mlflow_uri http://mlflow-service:5000 --print-sample
         env:
         - name: MLFLOW_TRACKING_URI
           value: "http://mlflow-service:5000"

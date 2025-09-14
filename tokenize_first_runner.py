@@ -176,12 +176,17 @@ def train_from_cache(args):
     print("🏗️ Model compiled")
 
     # Train
+    # Configure MLflow URI if provided
+    if args.mlflow_uri:
+        mlflow.set_tracking_uri(args.mlflow_uri)
+
     with mlflow.start_run():
         mlflow.log_params({
             "vocab_size": vocab_size,
             "max_len": max_len,
             "epochs": args.epochs,
-            "batch_size": args.batch_size
+            "batch_size": args.batch_size,
+            "grad_accum": args.grad_accum
         })
 
         history = model.fit(
@@ -210,6 +215,24 @@ def train_from_cache(args):
         model_path = "cerebros-tokenized-model.keras"
         model.save(model_path)
         mlflow.log_artifact(model_path)
+
+        # Optional: print a small decoded sample
+        if args.print_sample:
+            try:
+                # Decode first few tokens of the first test sample
+                first_ids = test_tokens[0][: min(64, max_len)]
+                # When we tokenized, we used only input_ids; decoding with a generic tokenizer requires a checkpoint
+                # We store tokenizer checkpoint in params; try to re-load quickly
+                tokenizer_ckpt = args.tokenizer_checkpoint or "HuggingFaceTB/SmolLM3-3B"
+                tok = AutoTokenizer.from_pretrained(tokenizer_ckpt)
+                text_preview = tok.decode(first_ids, skip_special_tokens=True)
+                sample_path = "sample_preview.txt"
+                with open(sample_path, "w", encoding="utf-8") as f:
+                    f.write(text_preview)
+                mlflow.log_artifact(sample_path)
+                print(f"📝 Sample preview: {text_preview[:200]}")
+            except Exception as e:
+                print(f"⚠️ Could not generate sample preview: {e}")
 
         # Print model size
         model_size_mb = os.path.getsize(model_path) / (1024 * 1024)
@@ -248,8 +271,14 @@ def main():
                        help="Training epochs")
     parser.add_argument("--batch", "--batch_size", type=int, default=8, dest="batch_size",
                        help="Batch size")
+    parser.add_argument("--grad_accum", type=int, default=1,
+                       help="Gradient accumulation steps (placeholder; model uses batch_size today)")
     parser.add_argument("--print-score-only", action="store_true",
                        help="Print only final scalar score")
+    parser.add_argument("--mlflow_uri", default=os.environ.get("MLFLOW_TRACKING_URI", ""),
+                       help="MLflow tracking URI")
+    parser.add_argument("--print-sample", action="store_true",
+                       help="Decode and log a small text preview from test tokens")
 
     args = parser.parse_args()
 
