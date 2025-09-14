@@ -65,6 +65,7 @@ num_lateral_connection_tries_per_unit = 25
 learning_rate = 3 * 10 ** -4 # 3 * 10 ** -3
 epochs = 15  #
 batch_size = 10 # 17
+gradient_accumulation_steps = 3
 minimum_levels = 2
 maximum_levels = 2 # [3,7]
 
@@ -573,6 +574,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     project_name=f"{PROJECT_NAME}_meta_{meta_trial_number}",
     model_graphs='model_graphs',
     batch_size=batch_size,
+    gradient_accumulation_steps=gradient_accumulation_steps,
     meta_trial_number=meta_trial_number,
     base_models=[cerebros_base_model],
     train_data_dtype=tf.int32)  # Changed from tf.string to tf.int32
