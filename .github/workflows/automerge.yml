@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "214-first-pass-optimization-of-pico-scale-generative-model-0001" ]
+    branches: [ "main", "220-fp-optimization-of-pico-scale-generative-model-streaming-sample-expansion-0002" ]
 
 permissions:
   contents: read
