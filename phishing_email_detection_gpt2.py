@@ -860,7 +860,13 @@ for sample in non_instruct_samples:
     half_sample = sample[:half_sample_len]
     
     # Tokenize the text
-    half_sample_tokenized = tokenizer(half_sample)
+    half_sample_tokenized = tokenizer(
+        half_sample,
+        max_length=max_seq_length,
+        padding='max_length',
+        truncation=True,
+        add_special_tokens=False
+    )['input_ids']
     
     # Extract token IDs as a list of integers (not tensors)
     if isinstance(half_sample_tokenized, dict):
@@ -964,21 +970,27 @@ for sample in non_instruct_samples:
     half_sample = sample[:half_sample_len]
     
     # Tokenize the text
-    half_sample_tokenized = tokenizer(half_sample)
+    half_sample_tokenized = tokenizer(
+        half_sample,
+        max_length=max_seq_length,
+        padding='max_length',
+        truncation=True,
+        add_special_tokens=False
+    )['input_ids']
     
-    # Extract token IDs as a list of integers (not tensors)
-    if isinstance(half_sample_tokenized, dict):
-        # If tokenizer returns a dict, extract the token IDs
-        token_ids = half_sample_tokenized['input_ids']  # or 'token_ids' depending on your tokenizer
-    else:
-        # If tokenizer returns a list directly
-        token_ids = half_sample_tokenized
+    # # Extract token IDs as a list of integers (not tensors)
+    # if isinstance(half_sample_tokenized, dict):
+    #     # If tokenizer returns a dict, extract the token IDs
+    #     token_ids = half_sample_tokenized['input_ids']  # or 'token_ids' depending on your tokenizer
+    # else:
+    #     # If tokenizer returns a list directly
+    #     token_ids = half_sample_tokenized
     
-    # Convert to Python list of integers if it's a tensor
-    if hasattr(token_ids, 'numpy'):
-        token_ids = token_ids.numpy().tolist()
-    if not isinstance(token_ids, list):
-        token_ids = list(token_ids)
+    # # Convert to Python list of integers if it's a tensor
+    # if hasattr(token_ids, 'numpy'):
+    #     token_ids = token_ids.numpy().tolist()
+    # if not isinstance(token_ids, list):
+    #     token_ids = list(token_ids)
     
     # Now pass the list of integers to your generate method
     generated_tokens = reconstituted_generator.generate(
