@@ -231,7 +231,7 @@ def package_non_instruct_text(text: str, desired_samples: int, max_length_tokens
     return samples
 
 # Separate into samples
-non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=30, max_length_tokens=int(np.ceil(MAX_SEQ_LENGTH * .8)) ##
+non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=30, max_length_tokens=int(np.ceil(MAX_SEQ_LENGTH * .8))) ##
 
 del(bible)
 collect()
