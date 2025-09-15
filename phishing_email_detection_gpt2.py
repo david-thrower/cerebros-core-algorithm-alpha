@@ -531,6 +531,37 @@ PROJECT_NAME = f'{TIME}_cerebros_auto_ml_phishing_email_test'
 
 meta_trial_number = 42 # irrelevant unless in distributed training
 
+# Custom metric: Perplexity:
+
+class Perplexity(tf.keras.metrics.Metric):
+    """
+    Computes perplexity, defined as e^(categorical crossentropy).
+    """
+    def __init__(self, name='perplexity', **kwargs):
+        super().__init__(name=name, **kwargs)
+        self.total_crossentropy = self.add_weight(name='total_crossentropy', initializer='zeros')
+        self.count = self.add_weight(name='count', initializer='zeros')
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        # Calculate categorical crossentropy
+        crossentropy = tf.keras.losses.categorical_crossentropy(y_true, y_pred)
+
+        # Update the running sum of crossentropy and the count of samples
+        self.total_crossentropy.assign_add(tf.reduce_sum(crossentropy))
+        self.count.assign_add(tf.cast(tf.shape(y_true)[0], dtype=tf.float32))
+
+    def result(self):
+        # Compute the average crossentropy
+        average_crossentropy = self.total_crossentropy / self.count
+        # Compute perplexity as e^(average crossentropy)
+        return tf.exp(average_crossentropy)
+
+    def reset_state(self):
+        # Reset the state variables
+        self.total_crossentropy.assign(0.0)
+        self.count.assign(0.0)
+
+perplexity_metric = Perplexity()
 
 cerebros_automl = SimpleCerebrosRandomSearch(
     unit_type=DenseUnit,
@@ -568,7 +599,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     learning_rate=learning_rate,
     loss=tf.keras.losses.CategoricalCrossentropy(),
     metrics=[tf.keras.metrics.CategoricalAccuracy(),
-            # tf.keras.metrics.Perplexity(name='perplexity'),
+             perplexity_metric,
         # tf.keras.metrics.Accuracy()
             ],
     epochs=epochs,
