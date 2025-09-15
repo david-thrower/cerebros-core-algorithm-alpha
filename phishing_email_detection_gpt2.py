@@ -34,7 +34,7 @@ MAX_TRAIN_PLUS_TEST_SAMPLES = 150
 
 # Text encoding / embedding related constants
 
-MAX_SEQ_LENGTH = 1536 # (baseline from text classification model)
+MAX_SEQ_LENGTH = 500 # (baseline from text classification model)
 
 tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B" # "HuggingFaceTB/SmolLM2-1.7B-Instruct" 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
