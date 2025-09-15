@@ -883,7 +883,7 @@ for sample in non_instruct_samples:
     #     token_ids = list(token_ids)
     
     # Now pass the list of integers to your generate method
-    generated_tokens = reconstituted_generator.generate(
+    generated_tokens = generator.generate(
         token_ids=half_sample_tokenized,  # This should now be a list of integers
         do_sample=False,
         max_new_tokens=40
@@ -993,7 +993,7 @@ for sample in non_instruct_samples:
     #     token_ids = list(token_ids)
     
     # Now pass the list of integers to your generate method
-    generated_tokens = reconstituted_generator.generate(
+    generated_tokens =  reconstituted_generator.generate(
         token_ids=half_sample_tokenized,  # This should now be a list of integers
         do_sample=False,
         max_new_tokens=40
