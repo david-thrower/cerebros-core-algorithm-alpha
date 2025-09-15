@@ -357,6 +357,13 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.maximum_units_per_level = maximum_units_per_level
         self.minimum_neurons_per_unit = minimum_neurons_per_unit
         self.maximum_neurons_per_unit = maximum_neurons_per_unit
+        # enforce mutual exclusivity of parameters (training_data, labels) OR dataset 
+        if dataset is not None and training_data is not None and training_data:
+            raise ValueError("If using a tf.Dataset: Set  Either "
+                             "set training_data and labels to None "
+                             "or a falsy value: [] '' ... Use of the "
+                             "parameter dataset OR training_data and "
+                             "labels is mutually exclusive ")
         self.dataset = dataset
         self.activation = activation
         self.final_activation = final_activation
