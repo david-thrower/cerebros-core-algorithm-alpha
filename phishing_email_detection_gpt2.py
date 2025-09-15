@@ -857,7 +857,7 @@ print("########### BEFORE SEARIALIZING THE GENERATIVE MODEL")
 counter = 0
 for sample in non_instruct_samples:
     half_sample_len = int(np.ceil(len(sample)))
-    half_sample = sample[:half_sample]
+    half_sample = sample[:half_sample_len]
     half_sample_tokenized = tokenizer(half_sample)
     generated_tokens = generator.generate(
         token_ids=half_sample_tokenized,
@@ -940,7 +940,7 @@ print("Model reconstituted successfully!")
 counter = 0
 for sample in non_instruct_samples:
     half_sample_len = int(np.ceil(len(sample)))
-    half_sample = sample[:half_sample]
+    half_sample = sample[:half_sample_len]
     half_sample_tokenized = tokenizer(half_sample)
     generated_tokens = reconstituted_generator.generate(
         token_ids=half_sample_tokenized,
