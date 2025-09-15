@@ -365,9 +365,9 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.training_data = training_data
         self.labels = labels
 
-        self.cast_as_dataset = cast_as_dataset
+        self.cast_data_to_dataset = cast_data_to_dataset
 
-        if not cast_as_dataset:
+        if not cast_data_to_dataset:
             self.dataset = None
         else:
             # Warn about experimental feature
