@@ -26,7 +26,7 @@ from os.path import getsize
 # Text encoding / embedding related constants
 
 
-MAX_SEQ_LENGTH = 1536
+MAX_SEQ_LENGTH = 196 # 1536
 
 tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B" # "HuggingFaceTB/SmolLM2-1.7B-Instruct" 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
