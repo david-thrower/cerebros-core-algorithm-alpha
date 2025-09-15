@@ -64,7 +64,7 @@ p_lateral_connection = 30
 num_lateral_connection_tries_per_unit = 25
 learning_rate = 3 * 10 ** -4 # 3 * 10 ** -3
 epochs = 15  #
-batch_size = 7 # 17
+batch_size = 17
 gradient_accumulation_steps = 1
 minimum_levels = 2
 maximum_levels = 2 # [3,7]
@@ -568,7 +568,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     learning_rate=learning_rate,
     loss=tf.keras.losses.CategoricalCrossentropy(),
     metrics=[tf.keras.metrics.CategoricalAccuracy(),
-             tf.keras.metrics.Perplexity(name='perplexity'),
+            # tf.keras.metrics.Perplexity(name='perplexity'),
         # tf.keras.metrics.Accuracy()
             ],
     epochs=epochs,
