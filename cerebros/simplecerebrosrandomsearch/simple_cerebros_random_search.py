@@ -288,6 +288,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                  maximum_units_per_level: int,
                  minimum_neurons_per_unit: int,
                  maximum_neurons_per_unit: int,
+                 dataset: tf.data.Dataset=None,
                  validation_data: tuple=None,
                  activation='elu',
                  final_activation=None,
@@ -356,6 +357,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.maximum_units_per_level = maximum_units_per_level
         self.minimum_neurons_per_unit = minimum_neurons_per_unit
         self.maximum_neurons_per_unit = maximum_neurons_per_unit
+        self.data_set = data_set
         self.activation = activation
         self.final_activation = final_activation
         self.unit_type = unit_type
@@ -493,15 +495,23 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         print(nnf.materialized_neural_network.summary())
         if self.chart_network_graph:
             nnf.get_graph()
-
-        history = neural_network.fit(x=self.training_data,
-                                     y=self.labels,
-                                     epochs=self.epochs,
-                                     batch_size=self.batch_size,
-                                     # callbacks=[early_stopping,
-                                     #            tensor_board],
-                                     validation_split=self.validation_split,
-                                     validation_data=self.validation_data)
+        if self.dataset is not None:
+            history = neural_network.fit(x=self.training_data,
+                                         y=self.labels,
+                                         epochs=self.epochs,
+                                         batch_size=self.batch_size,
+                                         # callbacks=[early_stopping,
+                                         #            tensor_board],
+                                         validation_split=self.validation_split,
+                                         validation_data=self.validation_data)
+        else:
+            history = neural_network.fit(dataset=self.dataset,
+                                         epochs=self.epochs,
+                                         batch_size=self.batch_size,
+                                         # callbacks=[early_stopping,
+                                         #            tensor_board],
+                                         validation_split=self.validation_split,
+                                         validation_data=self.validation_data)            
         oracle_0 = pd.DataFrame(history.history)
 
         model_architectures_folder = f"{self.project_name}/model_architectures"
