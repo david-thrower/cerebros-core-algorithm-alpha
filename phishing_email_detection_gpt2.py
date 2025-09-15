@@ -430,6 +430,7 @@ class RotaryEmbedding(tf.keras.layers.Layer):
 
 # iRoPE helper functions
 
+@tf.keras.utils.register_keras_serializable()
 def split_alternate(x):
     shape = tf.shape(x)
     x = tf.reshape(x, [shape[0], shape[1], shape[2] // 2, 2])
@@ -438,6 +439,7 @@ def split_alternate(x):
     return x
 
 
+@tf.keras.utils.register_keras_serializable()
 def rotate_half(x):
     x = split_alternate(x)
     d = tf.shape(x)[-1]
@@ -445,6 +447,7 @@ def rotate_half(x):
     return tf.reshape(rotated_x, tf.shape(x))
 
 
+@tf.keras.utils.register_keras_serializable()
 def apply_rotary_pos_emb(x, sin, cos):
     cos = tf.reshape(cos, [tf.shape(cos)[0], tf.shape(cos)[1], -1])
     sin = tf.reshape(sin, [tf.shape(sin)[0], tf.shape(sin)[1], -1])
@@ -533,6 +536,7 @@ meta_trial_number = 42 # irrelevant unless in distributed training
 
 # Custom metric: Perplexity:
 
+@tf.keras.utils.register_keras_serializable()
 class Perplexity(tf.keras.metrics.Metric):
     """
     Computes perplexity, defined as e^(categorical crossentropy).
