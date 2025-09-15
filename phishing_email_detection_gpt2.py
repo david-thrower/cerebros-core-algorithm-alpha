@@ -75,7 +75,7 @@ maximum_units_per_level = 7
 minimum_neurons_per_unit = 1
 maximum_neurons_per_unit = 2
 
-moities_to_try = 5
+moities_to_try = 3
 tries_per_moity = 1
 
 ####### DO NOT FORGET TO MERGE IN THE WORK THAT ADDED GRADIENT
@@ -231,7 +231,7 @@ def package_non_instruct_text(text: str, desired_samples: int, max_length_tokens
     return samples
 
 # Separate into samples
-non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=30, max_length_tokens=int(np.ceil(MAX_SEQ_LENGTH * .8))) ##
+non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=10, max_length_tokens=int(np.ceil(MAX_SEQ_LENGTH * .8))) ##
 
 del(bible)
 collect()
