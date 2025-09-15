@@ -357,7 +357,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.maximum_units_per_level = maximum_units_per_level
         self.minimum_neurons_per_unit = minimum_neurons_per_unit
         self.maximum_neurons_per_unit = maximum_neurons_per_unit
-        self.data_set = data_set
+        self.dataset = dataset
         self.activation = activation
         self.final_activation = final_activation
         self.unit_type = unit_type
