@@ -813,7 +813,7 @@ class CerebrosAutoregressiveTextGenerator(tf.keras.Model):
             print(f"... next_token_id: {next_token_id}")
             next_word = tokenizer.decode(next_token_id)
             print(f"Next decoded word: {next_word}")
-            temp_gen_count =+=1
+            temp_gen_count +=1
 
             # Check for termination condition
             if next_token_id == self.padding_token:
