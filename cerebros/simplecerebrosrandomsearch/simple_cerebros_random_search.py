@@ -365,142 +365,142 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.training_data = training_data
         self.labels = labels
 
-self.cast_as_dataset = cast_as_dataset
+        self.cast_as_dataset = cast_as_dataset
 
-if not cast_as_dataset:
-    self.dataset = None
-else:
-    # Warn about experimental feature
-    warn("Casting data to a tf.data.Dataset is EXPERIMENTAL! We do not recommend this for production use.")
-    
-    # Check if training_data is a list/tuple and has elements
-    if isinstance(training_data, (list, tuple)) and len(training_data) > 0:
-        first_element = training_data[0]
-        if isinstance(first_element, (np.ndarray, tf.Tensor)):
-            # training_data is [np.array()] or [tf.tensor()]
-            self.dataset = tf.data.Dataset.from_tensor_slices((training_data, labels))
+        if not cast_as_dataset:
+            self.dataset = None
         else:
-            # training_data consists of generators/iterables
-            def nested_input_generator():
-                """
-                Combines the training data generators and labels generator and yields data in the
-                format (sample_tensor, label_tensor).
-                """
-                # Assuming training_data contains generator functions or iterables
-                # and labels is also a generator function or iterable
-                if hasattr(training_data[0], '__call__'):
-                    # If they are generator functions, call them
-                    data_iterators = [data_gen() for data_gen in training_data]
-                    label_iterator = labels() if hasattr(labels, '__call__') else labels
+            # Warn about experimental feature
+            warn("Casting data to a tf.data.Dataset is EXPERIMENTAL! We do not recommend this for production use.")
+    
+            # Check if training_data is a list/tuple and has elements
+            if isinstance(training_data, (list, tuple)) and len(training_data) > 0:
+                first_element = training_data[0]
+                if isinstance(first_element, (np.ndarray, tf.Tensor)):
+                    # training_data is [np.array()] or [tf.tensor()]
+                    self.dataset = tf.data.Dataset.from_tensor_slices((training_data, labels))
                 else:
-                    # If they are already iterators/iterables
-                    data_iterators = training_data
-                    label_iterator = labels
+                    # training_data consists of generators/iterables
+                    def nested_input_generator():
+                        """
+                        Combines the training data generators and labels generator and yields data in the
+                        format (sample_tensor, label_tensor).
+                        """
+                        # Assuming training_data contains generator functions or iterables
+                        # and labels is also a generator function or iterable
+                        if hasattr(training_data[0], '__call__'):
+                            # If they are generator functions, call them
+                            data_iterators = [data_gen() for data_gen in training_data]
+                            label_iterator = labels() if hasattr(labels, '__call__') else labels
+                        else:
+                            # If they are already iterators/iterables
+                            data_iterators = training_data
+                            label_iterator = labels
                     
-                for data_items, label_item in zip(zip(*data_iterators), label_iterator):
-                    # data_items is a tuple of inputs for multimodal case
-                    # For single input, it's a tuple with one element
-                    if len(data_items) == 1:
-                        yield data_items[0], label_item
-                    else:
-                        yield list(data_items), label_item
+                        for data_items, label_item in zip(zip(*data_iterators), label_iterator):
+                            # data_items is a tuple of inputs for multimodal case
+                            # For single input, it's a tuple with one element
+                            if len(data_items) == 1:
+                                yield data_items[0], label_item
+                            else:
+                                yield list(data_items), label_item
 
-            def create_dataset_from_generator(generator_func):
-                """
-                Creates a tf.data.Dataset by automatically inferring the output signature.
-            
-                This function inspects the first item yielded by the generator to determine the
-                shapes and data types of the elements, removing the need to specify them manually.
-            
-                Args:
-                    generator_func: A callable that returns a generator object.
-            
-                Returns:
-                    A tf.data.Dataset instance.
-                """
+                    def create_dataset_from_generator(generator_func):
+                        """
+                        Creates a tf.data.Dataset by automatically inferring the output signature.
+                    
+                        This function inspects the first item yielded by the generator to determine the
+                        shapes and data types of the elements, removing the need to specify them manually.
+                    
+                        Args:
+                            generator_func: A callable that returns a generator object.
+                    
+                        Returns:
+                            A tf.data.Dataset instance.
+                        """
+                        
+                        # 1. Get the first item from the generator to see what it looks like.
+                        first_item = next(generator_func())
+                    
+                        # 2. A recursive helper function to build the TensorSpec signature from the first item.
+                        def _to_tensor_spec(element):
+                            """Converts a nested structure of numpy arrays/scalars to a TensorSpec structure."""
+                            if isinstance(element, (tuple, list)):
+                                # If it's a list or tuple, recursively process each of its items.
+                                return tuple(_to_tensor_spec(e) for e in element)
+                            else:
+                                # For arrays or scalars, create a TensorSpec.
+                                # `tf.convert_to_tensor` correctly handles Python/Numpy types.
+                                tensor = tf.convert_to_tensor(element)
+                                return tf.TensorSpec(shape=tensor.shape, dtype=tensor.dtype)
+                    
+                        # 3. Build the complete signature from the first item's structure.
+                        output_signature = _to_tensor_spec(first_item)
+                        
+                        print("✅ Successfully inferred the following signature:")
+                        print(output_signature)
+                        print("-" * 30)
+                        # 4. Create the dataset using the generator function and the inferred signature.
+                        return tf.data.Dataset.from_generator(
+                            generator_func,
+                            output_signature=output_signature
+                        )
+                    
+                    self.dataset = create_dataset_from_generator(nested_input_generator)
+            else:
+                # Assume training_data is a single generator/iterable
+                def nested_input_generator():
+                    """
+                    Handles single generator/iterable case.
+                    """
+                    data_iterator = training_data() if hasattr(training_data, '__call__') else training_data
+                    label_iterator = labels() if hasattr(labels, '__call__') else labels
+                    
+                    for data_item, label_item in zip(data_iterator, label_iterator):
+                        yield data_item, label_item
+        
+                def create_dataset_from_generator(generator_func):
+                    """
+                    Creates a tf.data.Dataset by automatically inferring the output signature.
                 
-                # 1. Get the first item from the generator to see what it looks like.
-                first_item = next(generator_func())
-            
-                # 2. A recursive helper function to build the TensorSpec signature from the first item.
-                def _to_tensor_spec(element):
-                    """Converts a nested structure of numpy arrays/scalars to a TensorSpec structure."""
-                    if isinstance(element, (tuple, list)):
-                        # If it's a list or tuple, recursively process each of its items.
-                        return tuple(_to_tensor_spec(e) for e in element)
-                    else:
-                        # For arrays or scalars, create a TensorSpec.
-                        # `tf.convert_to_tensor` correctly handles Python/Numpy types.
-                        tensor = tf.convert_to_tensor(element)
-                        return tf.TensorSpec(shape=tensor.shape, dtype=tensor.dtype)
-            
-                # 3. Build the complete signature from the first item's structure.
-                output_signature = _to_tensor_spec(first_item)
+                    This function inspects the first item yielded by the generator to determine the
+                    shapes and data types of the elements, removing the need to specify them manually.
                 
-                print("✅ Successfully inferred the following signature:")
-                print(output_signature)
-                print("-" * 30)
-                # 4. Create the dataset using the generator function and the inferred signature.
-                return tf.data.Dataset.from_generator(
-                    generator_func,
-                    output_signature=output_signature
-                )
-            
-            self.dataset = create_dataset_from_generator(nested_input_generator)
-    else:
-        # Assume training_data is a single generator/iterable
-        def nested_input_generator():
-            """
-            Handles single generator/iterable case.
-            """
-            data_iterator = training_data() if hasattr(training_data, '__call__') else training_data
-            label_iterator = labels() if hasattr(labels, '__call__') else labels
-            
-            for data_item, label_item in zip(data_iterator, label_iterator):
-                yield data_item, label_item
-
-        def create_dataset_from_generator(generator_func):
-            """
-            Creates a tf.data.Dataset by automatically inferring the output signature.
-        
-            This function inspects the first item yielded by the generator to determine the
-            shapes and data types of the elements, removing the need to specify them manually.
-        
-            Args:
-                generator_func: A callable that returns a generator object.
-        
-            Returns:
-                A tf.data.Dataset instance.
-            """
-            
-            # 1. Get the first item from the generator to see what it looks like.
-            first_item = next(generator_func())
-        
-            # 2. A recursive helper function to build the TensorSpec signature from the first item.
-            def _to_tensor_spec(element):
-                """Converts a nested structure of numpy arrays/scalars to a TensorSpec structure."""
-                if isinstance(element, (tuple, list)):
-                    # If it's a list or tuple, recursively process each of its items.
-                    return tuple(_to_tensor_spec(e) for e in element)
-                else:
-                    # For arrays or scalars, create a TensorSpec.
-                    # `tf.convert_to_tensor` correctly handles Python/Numpy types.
-                    tensor = tf.convert_to_tensor(element)
-                    return tf.TensorSpec(shape=tensor.shape, dtype=tensor.dtype)
-        
-            # 3. Build the complete signature from the first item's structure.
-            output_signature = _to_tensor_spec(first_item)
-            
-            print("✅ Successfully inferred the following signature:")
-            print(output_signature)
-            print("-" * 30)
-            # 4. Create the dataset using the generator function and the inferred signature.
-            return tf.data.Dataset.from_generator(
-                generator_func,
-                output_signature=output_signature
-            )
-        
-        self.dataset = create_dataset_from_generator(nested_input_generator)
+                    Args:
+                        generator_func: A callable that returns a generator object.
+                
+                    Returns:
+                        A tf.data.Dataset instance.
+                    """
+                    
+                    # 1. Get the first item from the generator to see what it looks like.
+                    first_item = next(generator_func())
+                
+                    # 2. A recursive helper function to build the TensorSpec signature from the first item.
+                    def _to_tensor_spec(element):
+                        """Converts a nested structure of numpy arrays/scalars to a TensorSpec structure."""
+                        if isinstance(element, (tuple, list)):
+                            # If it's a list or tuple, recursively process each of its items.
+                            return tuple(_to_tensor_spec(e) for e in element)
+                        else:
+                            # For arrays or scalars, create a TensorSpec.
+                            # `tf.convert_to_tensor` correctly handles Python/Numpy types.
+                            tensor = tf.convert_to_tensor(element)
+                            return tf.TensorSpec(shape=tensor.shape, dtype=tensor.dtype)
+                
+                    # 3. Build the complete signature from the first item's structure.
+                    output_signature = _to_tensor_spec(first_item)
+                    
+                    print("✅ Successfully inferred the following signature:")
+                    print(output_signature)
+                    print("-" * 30)
+                    # 4. Create the dataset using the generator function and the inferred signature.
+                    return tf.data.Dataset.from_generator(
+                        generator_func,
+                        output_signature=output_signature
+                    )
+                
+                self.dataset = create_dataset_from_generator(nested_input_generator)
 
 
         self.validation_split = validation_split
