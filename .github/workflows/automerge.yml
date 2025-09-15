@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "cerebros-core-algorithm-alpha/tree/225-second-attempt-add-support-for-tf-dataset" ]
+    branches: [ "main", "225-second-attempt-add-support-for-tf-dataset" ]
 
 
 permissions:
