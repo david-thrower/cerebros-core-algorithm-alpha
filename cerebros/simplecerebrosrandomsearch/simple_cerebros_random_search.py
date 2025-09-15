@@ -288,7 +288,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                  maximum_units_per_level: int,
                  minimum_neurons_per_unit: int,
                  maximum_neurons_per_unit: int,
-                 cast_data_to_dataset: bool=False.
+                 cast_data_to_dataset: bool=False,
                  validation_data: tuple=None,
                  activation='elu',
                  final_activation=None,
