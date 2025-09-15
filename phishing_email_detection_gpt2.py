@@ -231,7 +231,7 @@ def package_non_instruct_text(text: str, desired_samples: int, max_length_tokens
     return samples
 
 # Separate into samples
-non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=30, max_length_tokens=1200)
+non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=30, max_length_tokens=int(np.ceil(MAX_SEQ_LENGTH * .8)) ##
 
 del(bible)
 collect()
@@ -641,9 +641,9 @@ MODEL_FILE_NAME = "cerebros-foundation-model.keras"
 
 best_model_found = cerebros_automl.get_best_model()
 best_model_found.save(MODEL_FILE_NAME)
-del(best_model_found)
-del(cerebros_automl)
-collect()
+# del(best_model_found)
+# del(cerebros_automl)
+# collect()
 
 file_size_bytes = getsize(MODEL_FILE_NAME)
 print(f"Model size on disk: {file_size_bytes / (1024*1024):.2f} MB")
@@ -659,62 +659,62 @@ print("="*50)
 pad_token_id = tokenizer.pad_token_id
 end_prompt_token_id = tokenizer.encode("</prompt>", add_special_tokens=False)[0]
 
-# Generate text for first 5 test samples (Working)
-generated_texts = []
-for i in range(min(5, len(x_test_packaged[0]))):
-    original_input = x_test_packaged[0][i].numpy()
+# # Generate text for first 5 test samples (Working)
+# generated_texts = []
+# for i in range(min(5, len(x_test_packaged[0]))):
+#     original_input = x_test_packaged[0][i].numpy()
     
-    # Find the end of the prompt
-    try:
-        end_prompt_index = list(original_input).index(end_prompt_token_id)
-    except ValueError:
-        end_prompt_index = 0
+#     # Find the end of the prompt
+#     try:
+#         end_prompt_index = list(original_input).index(end_prompt_token_id)
+#     except ValueError:
+#         end_prompt_index = 0
     
-    # Extract the prompt part
-    prompt_tokens = original_input[:end_prompt_index+1].tolist()
+#     # Extract the prompt part
+#     prompt_tokens = original_input[:end_prompt_index+1].tolist()
     
-    # Generate tokens sequentially
-    generated_tokens = []
-    current_input = prompt_tokens.copy()
+#     # Generate tokens sequentially
+#     generated_tokens = []
+#     current_input = prompt_tokens.copy()
     
-    # Generate up to 100 tokens or until pad token
-    for _ in range(100):
-        # Pad or truncate to MAX_SEQ_LENGTH
-        input_tensor = tf.constant([current_input + [pad_token_id] * (MAX_SEQ_LENGTH - len(current_input))], dtype=tf.int32)
+#     # Generate up to 100 tokens or until pad token
+#     for _ in range(100):
+#         # Pad or truncate to MAX_SEQ_LENGTH
+#         input_tensor = tf.constant([current_input + [pad_token_id] * (MAX_SEQ_LENGTH - len(current_input))], dtype=tf.int32)
         
-        # Get prediction
-        prediction = reconstituted_model(input_tensor)
-        next_token_id = int(tf.argmax(prediction[0], axis=-1).numpy())
+#         # Get prediction
+#         prediction = reconstituted_model(input_tensor)
+#         next_token_id = int(tf.argmax(prediction[0], axis=-1).numpy())
         
-        # Stop if pad token generated
-        if next_token_id == pad_token_id:
-            break
+#         # Stop if pad token generated
+#         if next_token_id == pad_token_id:
+#             break
             
-        generated_tokens.append(next_token_id)
-        current_input.append(next_token_id)
+#         generated_tokens.append(next_token_id)
+#         current_input.append(next_token_id)
         
-        # Stop if we exceed max length
-        if len(current_input) >= MAX_SEQ_LENGTH:
-            break
+#         # Stop if we exceed max length
+#         if len(current_input) >= MAX_SEQ_LENGTH:
+#             break
     
-    generated_texts.append((prompt_tokens, generated_tokens))
+#     generated_texts.append((prompt_tokens, generated_tokens))
 
-# Decode and print with proper formatting
-for idx, (prompt_tokens, generated_tokens) in enumerate(generated_texts):
-    # Decode prompt
-    prompt_text = tokenizer.decode(prompt_tokens, skip_special_tokens=False)
+# # Decode and print with proper formatting
+# for idx, (prompt_tokens, generated_tokens) in enumerate(generated_texts):
+#     # Decode prompt
+#     prompt_text = tokenizer.decode(prompt_tokens, skip_special_tokens=False)
     
-    # Extract original prompt content
-    if '<prompt>' in prompt_text and '</prompt>' in prompt_text:
-        original_prompt = prompt_text.split('<prompt>')[-1].split('</prompt>')[0]
-    else:
-        original_prompt = prompt_text[:50] + "..." if len(prompt_text) > 50 else prompt_text
+#     # Extract original prompt content
+#     if '<prompt>' in prompt_text and '</prompt>' in prompt_text:
+#         original_prompt = prompt_text.split('<prompt>')[-1].split('</prompt>')[0]
+#     else:
+#         original_prompt = prompt_text[:50] + "..." if len(prompt_text) > 50 else prompt_text
     
-    # Decode generated text
-    generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False) if generated_tokens else ""
+#     # Decode generated text
+#     generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False) if generated_tokens else ""
     
-    print(f"\nGenerated text from sample {idx+1}:")
-    print(f"<prompt>{original_prompt}</prompt>{generated_text}")
+#     print(f"\nGenerated text from sample {idx+1}:")
+#     print(f"<prompt>{original_prompt}</prompt>{generated_text}")
 
 
 
@@ -747,7 +747,7 @@ class CerebrosAutoregressiveTextGenerator(tf.keras.Model):
         self.max_sequence_length = config.max_sequence_length
         self.padding_token = config.padding_token
         # Make self.model = the reconstituted model (constant)
-        self.model = reconstituted_model
+        self.model = best_model_found # reconstituted_model
     
     def get_config(self):
         return {
@@ -786,6 +786,7 @@ class CerebrosAutoregressiveTextGenerator(tf.keras.Model):
         current_tokens = token_ids.copy()
         
         # Autoregressive generation loop
+        temp_gen_count = 0 # <--------<< Debug code to remove later
         for _ in range(max_new_tokens):
             # Pad or truncate to max_sequence_length (CORRECTED PADDING LOGIC)
             if len(current_tokens) > self.max_sequence_length:
@@ -802,12 +803,18 @@ class CerebrosAutoregressiveTextGenerator(tf.keras.Model):
             # Get next token based on sampling strategy
             if do_sample:
                 # Sample from the distribution
-                probabilities = tf.nn.softmax(logits[0], axis=-1)
-                next_token_id = tf.random.categorical(tf.math.log(probabilities)[None, :], 1)[0, 0].numpy()
+                # probabilities = tf.nn.softmax(logits[0], axis=-1) # Model already applies softmax
+                next_token_id = tf.random.categorical(tf.math.log(logits[0])[None, :], 1)[0, 0].numpy()
             else:
                 # Greedy sampling (argmax)
                 next_token_id = int(tf.argmax(logits[0], axis=-1).numpy())
-            
+            # Debug code to removel later
+            print(f"Generating {temp_gen_count}")
+            print(f"... next_token_id: {next_token_id}")
+            next_word = tokenizer.decode(next_token_id)
+            print(f"Next decoded word: {next_word}")
+            temp_gen_count =+=1
+
             # Check for termination condition
             if next_token_id == self.padding_token:
                 break
@@ -845,54 +852,73 @@ config = CerebrosAutoregressiveTextGeneratorConfig(
 )
 generator = CerebrosAutoregressiveTextGenerator(config)
 
-# Process ALL original samples from data - REAL WORLD USAGE
-generated_texts = []
-for i, original_text in enumerate(data[:5]):  # Process first 5 samples
-    print(f"\nProcessing sample {i+1}...")
-    
-    # Extract prompt part (everything up to and including </prompt>)
-    if '</prompt>' in original_text:
-        prompt_part = original_text.split('</prompt>')[0] + '</prompt>'
-    else:
-        prompt_part = original_text
-    
-    # Tokenize the prompt part
-    tokenized = tokenizer(
-        prompt_part,
-        add_special_tokens=False,  # We handle special tokens manually
-        return_tensors=None  # Return lists, not tensors
-    )
-    prompt_tokens = tokenized['input_ids']
-    
-    print(f"Original prompt: {prompt_part[:100]}...")
-    print(f"Tokenized prompt length: {len(prompt_tokens)} tokens")
-    
-    # Generate tokens using the wrapper class - REAL WORLD USAGE
+print("########### BEFORE SEARIALIZING THE GENERATIVE MODEL")
+
+counter = 0
+for sample in non_instruct_samples:
+    half_sample_len = int(np.ceil(len(sample)))
+    half_sample = sample[:half_sample]
+    half_sample_tokenized = tokenizer(half_sample)
     generated_tokens = generator.generate(
-        token_ids=prompt_tokens,
+        token_ids=half_sample_tokenized,
         do_sample=False,
-        max_new_tokens=100
+        max_new_tokens=40
     )
-    
-    # Decode the full generated text
     full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)
-    
-    # Extract just the newly generated part (after the prompt)
-    generated_part = full_generated_text[len(prompt_part):]
-    
-    generated_texts.append((prompt_part, generated_part))
-    
-    print(f"Generated response: {generated_part}...")
+    print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
 
-# Display results with proper formatting
-print("\n" + "="*50)
-print("FINAL GENERATED RESULTS")
-print("="*50)
 
-for idx, (original_prompt, generated_response) in enumerate(generated_texts):
-    print(f"\nSample {idx+1}:")
-    print(f"Prompt:{original_prompt}")
-    print(f"Response: {generated_response}")
+
+
+
+# # Process ALL original samples from data - REAL WORLD USAGE
+# generated_texts = []
+# for i, original_text in enumerate(data[:5]):  # Process first 5 samples
+#     print(f"\nProcessing sample {i+1}...")
+    
+#     # Extract prompt part (everything up to and including </prompt>)
+#     if '</prompt>' in original_text:
+#         prompt_part = original_text.split('</prompt>')[0] + '</prompt>'
+#     else:
+#         prompt_part = original_text
+    
+#     # Tokenize the prompt part
+#     tokenized = tokenizer(
+#         prompt_part,
+#         add_special_tokens=False,  # We handle special tokens manually
+#         return_tensors=None  # Return lists, not tensors
+#     )
+#     prompt_tokens = tokenized['input_ids']
+    
+#     print(f"Original prompt: {prompt_part[:100]}...")
+#     print(f"Tokenized prompt length: {len(prompt_tokens)} tokens")
+    
+#     # Generate tokens using the wrapper class - REAL WORLD USAGE
+#     generated_tokens = generator.generate(
+#         token_ids=prompt_tokens,
+#         do_sample=False,
+#         max_new_tokens=100
+#     )
+    
+#     # Decode the full generated text
+#     full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)
+    
+#     # Extract just the newly generated part (after the prompt)
+#     generated_part = full_generated_text[len(prompt_part):]
+    
+#     generated_texts.append((prompt_part, generated_part))
+    
+#     print(f"Generated response: {generated_part}...")
+
+# # Display results with proper formatting
+# print("\n" + "="*50)
+# print("FINAL GENERATED RESULTS")
+# print("="*50)
+
+# for idx, (original_prompt, generated_response) in enumerate(generated_texts):
+#     print(f"\nSample {idx+1}:")
+#     print(f"Prompt:{original_prompt}")
+#     print(f"Response: {generated_response}")
 
 # Save the model
 model_save_path = f"{TIME}_cerebros-autoregressive-text-generator.keras"
@@ -909,53 +935,68 @@ print("Reconstituting model...")
 reconstituted_generator = tf.keras.models.load_model(model_save_path)
 print("Model reconstituted successfully!")
 
-# Test with all original data samples - REAL WORLD DEMO (reconstituted)
-print("\n" + "="*50)
-print("GENERATED TEXT SAMPLES FROM ALL DATA - REAL WORLD USAGE (reconstituted)")
-print("="*50)
+##### here <--------<<<<<<
 
-generated_texts_all = []
-for i, text in enumerate(data):
-    # Extract prompt part (everything up to and including </prompt>)
-    if '</prompt>' in text:
-        prompt_text = text.split('</prompt>')[0] + '</prompt>'
-    else:
-        prompt_text = text
-    
-    # Tokenize the prompt part for model input
-    tokenized = tokenizer(
-        prompt_text,
-        max_length=MAX_SEQ_LENGTH,
-        padding='max_length',
-        truncation=True,
-        add_special_tokens=False
-    )
-    token_ids = tokenized['input_ids']
-    
-    # Generate using the reconstituted model
-    generated_token_ids = reconstituted_generator.generate(
-        token_ids=token_ids,
+counter = 0
+for sample in non_instruct_samples:
+    half_sample_len = int(np.ceil(len(sample)))
+    half_sample = sample[:half_sample]
+    half_sample_tokenized = tokenizer(half_sample)
+    generated_tokens = reconstituted_generator.generate(
+        token_ids=half_sample_tokenized,
         do_sample=False,
-        max_new_tokens=100
+        max_new_tokens=40
     )
+    full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)
+    print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
+
+# # Test with all original data samples - REAL WORLD DEMO (reconstituted)
+# print("\n" + "="*50)
+# print("GENERATED TEXT SAMPLES FROM ALL DATA - REAL WORLD USAGE (reconstituted)")
+# print("="*50)
+
+# generated_texts_all = []
+# for i, text in enumerate(data):
+#     # Extract prompt part (everything up to and including </prompt>)
+#     if '</prompt>' in text:
+#         prompt_text = text.split('</prompt>')[0] + '</prompt>'
+#     else:
+#         prompt_text = text
     
-    # Decode generated text
-    generated_text = tokenizer.decode(generated_token_ids, skip_special_tokens=False)
-    generated_texts_all.append(generated_text)
+#     # Tokenize the prompt part for model input
+#     tokenized = tokenizer(
+#         prompt_text,
+#         max_length=MAX_SEQ_LENGTH,
+#         padding='max_length',
+#         truncation=True,
+#         add_special_tokens=False
+#     )
+#     token_ids = tokenized['input_ids']
+    
+#     # Generate using the reconstituted model
+#     generated_token_ids = reconstituted_generator.generate(
+#         token_ids=token_ids,
+#         do_sample=False,
+#         max_new_tokens=100
+#     )
+    
+#     # Decode generated text
+#     generated_text = tokenizer.decode(generated_token_ids, skip_special_tokens=False)
+#     generated_texts_all.append(generated_text)
     
         
-    print(f"\nSample {i+1}:")
-    print(f"Prompt: {prompt_text}")
-    print(f"Generated: {generated_text}")
-    # [len(prompt_text):][:200]}...")
+#     print(f"\nSample {i+1}:")
+#     print(f"Prompt: {prompt_text}")
+#     print(f"Generated: {generated_text}")
+#     # [len(prompt_text):][:200]}...")
 
 print("\nAll samples processed with reconstituted model!")
 
 
-# Test with all original data samples
-print("\n" + "="*50)
-print("GENERATED TEXT SAMPLES FROM ALL DATA")
-print("="*50)
+# # Test with all original data samples
+# print("\n" + "="*50)
+# print("GENERATED TEXT SAMPLES FROM ALL DATA")
+# print("="*50)
 
 # generated_texts_all = []
 # for i, text in enumerate(data[:3]):  # Process first 3 for demo
