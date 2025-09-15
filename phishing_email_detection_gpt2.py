@@ -21,7 +21,7 @@ from ast import literal_eval
 import time
 from gc import collect
 from os.path import getsize
-
+import re
 
 # Text encoding / embedding related constants
 
@@ -64,7 +64,7 @@ p_lateral_connection = 30
 num_lateral_connection_tries_per_unit = 25
 learning_rate = 3 * 10 ** -4 # 3 * 10 ** -3
 epochs = 15  #
-batch_size = 7 # 17
+batch_size = 5 # 17
 gradient_accumulation_steps = 1
 minimum_levels = 2
 maximum_levels = 2 # [3,7]
@@ -164,7 +164,7 @@ def prepare_data(data, max_seq_length: int = MAX_SEQ_LENGTH):
 
 ## Only add re, tokenizer already in script
 
-import re
+
 
 from transformers import AutoTokenizer
 
@@ -231,7 +231,7 @@ def package_non_instruct_text(text: str, desired_samples: int, max_length_tokens
     return samples
 
 # Separate into samples
-non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=50, max_length_tokens=1200)
+non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=30, max_length_tokens=1200)
 
 del(bible)
 collect()
