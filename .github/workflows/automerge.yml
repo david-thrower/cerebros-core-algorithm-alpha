@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "224-fp-continue-optimizations-on-smaller-seq-len-model-0004" ]
+    branches: [ "main", "226-fp-optimizations-generartive-rapid-test-from-224" ]
 
 permissions:
   contents: read
