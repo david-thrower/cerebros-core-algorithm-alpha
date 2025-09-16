@@ -807,7 +807,7 @@ def complete_text(text):
             tokenizer.decode(generated_tokens).replace(text, "")
     return generated_text
 
-test_text = "I saw the sun and it was"
+test_text = "I saw the sun and it was as"
 response = complete_text(test_text)
 
 print(f"I ask the generator: {test_text}... It responds:")
@@ -822,8 +822,8 @@ for sample in non_instruct_samples:
         sample,
         add_special_tokens=False
     )['input_ids']
-    half_index = int(np.ceil(len(sample_tokenized) * 0.5))
-    half_sample_tokenized = sample_tokenized[:half_index]
+    start_generate_index = int(np.ceil(len(sample_tokenized) * 0.5))
+    half_sample_tokenized = sample_tokenized[:start_generate_index]
     
     # Convert to Python list of integers
     if hasattr(half_sample_tokenized, 'numpy'):
@@ -868,14 +868,14 @@ print("Model reconstituted successfully!")
 
 counter = 0
 for sample in non_instruct_samples:
-    half_sample_len = int(np.ceil(len(sample) / 2))
-    half_sample = sample[:half_sample_len]
-    
+
     # Tokenize the text without padding first to get actual tokens
-    half_sample_tokenized = tokenizer(
-        half_sample,
+    sample_tokenized = tokenizer(
+        sample,
         add_special_tokens=False
     )['input_ids']
+    start_generate_index = int(np.ceil(len(sample_tokenized) * 0.5))
+    half_sample_tokenized = sample_tokenized[:start_generate_index]
     
     # Convert to Python list of integers
     if hasattr(half_sample_tokenized, 'numpy'):
@@ -894,7 +894,10 @@ for sample in non_instruct_samples:
     )
     
     # Decode the result
-    full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)
+    half_sample = tokenizer.decode(half_sample_tokenized)
+    full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)\
+            .replace(half_sample, "")
+    
     print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
     counter += 1
 
