@@ -867,7 +867,7 @@ def complete_text(text):
     )
     generated_text =\
             tokenizer.decode(generated_tokens).replace(text, "")
-    rerurn generated_text
+    return generated_text
 
 test_text = "I saw the sun and it was"
 response = complete_text(test_text)
