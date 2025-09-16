@@ -47,7 +47,7 @@ jobs:
     # 
     - name: Generative Proof Of Concept
       timeout-minutes: 180
-      run: generative-proof-of-concept-CPU-preprocessing-in-memory.py
+      run: python3 generative-proof-of-concept-CPU-preprocessing-in-memory.py
     - name: Phishing email detection with GPT2 embedding
       timeout-minutes: 420
       run: python3 phishing_email_detection_gpt2.py
