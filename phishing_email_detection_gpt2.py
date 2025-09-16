@@ -905,8 +905,10 @@ for sample in non_instruct_samples:
     
     # Decode the result
     half_sample = tokenizer.decode(half_sample_tokenized)
-    full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)
-    print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text.replace(half_sample, "")}")
+    full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)\
+            .replace(half_sample, "")
+    
+    print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
     counter += 1
 
 
