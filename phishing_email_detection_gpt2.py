@@ -694,7 +694,7 @@ class CerebrosNotGPT(tf.keras.Model):
     
     @classmethod
     def from_config(cls, config):
-        config_obj = CerebrosAutoregressiveTextGeneratorConfig.from_config(config['config'])
+        config_obj = CerebrosNotGPTConfig.from_config(config['config'])
         return cls(config=config_obj)
     
     def generate(self, token_ids, do_sample=False, max_new_tokens=None):
