@@ -859,32 +859,24 @@ for sample in non_instruct_samples:
     half_sample_len = int(np.ceil(len(sample) / 2))
     half_sample = sample[:half_sample_len]
     
-    # Tokenize the text
+    # Tokenize the text without padding first to get actual tokens
     half_sample_tokenized = tokenizer(
         half_sample,
-        max_length=MAX_SEQ_LENGTH,
-        padding='max_length',
-        truncation=True,
         add_special_tokens=False
     )['input_ids']
     
-    # # Extract token IDs as a list of integers (not tensors)
-    # if isinstance(half_sample_tokenized, dict):
-    #     # If tokenizer returns a dict, extract the token IDs
-    #     token_ids = half_sample_tokenized['input_ids']  # or 'token_ids' depending on your tokenizer
-    # else:
-    #     # If tokenizer returns a list directly
-    #     token_ids = half_sample_tokenized
+    # Convert to Python list of integers
+    if hasattr(half_sample_tokenized, 'numpy'):
+        token_ids = half_sample_tokenized.numpy().tolist()
+    else:
+        token_ids = [int(token_id) for token_id in half_sample_tokenized]
     
-    # # Convert to Python list of integers if it's a tensor
-    # if hasattr(token_ids, 'numpy'):
-    #     token_ids = token_ids.numpy().tolist()
-    # if not isinstance(token_ids, list):
-    #     token_ids = list(token_ids)
+    print(f"Actual token count: {len(token_ids)}")
+    print(f"First 10 tokens: {token_ids[:10]}")
     
     # Now pass the list of integers to your generate method
     generated_tokens = generator.generate(
-        token_ids=half_sample_tokenized,  # This should now be a list of integers
+        token_ids=token_ids,  # Just the actual tokens, no padding
         do_sample=False,
         max_new_tokens=40
     )
@@ -962,39 +954,30 @@ print("Reconstituting model...")
 reconstituted_generator = tf.keras.models.load_model(model_save_path)
 print("Model reconstituted successfully!")
 
-##### here <--------<<<<<<
 
 counter = 0
 for sample in non_instruct_samples:
     half_sample_len = int(np.ceil(len(sample) / 2))
     half_sample = sample[:half_sample_len]
     
-    # Tokenize the text
+    # Tokenize the text without padding first to get actual tokens
     half_sample_tokenized = tokenizer(
         half_sample,
-        max_length=MAX_SEQ_LENGTH,
-        padding='max_length',
-        truncation=True,
         add_special_tokens=False
     )['input_ids']
     
-    # # Extract token IDs as a list of integers (not tensors)
-    # if isinstance(half_sample_tokenized, dict):
-    #     # If tokenizer returns a dict, extract the token IDs
-    #     token_ids = half_sample_tokenized['input_ids']  # or 'token_ids' depending on your tokenizer
-    # else:
-    #     # If tokenizer returns a list directly
-    #     token_ids = half_sample_tokenized
+    # Convert to Python list of integers
+    if hasattr(half_sample_tokenized, 'numpy'):
+        token_ids = half_sample_tokenized.numpy().tolist()
+    else:
+        token_ids = [int(token_id) for token_id in half_sample_tokenized]
     
-    # # Convert to Python list of integers if it's a tensor
-    # if hasattr(token_ids, 'numpy'):
-    #     token_ids = token_ids.numpy().tolist()
-    # if not isinstance(token_ids, list):
-    #     token_ids = list(token_ids)
+    print(f"Actual token count: {len(token_ids)}")
+    print(f"First 10 tokens: {token_ids[:10]}")
     
     # Now pass the list of integers to your generate method
-    generated_tokens =  reconstituted_generator.generate(
-        token_ids=half_sample_tokenized,  # This should now be a list of integers
+    generated_tokens = reconstituted_generator.generate(
+        token_ids=token_ids,  # Just the actual tokens, no padding
         do_sample=False,
         max_new_tokens=40
     )
@@ -1003,6 +986,7 @@ for sample in non_instruct_samples:
     full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)
     print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
     counter += 1
+
 
 # # Test with all original data samples - REAL WORLD DEMO (reconstituted)
 # print("\n" + "="*50)
