@@ -23,6 +23,11 @@ from gc import collect
 from os.path import getsize
 import re
 
+
+# Number of text samples to create:
+
+SAMPLES_TO_CREATE = 10 # Number of text samples (of approximately max_seq_len) to create 
+
 # Text encoding / embedding related constants
 
 
@@ -231,7 +236,7 @@ def package_non_instruct_text(text: str, desired_samples: int, max_length_tokens
     return samples
 
 # Separate into samples
-non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=10, max_length_tokens=int(np.ceil(MAX_SEQ_LENGTH * .8))) ##
+non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=SAMPLES_TO_CREATE, max_length_tokens=int(np.ceil(MAX_SEQ_LENGTH * .8))) ##
 
 del(bible)
 collect()
