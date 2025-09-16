@@ -859,7 +859,7 @@ def complete_text(text):
         half_sample,
         add_special_tokens=False
     )['input_ids']
-    
+
     generated_tokens = generator.generate(
         token_ids=token_ids,  # Just the actual tokens, no padding
         do_sample=False,
@@ -904,8 +904,9 @@ for sample in non_instruct_samples:
     )
     
     # Decode the result
+    half_sample = tokenizer.decode(half_sample_tokenized)
     full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)
-    print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text.replace()}")
+    print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text.replace(half_sample, "")}")
     counter += 1
 
 
