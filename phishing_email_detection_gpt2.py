@@ -861,7 +861,7 @@ def complete_text(text):
     )['input_ids']
 
     generated_tokens = generator.generate(
-        token_ids=token_ids,  # Just the actual tokens, no padding
+        token_ids=input_ids,  # Just the actual tokens, no padding
         do_sample=False,
         max_new_tokens=40
     )
