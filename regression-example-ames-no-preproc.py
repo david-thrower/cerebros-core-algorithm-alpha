@@ -114,7 +114,8 @@ cerebros =\
         # use_multiprocessing_for_multiple_neural_networks=False,  # pull this param
         model_graphs='model_graphs',
         batch_size=batch_size,
-        meta_trial_number=meta_trial_number)
+        meta_trial_number=meta_trial_number,
+        cast_data_to_dataset=True)
 result = cerebros.run_random_search()
 
 print("Best model: (May need to re-initialize weights, and retrain with early stopping callback)")
