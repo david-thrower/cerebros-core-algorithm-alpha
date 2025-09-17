@@ -40,6 +40,8 @@ def objective(trial: optuna.Trial) -> float:
     from gc import collect
     from os.path import getsize
     import re
+
+    PROMPT_LENGTH = 1
     
     # Sample hyperparameters directly
     # Begin MLflow trial run (nested inside parent run if any)
@@ -187,7 +189,7 @@ def objective(trial: optuna.Trial) -> float:
                 end_prompt_index = sample_tokens.index(end_prompt_token_id)
             except ValueError:
                 # If </prompt> not found, treat sample as a non-instruct sample
-                end_prompt_index = int(np.ceil(len(sample_tokens) * (1/3)))  # 0 ## 1. Give it a fair starting place to predict the next word 2. reduce the number of expanded samples 
+                end_prompt_index = PROMPT_LENGTH # int(np.ceil(len(sample_tokens) * (1/3)))  # 0 ## 1. Give it a fair starting place to predict the next word 2. reduce the number of expanded samples 
                 
             # Find first pad token after </prompt>
             first_pad_index = None
