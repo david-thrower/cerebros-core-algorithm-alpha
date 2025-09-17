@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "227-clean-branch-to-merge-in-generative-in-memory-script-without-merge-conflict" ]
+    branches: [ "main", "228-prepare-generative-poc-227-for-serial-in-memory-hpo-study" ]
 
 permissions:
   contents: read
