@@ -3,6 +3,11 @@ import os
 import mlflow
 from datetime import datetime
 
+# Non-tunable generation control: how many initial tokens ("words")
+# to feed into the generator before attempting completion for non-instruct samples.
+# Interpreted as token count (since we operate at tokenizer level). Override via ENV.
+PROMPT_LEN = int(os.getenv("PROMPT_LEN", "40"))  # default 40 tokens
+
 
 
 def objective(trial: optuna.Trial) -> float:
@@ -897,8 +902,14 @@ def objective(trial: optuna.Trial) -> float:
             sample,
             add_special_tokens=False
         )['input_ids']
-        start_generate_index = int(np.ceil(len(sample_tokenized) * 0.5))
-        half_sample_tokenized = sample_tokenized[:start_generate_index]
+        # Determine prompt length based on fixed PROMPT_LEN (non-tunable) rather than % of sample
+        # Ensure at least 1 token and not exceeding available tokens - 1 (leave at least one for prediction if possible)
+        available_tokens = len(sample_tokenized)
+        if available_tokens <= 1:
+            prompt_length = available_tokens
+        else:
+            prompt_length = min(PROMPT_LEN, available_tokens - 1)
+        half_sample_tokenized = sample_tokenized[:prompt_length]
         
         # Convert to Python list of integers
         if hasattr(half_sample_tokenized, 'numpy'):
@@ -918,11 +929,10 @@ def objective(trial: optuna.Trial) -> float:
         
         # Decode the result
         half_sample = tokenizer.decode(half_sample_tokenized)
-        full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)\
-                .replace(half_sample, "")
-        
-        print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
-        counter += 1
+    full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)\
+        .replace(half_sample, "")
+    print(f"PROMPT number {counter} (len={prompt_length} tokens): {half_sample}; RESPONSE: {full_generated_text}")
+    counter += 1
     
     
     # # Save the model
@@ -1010,6 +1020,8 @@ def main():
     study = optuna.create_study(direction='minimize')
     study.optimize(objective, n_trials=n_trials)
     mlflow.log_param("n_trials", n_trials)
+    # Log fixed (non-tunable) generation control param once at parent level
+    mlflow.log_param("PROMPT_LEN", PROMPT_LEN)
     mlflow.log_metric("best_value", study.best_trial.value)
     # Log best params as params (flat)
     for k, v in study.best_trial.params.items():

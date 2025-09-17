@@ -15,12 +15,13 @@ We wrapped Optuna trials with MLflow runs:
   - Best trial params (prefixed with `best_` in parent run)
   - n_trials executed
 
-Environment toggles:
+Environment toggles / fixed params:
 - `CEREBROS_FAST=1` reduces `n_trials` default to 3 (vs 20)
 - `CEREBROS_N_TRIALS` overrides trial count
 - `MLFLOW_EXPERIMENT_NAME` sets experiment (default `cerebros_poc`)
 - `MLFLOW_PARENT_RUN_NAME` sets the parent run name
 - `MLFLOW_TRACKING_URI` sets tracking backend (default local ./mlruns if unset)
+- `PROMPT_LEN` (non-tunable) controls how many initial tokens from each non-instruct sample are used as the prompt before generation (default 40). Logged once at parent run level.
 
 ## Prerequisites
 Python 3.10+ suggested.
