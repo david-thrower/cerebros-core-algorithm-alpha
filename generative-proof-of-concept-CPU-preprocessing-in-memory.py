@@ -1,4 +1,7 @@
 import optuna 
+import os
+import mlflow
+from datetime import datetime
 
 
 
@@ -34,6 +37,12 @@ def objective(trial: optuna.Trial) -> float:
     import re
     
     # Sample hyperparameters directly
+    # Begin MLflow trial run (nested inside parent run if any)
+    mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "cerebros_poc"))
+    run_name = f"trial_{trial.number}"
+    tags = {"phase": "poc", "script": os.path.basename(__file__), "trial_number": str(trial.number)}
+    mlflow.start_run(run_name=run_name, nested=True, tags=tags)
+    trial_start_time = datetime.utcnow()
     POSITIONAL_EMBEDDING_DROPOUT = trial.suggest_float('POSITIONAL_EMBEDDING_DROPOUT', 0.1, 0.96)
     
     activation = trial.suggest_categorical('activation', ['relu', 'gelu', 'swish', 'softsign', 'softplus'])
@@ -55,6 +64,21 @@ def objective(trial: optuna.Trial) -> float:
     batch_size = trial.suggest_int('batch_size', 5, 15)
     
     gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 4)
+
+    # Log sampled hyperparameters to MLflow
+    mlflow.log_params({
+        "POSITIONAL_EMBEDDING_DROPOUT": POSITIONAL_EMBEDDING_DROPOUT,
+        "activation_sampled": activation,
+        "predecessor_level_connection_affinity_factor_first_sampled": predecessor_level_connection_affinity_factor_first,
+        "predecessor_level_connection_affinity_factor_main_sampled": predecessor_level_connection_affinity_factor_main,
+        "max_consecutive_lateral_connections_sampled": max_consecutive_lateral_connections,
+        "p_lateral_connection_sampled": p_lateral_connection,
+        "num_lateral_connection_tries_per_unit_sampled": num_lateral_connection_tries_per_unit,
+        "learning_rate_sampled": learning_rate,
+        "epochs_sampled": epochs,
+        "batch_size_sampled": batch_size,
+        "gradient_accumulation_steps_sampled": gradient_accumulation_steps,
+    })
     
     # Level constraints - ensure max >= min by setting min of max to value of min
     minimum_levels = trial.suggest_int('minimum_levels', 1, 5)
@@ -968,11 +992,29 @@ def objective(trial: optuna.Trial) -> float:
     # results = reconstituted_model.evaluate(x_test_packaged, y_test_packaged)
     # print("Test loss:", results[0])
     # print("Test accuracy:", results[-1])
+    # Log result metric & duration
+    try:
+        mlflow.log_metric("objective", float(result))
+    except Exception as e:
+        print(f"MLflow metric logging failed: {e}")
+    duration = (datetime.utcnow() - trial_start_time).total_seconds()
+    mlflow.log_metric("trial_duration_seconds", duration)
+    mlflow.end_run(status="FINISHED")
     return result
 
 def main():
+    # Optional fast path for CI / smoke tests
+    fast = os.getenv("CEREBROS_FAST", "0") == "1"
+    n_trials = int(os.getenv("CEREBROS_N_TRIALS", "3" if fast else "20"))
+    mlflow_parent = mlflow.start_run(run_name=os.getenv("MLFLOW_PARENT_RUN_NAME", "cerebros_poc_parent"), tags={"phase": "poc", "mode": "fast" if fast else "full"})
     study = optuna.create_study(direction='minimize')
-    study.optimize(objective, n_trials=20)
+    study.optimize(objective, n_trials=n_trials)
+    mlflow.log_param("n_trials", n_trials)
+    mlflow.log_metric("best_value", study.best_trial.value)
+    # Log best params as params (flat)
+    for k, v in study.best_trial.params.items():
+        mlflow.log_param(f"best_{k}", v)
+    mlflow.end_run()
     print('Best trial:')
     best_trial = study.best_trial
     print('  Value: ', best_trial.value)
