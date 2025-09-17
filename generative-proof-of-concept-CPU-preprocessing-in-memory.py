@@ -688,18 +688,18 @@ def objective(trial: optuna.Trial) -> float:
     
     """### Testing the best model found"""
     
-    MODEL_FILE_NAME = "cerebros-foundation-model.keras"
+    # MODEL_FILE_NAME = "cerebros-foundation-model.keras"
     
-    best_model_found = cerebros_automl.get_best_model()
-    best_model_found.save(MODEL_FILE_NAME)
+    # best_model_found = cerebros_automl.get_best_model()
+    # best_model_found.save(MODEL_FILE_NAME)
     # del(best_model_found)
     # del(cerebros_automl)
     # collect()
     
-    file_size_bytes = getsize(MODEL_FILE_NAME)
-    print(f"Model size on disk: {file_size_bytes / (1024*1024):.2f} MB")
+    # file_size_bytes = getsize(MODEL_FILE_NAME)
+    # print(f"Model size on disk: {file_size_bytes / (1024*1024):.2f} MB")
     
-    reconstituted_model = tf.keras.models.load_model(MODEL_FILE_NAME)
+    # reconstituted_model = tf.keras.models.load_model(MODEL_FILE_NAME)
     
     # Generate text from test samples
     print("\n" + "="*50)
@@ -901,73 +901,73 @@ def objective(trial: optuna.Trial) -> float:
         counter += 1
     
     
-    # Save the model
-    model_save_path = f"{TIME}_cerebros-autoregressive-text-generator.keras"
-    generator.save(model_save_path)
-    print(f"\nModel saved as '{model_save_path}'")
+    # # Save the model
+    # model_save_path = f"{TIME}_cerebros-autoregressive-text-generator.keras"
+    # generator.save(model_save_path)
+    # print(f"\nModel saved as '{model_save_path}'")
     
     # Garbage collect
     del generator
     collect()
     print("Garbage collection completed.")
     
-    # Reconstitute the model
-    print("Reconstituting model...")
-    reconstituted_generator = tf.keras.models.load_model(model_save_path)
-    print("Model reconstituted successfully!")
+    # # Reconstitute the model
+    # print("Reconstituting model...")
+    # reconstituted_generator = tf.keras.models.load_model(model_save_path)
+    # print("Model reconstituted successfully!")
     
     
-    counter = 0
-    for sample in non_instruct_samples:
+    # counter = 0
+    # for sample in non_instruct_samples:
     
-        # Tokenize the text without padding first to get actual tokens
-        sample_tokenized = tokenizer(
-            sample,
-            add_special_tokens=False
-        )['input_ids']
-        start_generate_index = int(np.ceil(len(sample_tokenized) * 0.5))
-        half_sample_tokenized = sample_tokenized[:start_generate_index]
+    #     # Tokenize the text without padding first to get actual tokens
+    #     sample_tokenized = tokenizer(
+    #         sample,
+    #         add_special_tokens=False
+    #     )['input_ids']
+    #     start_generate_index = int(np.ceil(len(sample_tokenized) * 0.5))
+    #     half_sample_tokenized = sample_tokenized[:start_generate_index]
         
-        # Convert to Python list of integers
-        if hasattr(half_sample_tokenized, 'numpy'):
-            token_ids = half_sample_tokenized.numpy().tolist()
-        else:
-            token_ids = [int(token_id) for token_id in half_sample_tokenized]
+    #     # Convert to Python list of integers
+    #     if hasattr(half_sample_tokenized, 'numpy'):
+    #         token_ids = half_sample_tokenized.numpy().tolist()
+    #     else:
+    #         token_ids = [int(token_id) for token_id in half_sample_tokenized]
         
-        print(f"Actual token count: {len(token_ids)}")
-        print(f"First 10 tokens: {token_ids[:10]}")
+    #     print(f"Actual token count: {len(token_ids)}")
+    #     print(f"First 10 tokens: {token_ids[:10]}")
         
-        # Now pass the list of integers to your generate method
-        generated_tokens = reconstituted_generator.generate(
-            token_ids=token_ids,  # Just the actual tokens, no padding
-            do_sample=False,
-            max_new_tokens=40
-        )
+    #     # Now pass the list of integers to your generate method
+    #     generated_tokens = reconstituted_generator.generate(
+    #         token_ids=token_ids,  # Just the actual tokens, no padding
+    #         do_sample=False,
+    #         max_new_tokens=40
+    #     )
         
-        # Decode the result
-        half_sample = tokenizer.decode(half_sample_tokenized)
-        full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)\
-                .replace(half_sample, "")
+    #     # Decode the result
+    #     half_sample = tokenizer.decode(half_sample_tokenized)
+    #     full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)\
+    #             .replace(half_sample, "")
         
-        print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
-        counter += 1
+    #     print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
+    #     counter += 1
     
     
-    print("\nAll samples processed with reconstituted model!")
+    # print("\nAll samples processed with reconstituted model!")
     
     
     
-    ## Model validation
-    print("Validation")
-    reconstituted_model.compile(
-        loss='categorical_crossentropy',
-        metrics=['accuracy']
-    )
+    # ## Model validation
+    # print("Validation")
+    # reconstituted_model.compile(
+    #     loss='categorical_crossentropy',
+    #     metrics=['accuracy']
+    # )
     
     
-    results = reconstituted_model.evaluate(x_test_packaged, y_test_packaged)
-    print("Test loss:", results[0])
-    print("Test accuracy:", results[-1])
+    # results = reconstituted_model.evaluate(x_test_packaged, y_test_packaged)
+    # print("Test loss:", results[0])
+    # print("Test accuracy:", results[-1])
     return result
 
 def main():
