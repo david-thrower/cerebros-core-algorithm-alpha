@@ -24,6 +24,87 @@ from os.path import getsize
 import re
 
 
+
+def objective(trial: optuna.Trial) -> float:
+    """
+    Objective function for Optuna optimization
+    Returns the validation loss or metric to minimize
+    """
+    
+    # Define search space for hyperparameters
+    
+    # Categorical parameters
+    activation = trial.suggest_categorical('activation', ['relu', 'gelu', 'swish', 'softsign', 'softplus'])
+    
+    # Integer parameters with min <= max constraints
+    predecessor_level_connection_affinity_factor_first_min = trial.suggest_float(
+        'predecessor_level_connection_affinity_factor_first_min', 0.01, 35.0
+    )
+    predecessor_level_connection_affinity_factor_first_max = trial.suggest_float(
+        'predecessor_level_connection_affinity_factor_first_max', 
+        predecessor_level_connection_affinity_factor_first_min, 35.0
+    )
+    
+    predecessor_level_connection_affinity_factor_main_min = trial.suggest_float(
+        'predecessor_level_connection_affinity_factor_main_min', 0.1, 40.0
+    )
+    predecessor_level_connection_affinity_factor_main_max = trial.suggest_float(
+        'predecessor_level_connection_affinity_factor_main_max',
+        predecessor_level_connection_affinity_factor_main_min, 40.0
+    )
+    
+    max_consecutive_lateral_connections_min = trial.suggest_int(
+        'max_consecutive_lateral_connections_min', 2, 10
+    )
+    max_consecutive_lateral_connections_max = trial.suggest_int(
+        'max_consecutive_lateral_connections_max',
+        max_consecutive_lateral_connections_min, 10
+    )
+    
+    minimum_levels_min = trial.suggest_int('minimum_levels_min', 1, 5)
+    maximum_levels = trial.suggest_int('maximum_levels', minimum_levels_min, 5)
+    
+    minimum_units_per_level_min = trial.suggest_int('minimum_units_per_level_min', 1, 9)
+    maximum_units_per_level_max = trial.suggest_int('maximum_units_per_level_max', 
+                                                   minimum_units_per_level_min, 10)
+    
+    minimum_neurons_per_unit_min = trial.suggest_float('minimum_neurons_per_unit_min', 1.0, 1.7)
+    maximum_neurons_per_unit_max = trial.suggest_int('maximum_neurons_per_unit_max', 
+                                                    max(1, int(minimum_neurons_per_unit_min)), 8)
+    
+    # Float parameters
+    p_lateral_connection_min = trial.suggest_float('p_lateral_connection_min', 0.01, 1.0)
+    p_lateral_connection_max = trial.suggest_float('p_lateral_connection_max', 
+                                                  p_lateral_connection_min, 1.0)
+    
+    num_lateral_connection_tries_per_unit_min = trial.suggest_int(
+        'num_lateral_connection_tries_per_unit_min', 1, 40
+    )
+    num_lateral_connection_tries_per_unit_max = trial.suggest_int(
+        'num_lateral_connection_tries_per_unit_max',
+        num_lateral_connection_tries_per_unit_min, 40
+    )
+
+
+    
+    # Log-scaled parameters
+    learning_rate = trial.suggest_float('learning_rate', 1e-6, 1e-2, log=True)
+    
+    # Other parameters
+    POSITIONAL_EMBEDDING_DROPOUT = trial.suggest_float('POSITIONAL_EMBEDDING_DROPOUT', 0.0, 0.9)
+    epochs = trial.suggest_int('epochs', 10, 50)
+    batch_size = trial.suggest_int('batch_size', 1, 32)  # Adjusted range
+    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 4)
+    moities_to_try = trial.suggest_int('moities_to_try', 1, 10)
+    tries_per_moity = trial.suggest_int('tries_per_moity', 1, 5)
+    
+    # Fixed parameters (if needed)
+    # These can be moved to trial parameters if you want to optimize them
+    minimum_units_per_level = 4
+    maximum_units_per_level = 7
+    minimum_neurons_per_unit = 1.7
+
+
 # Number of text samples to create:
 
 SAMPLES_TO_CREATE = 10 # Number of text samples (of approximately max_seq_len) to create 
