@@ -730,6 +730,7 @@ def objective(trial: optuna.Trial) -> float:
         MODEL_FILE_NAME = "cerebros-foundation-model.keras"
         
         best_model_found = cerebros_automl.get_best_model()
+        mlflow.keras.log_model(best_model_found, name="baseModel")
         # best_model_found.save(MODEL_FILE_NAME)
         # del(best_model_found)
         # del(cerebros_automl)
@@ -880,6 +881,7 @@ def objective(trial: optuna.Trial) -> float:
         )
         generator = CerebrosNotGPT(config)
         
+        mlflow.keras.log_model(generator, name="NotGPT")
         print("########### BEFORE SEARIALIZING THE GENERATIVE MODEL")
         
         def complete_text(text):
