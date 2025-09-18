@@ -167,7 +167,7 @@ def objective(trial: optuna.Trial) -> float:
 
         
         # Data Preprocessing:
-        
+
         def prepare_data(data, max_seq_length: int = MAX_SEQ_LENGTH):
             all_input_ids = []
             all_labels = []
@@ -417,7 +417,7 @@ def objective(trial: optuna.Trial) -> float:
         
         
         X_train, X_test, y_train, y_test = \
-        train_test_split(x, y, test_size=0.85, shuffle=False)
+            train_test_split(x, y, test_size=0.85, shuffle=False)
         
         INPUT_SHAPES = [(MAX_SEQ_LENGTH,)]
         OUTPUT_SHAPES = [(VOCABULARY_SIZE)]
@@ -702,7 +702,7 @@ def objective(trial: optuna.Trial) -> float:
         
         cerebros_t0 = time.time()
         result = cerebros_automl.run_random_search()
-        result = float(result) # Make a deep copy so the metric survives del() and cg.collect()
+        result = float(result) # Deep copy that survives del() of parent object ...
         cerebros_t1 = time.time()
         cerebros_time_all_models_min = (cerebros_t1 - cerebros_t0) / 60
         models_tried = moities_to_try  * tries_per_moity
@@ -719,11 +719,11 @@ def objective(trial: optuna.Trial) -> float:
         """
         
         print(f'Cerebros best accuracy achieved is {result}')
-        print(f'Perplexity')
+        print(f'val set accuracy')
         
         """### Testing the best model found"""
         
-        # MODEL_FILE_NAME = "cerebros-foundation-model.keras"
+        MODEL_FILE_NAME = "cerebros-foundation-model.keras"
         
         best_model_found = cerebros_automl.get_best_model()
         # best_model_found.save(MODEL_FILE_NAME)
@@ -908,14 +908,8 @@ def objective(trial: optuna.Trial) -> float:
                 sample,
                 add_special_tokens=False
             )['input_ids']
-            # Determine prompt length based on fixed PROMPT_LEN (non-tunable) rather than % of sample
-            # Ensure at least 1 token and not exceeding available tokens - 1 (leave at least one for prediction if possible)
-            available_tokens = len(sample_tokenized)
-            if available_tokens <= 1:
-                prompt_length = available_tokens
-            else:
-                prompt_length = min(PROMPT_LEN, available_tokens - 1)
-            half_sample_tokenized = sample_tokenized[:prompt_length]
+            start_generate_index = int(np.ceil(len(sample_tokenized) * 0.5))
+            half_sample_tokenized = sample_tokenized[:start_generate_index]
             
             # Convert to Python list of integers
             if hasattr(half_sample_tokenized, 'numpy'):
@@ -935,104 +929,27 @@ def objective(trial: optuna.Trial) -> float:
             
             # Decode the result
             half_sample = tokenizer.decode(half_sample_tokenized)
-        full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)\
-            .replace(half_sample, "")
-        print(f"PROMPT number {counter} (len={prompt_length} tokens): {half_sample}; RESPONSE: {full_generated_text}")
-        counter += 1
-        
-        
-        # # Save the model
-        # model_save_path = f"{TIME}_cerebros-autoregressive-text-generator.keras"
-        # generator.save(model_save_path)
-        # print(f"\nModel saved as '{model_save_path}'")
-        
-        # Garbage collect
-        del generator
-        collect()
-        print("Garbage collection completed.")
-        
-        # # Reconstitute the model
-        # print("Reconstituting model...")
-        # reconstituted_generator = tf.keras.models.load_model(model_save_path)
-        # print("Model reconstituted successfully!")
-        
-        
-        # counter = 0
-        # for sample in non_instruct_samples:
-        
-        #     # Tokenize the text without padding first to get actual tokens
-        #     sample_tokenized = tokenizer(
-        #         sample,
-        #         add_special_tokens=False
-        #     )['input_ids']
-        #     start_generate_index = int(np.ceil(len(sample_tokenized) * 0.5))
-        #     half_sample_tokenized = sample_tokenized[:start_generate_index]
+            full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)\
+                    .replace(half_sample, "")
             
-        #     # Convert to Python list of integers
-        #     if hasattr(half_sample_tokenized, 'numpy'):
-        #         token_ids = half_sample_tokenized.numpy().tolist()
-        #     else:
-        #         token_ids = [int(token_id) for token_id in half_sample_tokenized]
-            
-        #     print(f"Actual token count: {len(token_ids)}")
-        #     print(f"First 10 tokens: {token_ids[:10]}")
-            
-        #     # Now pass the list of integers to your generate method
-        #     generated_tokens = reconstituted_generator.generate(
-        #         token_ids=token_ids,  # Just the actual tokens, no padding
-        #         do_sample=False,
-        #         max_new_tokens=40
-        #     )
-            
-        #     # Decode the result
-        #     half_sample = tokenizer.decode(half_sample_tokenized)
-        #     full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)\
-        #             .replace(half_sample, "")
-            
-        #     print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
-        #     counter += 1
-        
-        
-        # print("\nAll samples processed with reconstituted model!")
-        
-        
-        
-        # ## Model validation
-        # print("Validation")
-        # reconstituted_model.compile(
-        #     loss='categorical_crossentropy',
-        #     metrics=['accuracy']
-        # )
-        
-        
-        # results = reconstituted_model.evaluate(x_test_packaged, y_test_packaged)
-        # print("Test loss:", results[0])
-        # print("Test accuracy:", results[-1])
-        # Log result metric & duration
-        try:
-            mlflow.log_metric("perplexity", float(result))
-        except Exception as e:
-            print(f"MLflow metric logging failed: {e}")
-        duration = (datetime.utcnow() - trial_start_time).total_seconds()
-        mlflow.log_metric("trial_duration_seconds", duration)
-        mlflow.end_run(status="FINISHED")
-        return result
+            print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
+            counter += 1
+        mlflow.log_metric("perplexity", result, step=trial.number)
+        return result            
 
 def main():
     # Optional fast path for CI / smoke tests
-    fast = os.getenv("CEREBROS_FAST", "0") == "1"
-    n_trials = int(os.getenv("CEREBROS_N_TRIALS", "3" if fast else "20"))
-    mlflow_parent = mlflow.start_run(run_name=os.getenv("MLFLOW_PARENT_RUN_NAME", "cerebros_poc_parent"), tags={"phase": "poc", "mode": "fast" if fast else "full"})
+    # fast = os.getenv("CEREBROS_FAST", "0") == "1"
+    # n_trials = int(os.getenv("CEREBROS_N_TRIALS", "3" if fast else "20"))
+    # mlflow_parent = mlflow.start_run(run_name=os.getenv("MLFLOW_PARENT_RUN_NAME", "cerebros_poc_parent"), tags={"phase": "poc", "mode": "fast" if fast else "full"})
     study = optuna.create_study(direction='minimize')
     study.optimize(objective, n_trials=n_trials)
-    mlflow.log_param("n_trials", n_trials)
+    # mlflow.log_param("n_trials", n_trials)
     # Log fixed (non-tunable) generation control param once at parent level
-    mlflow.log_param("PROMPT_LEN", PROMPT_LEN)
-    mlflow.log_metric("best_value", study.best_trial.value)
+    # mlflow.log_param("PROMPT_LEN", PROMPT_LEN)
+    # mlflow.log_metric("best_value", study.best_trial.value)
     # Log best params as params (flat)
-    for k, v in study.best_trial.params.items():
-        mlflow.log_param(f"best_{k}", v)
-    mlflow.end_run()
+
     print('Best trial:')
     best_trial = study.best_trial
     print('  Value: ', best_trial.value)
