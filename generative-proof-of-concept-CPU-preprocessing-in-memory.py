@@ -116,8 +116,8 @@ def objective(trial: optuna.Trial) -> float:
     maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 10)
     
     # Neurons per unit - ensure max >= min by setting min of max to value of min
-    minimum_neurons_per_unit = trial.suggest_float('minimum_neurons_per_unit', 1.0, 8.0)
-    maximum_neurons_per_unit = trial.suggest_float('maximum_neurons_per_unit', minimum_neurons_per_unit, 8.0)   
+    minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 1, 8)
+    maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 8)
 
     
     tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B" # "HuggingFaceTB/SmolLM2-1.7B-Instruct" 
@@ -259,13 +259,6 @@ def objective(trial: optuna.Trial) -> float:
         
         
         ## Only add re, tokenizer already in script
-        
-        
-        
-        from transformers import AutoTokenizer
-        
-        tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B" # "HuggingFaceTB/SmolLM2-1.7B-Instruct" 
-        tokenizer = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
         
         
         with open('king-james-bible.txt', 'r') as kjv:
