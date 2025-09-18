@@ -3,9 +3,11 @@ import os
 import mlflow
 from datetime import datetime
 
+EXPERIMENT_ITERATION = 0001
+
 mlflow.set_tracking_uri(uri="http://127.0.0.1:5000")
 
-mlflow.set_experiment(f"single-worker-1st-pass-tuning-{ITERATION}-a")
+mlflow.set_experiment(f"single-worker-1st-pass-tuning-{EXPERIMENT_ITERATION}-a")
 
 
 
@@ -132,7 +134,7 @@ def objective(trial: optuna.Trial) -> float:
               "predecessor_level_connection_affinity_factor_main":predecessor_level_connection_affinity_factor_main,
               "max_consecutive_lateral_connections": max_consecutive_lateral_connections,
               "p_lateral_connection":p_lateral_connection,
-              "num_lateral_connection_tries_per_unit",num_lateral_connection_tries_per_unit,
+              "num_lateral_connection_tries_per_unit": num_lateral_connection_tries_per_unit,
               "learning_rate":learning_rate,
               "epochs":epochs,
               "batch_size":batch_size,
