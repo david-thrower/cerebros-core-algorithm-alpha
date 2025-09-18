@@ -59,7 +59,13 @@ def objective(trial: optuna.Trial) -> float:
     
     MAX_SEQ_LENGTH = 196 # 1536 (Linear and directly proportional to RAM requirement)
 
+    #
+    # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
+    #
+
     
+    moities_to_try = 3 # ++ Accuracy, linear increase in computation time (Raise this before resorting to raising the next one)
+    tries_per_moity = 1 # ++ Modest ++ Accuracy, quadratic increase in computation time 
 
     ##### HP Tuning Parameters: ######### (Parameters to be optimized by TPE or SOBOL) 
 
@@ -158,20 +164,7 @@ def objective(trial: optuna.Trial) -> float:
     with mlflow.start_run():
         # Log the hyperparameters
         mlflow.log_params(params)
-    
-        
-    
-        
-        #
-        # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
-        #
-    
-        
-        moities_to_try = 3
-        tries_per_moity = 1
-        
-        ####### DO NOT FORGET TO MERGE IN THE WORK THAT ADDED GRADIENT
-        ####### ACCUMULATION STEPS AND ADD THAT AS A TUNABLE PARAMETER
+
         
         # Data Preprocessing:
         
