@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "228-prepare-generative-poc-227-for-serial-in-memory-hpo-study" ]
+    branches: [ "main", "229-pico-scale-tests-on-hpo-setup" ]
 
 permissions:
   contents: read
