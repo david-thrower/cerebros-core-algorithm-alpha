@@ -13,10 +13,13 @@ print(answer.stdout)
 
 EXPERIMENT_ITERATION = "0001"
 
+N_TRIALS = 25
+
+
+
 mlflow.set_tracking_uri(uri="http://127.0.0.1:5000")
 
 mlflow.set_experiment(f"single-worker-1st-pass-tuning-{EXPERIMENT_ITERATION}-a")
-
 
 
 
@@ -949,6 +952,7 @@ def main():
     # Optional fast path for CI / smoke tests
     # fast = os.getenv("CEREBROS_FAST", "0") == "1"
     # n_trials = int(os.getenv("CEREBROS_N_TRIALS", "3" if fast else "20"))
+    n_trials = N_TRIALS
     # mlflow_parent = mlflow.start_run(run_name=os.getenv("MLFLOW_PARENT_RUN_NAME", "cerebros_poc_parent"), tags={"phase": "poc", "mode": "fast" if fast else "full"})
     study = optuna.create_study(direction='minimize')
     study.optimize(objective, n_trials=n_trials)
