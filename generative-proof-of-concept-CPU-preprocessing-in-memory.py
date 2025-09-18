@@ -3,6 +3,14 @@ import os
 import mlflow
 from datetime import datetime
 
+from subprocess import run
+
+answer = run("mlflow server --host 127.0.0.1 --port 5000 &",
+   shell=True,
+)
+print(answer.stdout)
+
+
 EXPERIMENT_ITERATION = "0001"
 
 mlflow.set_tracking_uri(uri="http://127.0.0.1:5000")
