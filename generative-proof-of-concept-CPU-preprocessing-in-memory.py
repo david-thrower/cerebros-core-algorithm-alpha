@@ -168,11 +168,11 @@ def objective(trial: optuna.Trial) -> float:
              }
 
     run_name = f"trial_{trial.number}"
-    tags = {"phase": "poc", "script": os.path.basename(__file__), "trial_number": str(trial.number)}
-
     trial_start_time = datetime.utcnow()
-    mlflow.start_run(run_name=run_name, tags=tags)
-    with mlflow.start_run():
+   
+    tags = {"phase": "poc", "script": os.path.basename(__file__), "trial_number": str(trial.number), "Start_time": str(trial_start_time)}
+
+    with mlflow.start_run(run_name=run_name, tags=tags):
         # Log the hyperparameters
         mlflow.log_params(params)
 
