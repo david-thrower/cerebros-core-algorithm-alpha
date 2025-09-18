@@ -2,7 +2,6 @@ import optuna
 import os
 import mlflow
 from datetime import datetime
-
 from subprocess import run
 
 answer = run("mlflow server --host 127.0.0.1 --port 5000 &",
@@ -68,7 +67,7 @@ def objective(trial: optuna.Trial) -> float:
     # Text encoding / embedding related constants
     
     
-    MAX_SEQ_LENGTH = 196 # 1536 (Linear and directly proportional to RAM requirement)
+    MAX_SEQ_LENGTH = 100 # 1536 (Linear and directly proportional to RAM requirement)
 
     #
     # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
@@ -89,21 +88,21 @@ def objective(trial: optuna.Trial) -> float:
     
     activation = trial.suggest_categorical('activation', ['relu', 'gelu', 'swish', 'softsign', 'softplus'])
     
-    predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 0.01, 35.0)
+    predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 0.01, 20.0)
     
-    predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 0.1, 40.0)
+    predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 0.1, 20.0)
     
     max_consecutive_lateral_connections = trial.suggest_int('max_consecutive_lateral_connections', 2, 10)
     
     p_lateral_connection = trial.suggest_float('p_lateral_connection', 0.01, 1.00)
     
-    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 1, 40)
+    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 1, 20)
     
     learning_rate = trial.suggest_float('learning_rate', 10 ** -6, 10 ** -1, log=True)
     
-    epochs = trial.suggest_int('epochs', 10, 50)
+    epochs = trial.suggest_int('epochs', 5, 20)
     
-    batch_size = trial.suggest_int('batch_size', 5, 15)
+    batch_size = trial.suggest_int('batch_size', 2, 7)
     
     gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 4)
     
@@ -135,7 +134,7 @@ def objective(trial: optuna.Trial) -> float:
     # embedding output dim must be an even number
     # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-    EMBEDDING_N = 12
+    EMBEDDING_N = 6
     EMBEDDING_DIM = int(EMBEDDING_N * 2)
     
     PROJECTION_N = 1 # Punatuve increase of ram, leaving this as 1 until we are running on HPC
