@@ -3,7 +3,7 @@ import os
 import mlflow
 from datetime import datetime
 
-EXPERIMENT_ITERATION = 0001
+EXPERIMENT_ITERATION = "0001"
 
 mlflow.set_tracking_uri(uri="http://127.0.0.1:5000")
 
