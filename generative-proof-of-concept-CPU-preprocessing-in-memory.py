@@ -663,7 +663,7 @@ def objective(trial: optuna.Trial) -> float:
             labels=y_train_packaged,
             validation_split=0.2,
             direction='minimize',
-            metric_to_rank_by="perplexity", # REPLACE WITH VAL PERPLEXITY ONCE THIS IS STABLE
+            metric_to_rank_by="val_perplexity",
             minimum_levels=minimum_levels,
             maximum_levels=maximum_levels,
             minimum_units_per_level=minimum_units_per_level,
@@ -705,7 +705,12 @@ def objective(trial: optuna.Trial) -> float:
         
         cerebros_t0 = time.time()
         result = cerebros_automl.run_random_search()
-        result = float(result) # Deep copy that survives del() of parent object ...
+        # Replace "inf" / "nan" with "worst result that can be bumerically registered"
+        try:
+            result = float(result) # Deep copy that survives del() of parent object ...
+        except Exception as exc:
+           print(exc)
+           result = float(999999999999.9999)
         cerebros_t1 = time.time()
         cerebros_time_all_models_min = (cerebros_t1 - cerebros_t0) / 60
         models_tried = moities_to_try  * tries_per_moity
@@ -722,7 +727,7 @@ def objective(trial: optuna.Trial) -> float:
         """
         
         print(f'Cerebros best accuracy achieved is {result}')
-        print(f'val set accuracy')
+        print(f'val set perplexity')
         
         """### Testing the best model found"""
         
@@ -939,7 +944,7 @@ def objective(trial: optuna.Trial) -> float:
             
             print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
             counter += 1
-        mlflow.log_metric("perplexity", result, step=trial.number)
+        mlflow.log_metric("val_perplexity", result, step=trial.number)
         del(best_model_found)
         del(generator)
         collect()
