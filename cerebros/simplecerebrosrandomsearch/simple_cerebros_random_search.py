@@ -590,9 +590,9 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         path_0 = f"{self.project_name}/models"
         rmtree(path_0)
 
-    def get_best_model(self, purge_model_storage_files=False):
+    def get_best_model(self, purge_model_storage_files: bool=False):
         best_model = tf.keras.models.load_model(self.best_model_path)
-        if purge_model_storage:
+        if purge_model_storage_files:
             self.purge_model_storage()        
         return best_model
 
