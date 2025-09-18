@@ -947,7 +947,8 @@ def main():
     # n_trials = int(os.getenv("CEREBROS_N_TRIALS", "3" if fast else "20"))
     n_trials = N_TRIALS
     # mlflow_parent = mlflow.start_run(run_name=os.getenv("MLFLOW_PARENT_RUN_NAME", "cerebros_poc_parent"), tags={"phase": "poc", "mode": "fast" if fast else "full"})
-    study = optuna.create_study(direction='minimize')
+    sampler = optuna.samplers.TPESampler(multivariate=True)
+    study = optuna.create_study(direction="minimize", sampler=sampler)
     study.optimize(objective, n_trials=n_trials)
     # mlflow.log_param("n_trials", n_trials)
     # Log fixed (non-tunable) generation control param once at parent level
