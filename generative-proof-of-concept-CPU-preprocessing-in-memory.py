@@ -730,7 +730,7 @@ def objective(trial: optuna.Trial) -> float:
         MODEL_FILE_NAME = "cerebros-foundation-model.keras"
         
         best_model_found = cerebros_automl.get_best_model()
-        mlflow.keras.log_model(best_model_found)
+        # mlflow.keras.log_model(best_model_found)
         # best_model_found.save(MODEL_FILE_NAME)
         # del(best_model_found)
         # del(cerebros_automl)
@@ -880,8 +880,9 @@ def objective(trial: optuna.Trial) -> float:
             padding_token=tokenizer.pad_token_id
         )
         generator = CerebrosNotGPT(config)
-        
-        mlflow.keras.log_model(generator)
+
+
+        # mlflow.keras.log_model(generator)
         print("########### BEFORE SEARIALIZING THE GENERATIVE MODEL")
         
         def complete_text(text):
@@ -941,6 +942,9 @@ def objective(trial: optuna.Trial) -> float:
             print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
             counter += 1
         mlflow.log_metric("perplexity", result, step=trial.number)
+        del(best_model_found)
+        del(generator)
+        collect()
         return result            
 
 def main():
