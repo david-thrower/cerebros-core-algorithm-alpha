@@ -940,6 +940,9 @@ def objective(trial: optuna.Trial) -> float:
             print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
             counter += 1
         mlflow.log_metric("perplexity", result, step=trial.number)
+        del(best_model_found)
+        del(generator)
+        collect()
         return result            
 
 def main():
