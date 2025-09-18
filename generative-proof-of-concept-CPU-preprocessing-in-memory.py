@@ -706,11 +706,7 @@ def objective(trial: optuna.Trial) -> float:
         cerebros_t0 = time.time()
         result = cerebros_automl.run_random_search()
         # Replace "inf" / "nan" with "worst result that can be bumerically registered"
-        try:
-            result = float(result) # Deep copy that survives del() of parent object ...
-        except Exception as exc:
-           print(exc)
-           result = float(999999999999.9999)
+        result = float(result) # Deep copy that survives del() of parent object ...
         cerebros_t1 = time.time()
         cerebros_time_all_models_min = (cerebros_t1 - cerebros_t0) / 60
         models_tried = moities_to_try  * tries_per_moity
