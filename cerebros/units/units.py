@@ -1,6 +1,7 @@
 import numpy as np
 import jax.numpy as jnp
 import tensorflow as tf
+from cerebros.layers.voxel_output import VoxelQuantizedOutput
 from cerebros.nnfuturecomponent.neural_network_future_component import \
     NeuralNetworkFutureComponent
 
@@ -592,6 +593,13 @@ class FinalDenseUnit(DenseUnit):
             p_lateral_connection=.97,
             p_lateral_connection_decay=zero_95_exp_decay,
             num_lateral_connection_tries_per_unit=1,
+            # Voxel output configuration
+            output_layer_kind: str = "dense",  # one of: "dense", "voxel"
+            voxel_n_bits: int = 4,
+            voxel_signed: bool = False,
+            voxel_train_quant: bool = True,
+            voxel_learn_scales: bool = True,
+            voxel_use_bias: bool = True,
             *args,
             **kwargs
             ):
@@ -626,6 +634,17 @@ class FinalDenseUnit(DenseUnit):
         self.predecessor_level_connection_affinity_factor_final_to_kminus1 =\
             predecessor_level_connection_affinity_factor_final_to_kminus1
 
+        # Store output head configuration
+        allowed_kinds = {"dense", "voxel"}
+        if output_layer_kind not in allowed_kinds:
+            raise ValueError(f"output_layer_kind must be one of {allowed_kinds}, got {output_layer_kind}")
+        self.output_layer_kind = output_layer_kind
+        self.voxel_n_bits = int(voxel_n_bits)
+        self.voxel_signed = bool(voxel_signed)
+        self.voxel_train_quant = bool(voxel_train_quant)
+        self.voxel_learn_scales = bool(voxel_learn_scales)
+        self.voxel_use_bias = bool(voxel_use_bias)
+
     def set_final_connectivity_future_prototype(self):
         last_level_units = self.predecessor_levels[-1].parallel_units
         print(
@@ -643,6 +662,65 @@ class FinalDenseUnit(DenseUnit):
         self.set_connectivity_future_prototype()
         self.set_lateral_connectivity_future()
         self.parse_meta_predecessor_connectivity()
+
+    def materialize(self):
+        """Materialize the final unit with either Dense or VoxelQuantizedOutput head.
+
+        We largely mirror DenseUnit.materialize but swap the final layer based on configuration.
+        """
+        if not self.materialized:
+            print(f"materialize:_{self.name} (Final) called")
+            un_materilized_predecessor_units = \
+                self.lateral_connectivity_future + self.predecessor_connectivity_future
+            materialized_predecessor_units = \
+                [unit_0.neural_network_layer for unit_0 in un_materilized_predecessor_units]
+
+            if self.merging_strategy == "concatenate":
+                rn_1 = ""
+                unprocessed_merged_nn_layer_input = tf.keras.layers.Concatenate(
+                    axis=1, name=f"{self.name}_cat_{rn_1}")(materialized_predecessor_units)
+            elif self.merging_strategy == "add":
+                rn_2 = ''
+                unprocessed_merged_nn_layer_input = tf.keras.layers.Add(
+                    name=f"{self.name}_add_{rn_2}")(materialized_predecessor_units)
+            else:
+                raise ValueError("The only supported arguments for merging_strategy are 'concatenate' and add")
+
+            if self.bnorm_or_dropout == "bnorm":
+                rn_3 = ''
+                merged_neural_network_layer_input = tf.keras.layers.BatchNormalization(
+                    name=f"{self.name}_btn_{rn_3}")(unprocessed_merged_nn_layer_input)
+            elif self.bnorm_or_dropout == 'dropout':
+                rn_4 = ''
+                merged_neural_network_layer_input = \
+                    tf.keras.layers.Dropout(
+                        dropout_rate=self.dropout_rate,
+                        name=f"{self.name}_drp_{rn_4}")(unprocessed_merged_nn_layer_input)
+            else:
+                raise ValueError("The only arguments supported by the parameter 'bnorm_or_dropout' are 'bnorm' and 'dropout'")
+
+            # Final head selection
+            if self.output_layer_kind == "voxel":
+                layer = VoxelQuantizedOutput(
+                    units=self.n_neurons,
+                    n_bits=self.voxel_n_bits,
+                    activation=self.activation,
+                    use_bias=self.voxel_use_bias,
+                    signed=self.voxel_signed,
+                    train_quant=self.voxel_train_quant,
+                    learn_scales=self.voxel_learn_scales,
+                    name=f"{self.name}_vxl",
+                )
+                self.neural_network_layer = layer(merged_neural_network_layer_input)
+            else:
+                rn_5 = ''
+                self.neural_network_layer = \
+                    tf.keras.layers.Dense(
+                        self.n_neurons,
+                        self.activation,
+                        name=f"{self.name}_dns_{rn_5}")(merged_neural_network_layer_input)
+
+            self.materialized = True
 
 ### ->
 

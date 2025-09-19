@@ -35,6 +35,13 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
              activation='elu',
              final_activation=None,
              merging_strategy="concatenate",
+             # Voxel output configuration
+             output_layer_kind: str = "dense",  # one of: "dense", "voxel"
+             voxel_n_bits: int = 4,
+             voxel_signed: bool = False,
+             voxel_train_quant: bool = True,
+             voxel_learn_scales: bool = True,
+             voxel_use_bias: bool = True,
              minimum_skip_connection_depth=1,
              maximum_skip_connection_depth=7,
              predecessor_level_connection_affinity_factor_first=5,
@@ -68,6 +75,13 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
         self.activation = activation
         self.final_activation = final_activation
         self.merging_strategy = merging_strategy
+        # Persist voxel config
+        self.output_layer_kind = output_layer_kind
+        self.voxel_n_bits = int(voxel_n_bits)
+        self.voxel_signed = bool(voxel_signed)
+        self.voxel_train_quant = bool(voxel_train_quant)
+        self.voxel_learn_scales = bool(voxel_learn_scales)
+        self.voxel_use_bias = bool(voxel_use_bias)
         self.predecessor_level_connection_affinity_factor_final_to_kminus1 =\
             predecessor_level_connection_affinity_factor_final_to_kminus1
         self.learning_rate = learning_rate
@@ -191,6 +205,12 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
                         trial_number=self.trial_number,
                         level_number=k1,
                         final_activation=self.final_activation,
+                        output_layer_kind=self.output_layer_kind,
+                        voxel_n_bits=self.voxel_n_bits,
+                        voxel_signed=self.voxel_signed,
+                        voxel_train_quant=self.voxel_train_quant,
+                        voxel_learn_scales=self.voxel_learn_scales,
+                        voxel_use_bias=self.voxel_use_bias,
                         minimum_skip_connection_depth=self.maximum_skip_connection_depth,
                         maximum_skip_connection_depth=self.maximum_skip_connection_depth,
                         predecessor_level_connection_affinity_factor_first=self.predecessor_level_connection_affinity_factor_first,

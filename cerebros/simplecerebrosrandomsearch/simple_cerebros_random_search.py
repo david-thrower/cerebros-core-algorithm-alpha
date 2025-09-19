@@ -1,4 +1,4 @@
-import jax.numpy as jnp
+import numpy as jnp  # Alias numpy as jnp to avoid optional JAX dependency here
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -10,6 +10,7 @@ from cerebros.denseautomlstructuralcomponent.\
 from cerebros.units.units import Unit, InputUnit, FinalDenseUnit
 from cerebros.neuralnetworkfuture.neural_network_future \
     import NeuralNetworkFuture, RealNeuronNeuralNetworkFuture
+from cerebros.layers.voxel_output import VoxelQuantizedOutput
 # from cmdutil.cmdutil import run_command
 from multiprocessing import Process, Lock
 import os
@@ -320,6 +321,14 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                  base_models=[''],
                  train_data_dtype=tf.float32,
                  chart_network_graph: bool=False,
+                 # Voxel output configuration
+                 output_layer_kind: str = "dense",  # one of: "dense", "voxel"
+                 output_layer_kind_choices: list | None = None,
+                 voxel_n_bits: int = 4,
+                 voxel_signed: bool = False,
+                 voxel_train_quant: bool = True,
+                 voxel_learn_scales: bool = True,
+                 voxel_use_bias: bool = True,
                  *args,
                  **kwargs):
 
@@ -381,6 +390,14 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.best_model_path = ""
         self.train_data_dtype = train_data_dtype
         self.chart_network_graph = chart_network_graph
+        # Persist voxel output configuration
+        self.output_layer_kind = output_layer_kind
+        self.output_layer_kind_choices = output_layer_kind_choices
+        self.voxel_n_bits = int(voxel_n_bits)
+        self.voxel_signed = bool(voxel_signed)
+        self.voxel_train_quant = bool(voxel_train_quant)
+        self.voxel_learn_scales = bool(voxel_learn_scales)
+        self.voxel_use_bias = bool(voxel_use_bias)
         # Can be varied throughout the serch session;
         # must be controlled internally
         DenseAutoMlStructuralComponent.__init__(
@@ -455,6 +472,12 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         model_graph_file = f"{self.project_name}/model_graphs/tr_{str(self.trial_number).zfill(16)}_subtrial_{str(subtrial_number).zfill(16)}.html"
         #with STRATEGY.scope():
         print(f"SimpleCerebrosRandomSearch.input_shapes: {self.input_shapes}")
+        # Select output layer kind for this run if choices are provided
+        local_output_layer_kind = (
+            str(np.random.choice(self.output_layer_kind_choices))
+            if self.output_layer_kind_choices not in (None, [], [None])
+            else self.output_layer_kind
+        )
         nnf = NeuralNetworkFuture(
             input_shapes=self.input_shapes,
             output_shapes=self.output_shapes,
@@ -465,6 +488,12 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
             base_models=self.base_models,
             activation=self.activation,
             final_activation=self.final_activation,
+                output_layer_kind=local_output_layer_kind,
+                voxel_n_bits=self.voxel_n_bits,
+                voxel_signed=self.voxel_signed,
+                voxel_train_quant=self.voxel_train_quant,
+                voxel_learn_scales=self.voxel_learn_scales,
+                voxel_use_bias=self.voxel_use_bias,
             minimum_skip_connection_depth=self.minimum_skip_connection_depth,
             maximum_skip_connection_depth=self.maximum_skip_connection_depth,
             predecessor_level_connection_affinity_factor_first=self.predecessor_level_connection_affinity_factor_first,
@@ -543,16 +572,28 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
             processes = []
             subtrial_number = 0
             lock = Lock()
-            for i in np.arange(
-                    self.number_of_tries_per_architecture_moity):
-                processes.append(
-                    Process(target=self.run_moity_permutations(spec=spec, subtrial_number=subtrial_number, lock=lock)))
+            # If only one try, run synchronously to avoid multiprocessing overhead
+            if int(self.number_of_tries_per_architecture_moity) == 1:
+                self.run_moity_permutations(spec=spec, subtrial_number=subtrial_number, lock=lock)
                 subtrial_number += 1
                 self.seed += 1
-            for p in processes:
-                p.start()
-            for p in processes:
-                p.join()
+            else:
+                for i in np.arange(
+                        self.number_of_tries_per_architecture_moity):
+                    # Correctly pass the callable target and kwargs
+                    processes.append(
+                        Process(target=self.run_moity_permutations,
+                                kwargs={
+                                    'spec': spec,
+                                    'subtrial_number': int(subtrial_number),
+                                    'lock': lock
+                                }))
+                    subtrial_number += 1
+                    self.seed += 1
+                for p in processes:
+                    p.start()
+                for p in processes:
+                    p.join()
             # final_oracles = pd.concat(oracles, ignore_index=False)
             # if self.direction == "maximize":
             #     return float(final_oracles[self.metric_to_rank_by].values.max())
@@ -591,7 +632,15 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         rmtree(path_0)
 
     def get_best_model(self, purge_model_storage_files: bool=False):
-        best_model = tf.keras.models.load_model(self.best_model_path)
+        # Support loading custom voxel layer when present
+        try:
+            best_model = tf.keras.models.load_model(
+                self.best_model_path,
+                custom_objects={"VoxelQuantizedOutput": VoxelQuantizedOutput},
+            )
+        except Exception:
+            # Fallback: attempt without custom_objects
+            best_model = tf.keras.models.load_model(self.best_model_path)
         if purge_model_storage_files:
             self.purge_model_storage()        
         return best_model
