@@ -3,6 +3,9 @@ import os
 import mlflow
 from datetime import datetime
 from subprocess import run
+import psutil
+import threading
+import time as time_module
 
 answer = run("mlflow server --host 127.0.0.1 --port 5000 &",
    shell=True,
@@ -19,6 +22,65 @@ N_TRIALS = 30
 mlflow.set_tracking_uri(uri="http://127.0.0.1:5000")
 
 mlflow.set_experiment(f"single-worker-1st-pass-tuning-{EXPERIMENT_ITERATION}-a")
+
+
+class MemoryMonitor:
+    """
+    Monitor memory usage during script execution and track peak memory usage.
+    """
+    def __init__(self):
+        self.max_memory_mb = 0.0
+        self.current_memory_mb = 0.0
+        self.monitoring = False
+        self.monitor_thread = None
+        self.process = psutil.Process()
+        
+    def start_monitoring(self):
+        """Start memory monitoring in a background thread."""
+        self.monitoring = True
+        self.monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
+        self.monitor_thread.start()
+        print(f"Memory monitoring started. Initial memory: {self.get_current_memory():.2f} MB")
+    
+    def stop_monitoring(self):
+        """Stop memory monitoring."""
+        self.monitoring = False
+        if self.monitor_thread:
+            self.monitor_thread.join(timeout=1.0)
+        print(f"Memory monitoring stopped. Peak memory usage: {self.max_memory_mb:.2f} MB")
+        
+    def _monitor_loop(self):
+        """Background loop to monitor memory usage."""
+        while self.monitoring:
+            try:
+                current_mem = self.get_current_memory()
+                self.current_memory_mb = current_mem
+                if current_mem > self.max_memory_mb:
+                    self.max_memory_mb = current_mem
+                time_module.sleep(0.5)  # Check every 500ms
+            except Exception as e:
+                print(f"Memory monitoring error: {e}")
+                break
+                
+    def get_current_memory(self):
+        """Get current memory usage in MB."""
+        try:
+            memory_info = self.process.memory_info()
+            return memory_info.rss / (1024 * 1024)  # Convert bytes to MB
+        except Exception as e:
+            print(f"Error getting memory info: {e}")
+            return 0.0
+            
+    def get_memory_stats(self):
+        """Get memory statistics as a dictionary."""
+        current_mem = self.get_current_memory()
+        return {
+            'current_memory_mb': current_mem,
+            'max_memory_mb': self.max_memory_mb,
+            'memory_available_mb': psutil.virtual_memory().available / (1024 * 1024),
+            'memory_total_mb': psutil.virtual_memory().total / (1024 * 1024),
+            'memory_percent': psutil.virtual_memory().percent
+        }
 
 
 
@@ -52,6 +114,10 @@ def objective(trial: optuna.Trial) -> float:
     from gc import collect
     from os.path import getsize
     import re
+
+    # Initialize memory monitoring
+    memory_monitor = MemoryMonitor()
+    memory_monitor.start_monitoring()
 
     ### Non - HP tuning parameters (Optimize to RAM / CPU / GPU capacity)
     
@@ -941,6 +1007,23 @@ def objective(trial: optuna.Trial) -> float:
             print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
             counter += 1
         mlflow.log_metric("val_perplexity", result, step=trial.number)
+        
+        # Get memory statistics before cleanup
+        memory_stats = memory_monitor.get_memory_stats()
+        
+        # Log memory metrics to MLflow
+        mlflow.log_metric("max_memory_mb", memory_stats['max_memory_mb'], step=trial.number)
+        mlflow.log_metric("final_memory_mb", memory_stats['current_memory_mb'], step=trial.number)
+        mlflow.log_metric("memory_available_mb", memory_stats['memory_available_mb'], step=trial.number)
+        mlflow.log_metric("memory_percent_used", memory_stats['memory_percent'], step=trial.number)
+        
+        print(f"Memory usage stats - Peak: {memory_stats['max_memory_mb']:.2f} MB, "
+              f"Final: {memory_stats['current_memory_mb']:.2f} MB, "
+              f"System Memory Used: {memory_stats['memory_percent']:.1f}%")
+        
+        # Stop memory monitoring before cleanup
+        memory_monitor.stop_monitoring()
+        
         del(best_model_found)
         del(generator)
         collect()
