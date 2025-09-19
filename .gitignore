@@ -1,2 +1,19 @@
 *.pyc
 .ropeproject
+
+# Ignore experiment/run artifacts and large model files
+mlruns/
+models/
+**/oracle.csv
+**/model_architectures/
+**/run.log
+**/.ipynb_checkpoints/
+*.keras
+*.h5
+*.hdf5
+*.ckpt
+*.pth
+*.pt
+
+# Local experiment folders by timestamp/prefix
+20??_*_cerebros_auto_ml_*/
