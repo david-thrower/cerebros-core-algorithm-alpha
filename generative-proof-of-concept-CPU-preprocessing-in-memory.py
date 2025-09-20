@@ -13,8 +13,23 @@ answer = run("mlflow server --host 127.0.0.1 --port 5000 &",
 print(answer.stdout)
 
 
-EXPERIMENT_ITERATION = "0002"
+def _get_int_env(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except Exception:
+        return default
 
+def _get_str_env(*names: str, default: str) -> str:
+    for n in names:
+        v = os.getenv(n)
+        if v is not None and v != "":
+            return v
+    return default
+
+# Allow overriding experiment iteration via env; prefer CEREBROS_EXPERIMENT_ITERATION
+EXPERIMENT_ITERATION = _get_str_env("CEREBROS_EXPERIMENT_ITERATION", "EXPERIMENT_ITERATION", default="0003")
+
+# Keep hardcoded per user's note
 N_TRIALS = 30
 
 
@@ -91,9 +106,11 @@ def objective(trial: optuna.Trial) -> float:
     """
     
     import tensorflow as tf
-    import tensorflow_text
-    from keras_nlp.models import GPT2Tokenizer, GPT2Preprocessor, GPT2Backbone
-    from keras_nlp.layers import PositionEmbedding
+    # tensorflow_text is optional and version-locked to tensorflow; guard it
+    try:
+        import tensorflow_text  # noqa: F401
+    except ModuleNotFoundError:
+        print("[warn] tensorflow_text not installed; continuing without it. If needed, install a TF-matching tensorflow-text.")
     from transformers import AutoTokenizer
     from sklearn.model_selection import train_test_split
     from sklearn.utils import shuffle
@@ -124,16 +141,23 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion
     
-    SAMPLES_TO_CREATE = 100 
+    # Environment-driven knobs for memory/range control
+    SAMPLES_TO_CREATE = _get_int_env("CEREBROS_SAMPLES_TO_CREATE", 100)
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
-    PROMPT_LENGTH = 1 
+    PROMPT_LENGTH = _get_int_env("CEREBROS_PROMPT_LENGTH", 1)
     
     # Text encoding / embedding related constants
     
     
-    MAX_SEQ_LENGTH = 196 # 1536 (Linear and directly proportional to RAM requirement)
+    MAX_SEQ_LENGTH = _get_int_env("CEREBROS_MAX_SEQ_LENGTH", 196) # 1536 (Linear and directly proportional to RAM requirement)
+
+    # Safety clamp: keep prompt length < 2/3 of max seq len
+    max_prompt_allowed = max(1, int(2 * MAX_SEQ_LENGTH // 3))
+    if PROMPT_LENGTH >= max_prompt_allowed:
+        print(f"[guard] PROMPT_LENGTH={PROMPT_LENGTH} too large for MAX_SEQ_LENGTH={MAX_SEQ_LENGTH}. Clamping to {max_prompt_allowed - 1}.")
+        PROMPT_LENGTH = max_prompt_allowed - 1
 
     #
     # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
@@ -200,16 +224,17 @@ def objective(trial: optuna.Trial) -> float:
     # embedding output dim must be an even number
     # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-    EMBEDDING_N = 12
+    EMBEDDING_N = _get_int_env("CEREBROS_EMBEDDING_N", 12)
     EMBEDDING_DIM = int(EMBEDDING_N * 2)
     
-    PROJECTION_N = 1 # Punatuve increase of ram, leaving this as 1 until we are running on HPC
+    PROJECTION_N = _get_int_env("CEREBROS_PROJECTION_N", 1) # Positive increase of RAM; keep 1 on CPU
     
     # Prepare a record of params:
     # Log sampled hyperparameters to MLflow
     params = {"SAMPLES_TO_CREATE":SAMPLES_TO_CREATE,
               "PROMPT_LENGTH":PROMPT_LENGTH,
               "MAX_SEQ_LENGTH":MAX_SEQ_LENGTH,
+              "EMBEDDING_N": EMBEDDING_N,
               "POSITIONAL_EMBEDDING_DROPOUT":POSITIONAL_EMBEDDING_DROPOUT,
               "activation":activation,
               "predecessor_level_connection_affinity_factor_first":predecessor_level_connection_affinity_factor_first,
@@ -235,7 +260,12 @@ def objective(trial: optuna.Trial) -> float:
     run_name = f"trial_{trial.number}"
     trial_start_time = datetime.utcnow()
    
-    tags = {"phase": "poc", "script": os.path.basename(__file__), "trial_number": str(trial.number), "Start_time": str(trial_start_time)}
+    tags = {"phase": "poc",
+        "script": os.path.basename(__file__),
+        "trial_number": str(trial.number),
+        "Start_time": str(trial_start_time),
+        "exp_iter": EXPERIMENT_ITERATION,
+        "n_trials": str(N_TRIALS)}
 
     with mlflow.start_run(run_name=run_name, tags=tags) as run:
         # Log the hyperparameters

@@ -1,12 +1,21 @@
 """DenseAutoMlStructuralComponent: A base class that the NeuralNetworkFuture, Layers, Units, etc inherit from."""
 
 import tensorflow as tf
-import jax.numpy as jnp
-from jax import jit
 import numpy as np
 
+# Optional JAX acceleration with graceful fallback to NumPy
+try:
+    import jax.numpy as jnp  # type: ignore
+    from jax import jit as _jit  # type: ignore
+    _HAS_JAX = True
+except Exception:  # JAX not available (e.g., platform/python version constraints)
+    import numpy as jnp  # use NumPy under the same alias
+    def _jit(fn):
+        return fn
+    _HAS_JAX = False
 
-@jit
+
+@_jit
 def jit_zero_7_exp_decay(x):
     return 0.7 ** x
 
@@ -17,7 +26,7 @@ def zero_7_exp_decay(x):
     return float(jit_zero_7_exp_decay(x))
 
 
-@jit
+@_jit
 def jit_zero_95_exp_decay(x):
     return 0.95 ** x
 
@@ -28,7 +37,7 @@ def zero_95_exp_decay(x):
     return float(jit_zero_95_exp_decay(x))
 
 
-@jit
+@_jit
 def jit_sigmoid(x):
     s = 1/(1+jnp.exp(-x))
     return s
