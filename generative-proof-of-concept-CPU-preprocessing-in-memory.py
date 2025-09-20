@@ -6,11 +6,17 @@ from subprocess import run
 import psutil
 import threading
 import time as time_module
+from pathlib import Path
 
-answer = run("mlflow server --host 127.0.0.1 --port 5000 &",
-   shell=True,
-)
-print(answer.stdout)
+# Resolve script directory for robust relative paths
+SCRIPT_DIR = Path(__file__).resolve().parent
+
+def _get_bool_env(name: str, default: bool = False) -> bool:
+    v = os.getenv(name)
+    if v is None:
+        return default
+    v_lower = v.lower()
+    return v in ("1", "true", "yes", "y") or v_lower in ("1", "true", "yes", "y")
 
 
 def _get_int_env(name: str, default: int) -> int:
@@ -32,9 +38,21 @@ EXPERIMENT_ITERATION = _get_str_env("CEREBROS_EXPERIMENT_ITERATION", "EXPERIMENT
 # Keep hardcoded per user's note
 N_TRIALS = 30
 
-
-
-mlflow.set_tracking_uri(uri="http://127.0.0.1:5000")
+# MLflow configuration: optionally start server; otherwise use local file store
+MLFLOW_PORT = int(os.getenv("CEREBROS_MLFLOW_PORT", "5000"))
+START_MLFLOW = _get_bool_env("CEREBROS_START_MLFLOW_SERVER", False)
+if START_MLFLOW:
+    try:
+        answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &", shell=True)
+        if getattr(answer, "returncode", 0) not in (0, None):
+            print("[warn] mlflow server returned non-zero exit; continuing. If port busy, set CEREBROS_START_MLFLOW_SERVER=0 and run UI separately.")
+        print(getattr(answer, "stdout", ""))
+    except Exception as _e:
+        print(f"[warn] failed to start mlflow server: {_e}")
+    mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
+else:
+    local_store = SCRIPT_DIR / "mlruns"
+    mlflow.set_tracking_uri(uri=f"file:{local_store}")
 
 mlflow.set_experiment(f"single-worker-1st-pass-tuning-{EXPERIMENT_ITERATION}-a")
 
@@ -106,11 +124,7 @@ def objective(trial: optuna.Trial) -> float:
     """
     
     import tensorflow as tf
-    # tensorflow_text is optional and version-locked to tensorflow; guard it
-    try:
-        import tensorflow_text  # noqa: F401
-    except ModuleNotFoundError:
-        print("[warn] tensorflow_text not installed; continuing without it. If needed, install a TF-matching tensorflow-text.")
+    # Removed tensorflow_text entirely for stability on CPU-only and TF >= 2.20
     from transformers import AutoTokenizer
     from sklearn.model_selection import train_test_split
     from sklearn.utils import shuffle
@@ -164,8 +178,9 @@ def objective(trial: optuna.Trial) -> float:
     #
 
     
-    moities_to_try = 3 # ++ Accuracy, linear increase in computation time (Raise this before resorting to raising the next one)
-    tries_per_moity = 1 # ++ Modest ++ Accuracy, quadratic increase in computation time 
+    # Make these controllable via env to allow quick smoke runs
+    moities_to_try = _get_int_env("CEREBROS_MOITIES_TO_TRY", 3) # ++ Accuracy, linear increase in computation time (Raise this before resorting to raising the next one)
+    tries_per_moity = _get_int_env("CEREBROS_TRIES_PER_MOITY", 1) # ++ Modest ++ Accuracy, quadratic increase in computation time 
 
     ##### HP Tuning Parameters: ######### (Parameters to be optimized by TPE or SOBOL) 
 
@@ -190,7 +205,12 @@ def objective(trial: optuna.Trial) -> float:
     
     learning_rate = trial.suggest_float('learning_rate', 10 ** -6, 10 ** -1, log=True)
     
-    epochs = trial.suggest_int('epochs', 10, 50)
+    # Allow constraining epochs via env for fast runs
+    _epochs_min = _get_int_env('CEREBROS_EPOCHS_MIN', 10)
+    _epochs_max = _get_int_env('CEREBROS_EPOCHS_MAX', 50)
+    if _epochs_max < _epochs_min:
+        _epochs_max = _epochs_min
+    epochs = trial.suggest_int('epochs', _epochs_min, _epochs_max)
     
     batch_size = trial.suggest_int('batch_size', 5, 15)
     
@@ -355,8 +375,11 @@ def objective(trial: optuna.Trial) -> float:
         
         ## Only add re, tokenizer already in script
         
-        
-        with open('king-james-bible.txt', 'r') as kjv:
+        # Load dataset relative to the script directory to avoid CWD issues
+        bible_path = SCRIPT_DIR / 'king-james-bible.txt'
+        if not bible_path.exists():
+            raise FileNotFoundError(f"Required dataset not found at {bible_path}. Ensure the file exists next to the script.")
+        with open(bible_path, 'r', encoding='utf-8') as kjv:
             bible = kjv.read()
         
         
@@ -650,6 +673,14 @@ def objective(trial: optuna.Trial) -> float:
                 # Instantiate the RotaryEmbedding layer
                 # Ensure the name is consistent if needed for saving/loading
                 self.rotary_emb = RotaryEmbedding(dim, max_seq_len, name="rotary_embedding")
+
+            def build(self, input_shape):
+                # Build nested rotary embedding (no trainable weights but silences Keras warning)
+                try:
+                    self.rotary_emb.build(input_shape)
+                except Exception:
+                    pass
+                super().build(input_shape)
         
             def call(self, x):
                 # Get sin and cos from the RotaryEmbedding layer's call method
@@ -818,7 +849,8 @@ def objective(trial: optuna.Trial) -> float:
         
         """
         
-        print(f'Cerebros best accuracy achieved is {result}')
+        # Note: 'result' is the best validation perplexity (we minimize this)
+        print(f'Cerebros best validation perplexity is {result}')
         print(f'val set perplexity')
         
         """### Testing the best model found"""
@@ -826,7 +858,100 @@ def objective(trial: optuna.Trial) -> float:
         MODEL_FILE_NAME = "cerebros-foundation-model.keras"
         
         best_model_found = cerebros_automl.get_best_model(purge_model_storage_files=True)
-        mlflow.keras.log_model(best_model_found, artifact_path="base")
+        # Provide an input example and explicit requirements to improve MLflow reproducibility
+        import numpy as _np_for_example
+        sample_input = _np_for_example.zeros((1, MAX_SEQ_LENGTH), dtype=_np_for_example.int32)
+        # Build explicit MLflow signatures to avoid auto-inference and warnings
+        from mlflow.models import infer_signature as _infer_sig
+        try:
+            _sig_base = _infer_sig(sample_input, cerebros_base_model(sample_input))
+        except Exception:
+            _sig_base = None
+        pip_requirements = []
+        try:
+            import keras as _keras_pkg
+            _keras_ver = getattr(_keras_pkg, "__version__", None)
+            if _keras_ver:
+                pip_requirements.append(f"keras=={_keras_ver}")
+        except Exception:
+            pass
+        try:
+            _tf_ver = getattr(tf, "__version__", None)
+            if _tf_ver:
+                pip_requirements.append(f"tensorflow=={_tf_ver}")
+        except Exception:
+            pass
+        try:
+            import numpy as _np
+            _np_ver = getattr(_np, "__version__", None)
+            if _np_ver:
+                pip_requirements.append(f"numpy=={_np_ver}")
+        except Exception:
+            pass
+        try:
+            import sklearn as _sk
+            _sk_ver = getattr(_sk, "__version__", None)
+            if _sk_ver:
+                pip_requirements.append(f"scikit-learn=={_sk_ver}")
+        except Exception:
+            pass
+        try:
+            from transformers import __version__ as _hf_ver
+            if _hf_ver:
+                pip_requirements.append(f"transformers=={_hf_ver}")
+        except Exception:
+            pass
+        try:
+            import pendulum as _pend
+            _pend_ver = getattr(_pend, "__version__", None)
+            if _pend_ver:
+                pip_requirements.append(f"pendulum=={_pend_ver}")
+        except Exception:
+            pass
+        try:
+            import mlflow as _mlf
+            _mlf_ver = getattr(_mlf, "__version__", None)
+            if _mlf_ver:
+                pip_requirements.append(f"mlflow=={_mlf_ver}")
+        except Exception:
+            pass
+
+        # Robust MLflow logging: avoid input_example due to MLflow bug; log explicit signature and attach sample as artifact
+        import tempfile as _tmp
+        import json as _json
+        from pathlib import Path as _Path
+        # If using local file-based MLflow tracking, avoid model registry APIs which require http(s)
+        try:
+            _tracking_uri = mlflow.get_tracking_uri() or ""
+        except Exception:
+            _tracking_uri = ""
+        if _tracking_uri.startswith("file:"):
+            with _tmp.TemporaryDirectory() as _td:
+                _local_dir = _Path(_td) / "mlflow_keras_model"
+                # Save MLflow-formatted Keras model locally, then log as run artifacts
+                mlflow.keras.save_model(
+                    best_model_found,
+                    path=str(_local_dir),
+                    signature=_sig_base,
+                    pip_requirements=pip_requirements if pip_requirements else None,
+                )
+                mlflow.log_artifacts(str(_local_dir), artifact_path="base")
+        else:
+            # With an active HTTP tracking server, use the registry-backed logging
+            mlflow.keras.log_model(
+                best_model_found,
+                artifact_path="base",
+                signature=_sig_base,
+                pip_requirements=pip_requirements if pip_requirements else None,
+            )
+        # Attach the input example as an artifact for reference
+        try:
+            with _tmp.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as _f:
+                _json.dump(sample_input.tolist(), _f)
+                _f.flush()
+                mlflow.log_artifact(_f.name, artifact_path="base")
+        except Exception as _e:
+            print(f"[warn] failed to attach input_example artifact: {_e}")
         # best_model_found.save(MODEL_FILE_NAME)
         # del(best_model_found)
         # del(cerebros_automl)
@@ -977,7 +1102,40 @@ def objective(trial: optuna.Trial) -> float:
         )
         generator = CerebrosNotGPT(config)
         
-        mlflow.keras.log_model(generator, artifact_path="generator")
+        # Create a small dummy call to produce output for signature
+        try:
+            _sig_gen = _infer_sig(sample_input, generator(sample_input))
+        except Exception:
+            _sig_gen = None
+        # Log the generator model with the same file-vs-server conditional
+        try:
+            _tracking_uri = mlflow.get_tracking_uri() or ""
+        except Exception:
+            _tracking_uri = ""
+        if _tracking_uri.startswith("file:"):
+            with _tmp.TemporaryDirectory() as _td:
+                _local_dir = _Path(_td) / "mlflow_keras_generator"
+                mlflow.keras.save_model(
+                    generator,
+                    path=str(_local_dir),
+                    signature=_sig_gen,
+                    pip_requirements=pip_requirements if pip_requirements else None,
+                )
+                mlflow.log_artifacts(str(_local_dir), artifact_path="generator")
+        else:
+            mlflow.keras.log_model(
+                generator,
+                artifact_path="generator",
+                signature=_sig_gen,
+                pip_requirements=pip_requirements if pip_requirements else None,
+            )
+        try:
+            with _tmp.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as _f:
+                _json.dump(sample_input.tolist(), _f)
+                _f.flush()
+                mlflow.log_artifact(_f.name, artifact_path="generator")
+        except Exception as _e:
+            print(f"[warn] failed to attach generator input_example artifact: {_e}")
         print("########### BEFORE SEARIALIZING THE GENERATIVE MODEL")
         
         def complete_text(text):
@@ -1063,7 +1221,8 @@ def main():
     # Optional fast path for CI / smoke tests
     # fast = os.getenv("CEREBROS_FAST", "0") == "1"
     # n_trials = int(os.getenv("CEREBROS_N_TRIALS", "3" if fast else "20"))
-    n_trials = N_TRIALS
+    # Allow overriding via env var for convenience
+    n_trials = _get_int_env("CEREBROS_N_TRIALS", N_TRIALS)
     # mlflow_parent = mlflow.start_run(run_name=os.getenv("MLFLOW_PARENT_RUN_NAME", "cerebros_poc_parent"), tags={"phase": "poc", "mode": "fast" if fast else "full"})
     sampler = optuna.samplers.TPESampler(multivariate=True)
     study = optuna.create_study(direction="minimize", sampler=sampler)

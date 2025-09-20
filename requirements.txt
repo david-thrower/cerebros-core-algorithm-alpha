@@ -1,7 +1,7 @@
 jax==0.5.3
 jaxlib==0.5.3
 pendulum==3.0.0
-tensorflow==2.19.0
+tensorflow==2.20.0
 numpy==1.26.4
 pandas==2.2.1
 pyvis==0.3.2
@@ -9,3 +9,8 @@ plotly==5.20.0
 matplotlib==3.8.4
 imageio==2.34.0
 tqdm==4.67.1
+mlflow==3.4.0
+optuna==4.5.0
+scikit-learn==1.4.1.post1
+transformers==4.54.0
+psutil
