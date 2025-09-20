@@ -4,7 +4,9 @@ import mlflow
 from datetime import datetime
 from subprocess import run
 
-answer = run("mlflow server --host 127.0.0.1 --port 5000 &",
+MLFLOW_PORT = 5000
+
+answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
    shell=True,
 )
 print(answer.stdout)
@@ -15,8 +17,7 @@ EXPERIMENT_ITERATION = "0002"
 N_TRIALS = 30
 
 
-
-mlflow.set_tracking_uri(uri="http://127.0.0.1:5000")
+mlflow.set_tracking_uri(uri="http://127.0.0.1:{MLFLOW_PORT}")
 
 mlflow.set_experiment(f"single-worker-1st-pass-tuning-{EXPERIMENT_ITERATION}-a")
 
