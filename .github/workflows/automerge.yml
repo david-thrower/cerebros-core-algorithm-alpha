@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "236-copy-of-234-error-handling-on-finding-best-metric" ]
+    branches: [ "main", "237-copy-purge-model-storage-functionality-for-main" ]
 
 
 permissions:
