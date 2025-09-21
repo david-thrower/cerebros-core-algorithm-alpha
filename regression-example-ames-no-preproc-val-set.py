@@ -26,8 +26,8 @@ TIME = pendulum.now().__str__()[:16]\
     .replace('T', '_')\
     .replace(':', '_')\
     .replace('-', '_')
-PROJECT_NAME = f'{TIME}_cerebros_auto_ml_test-{META_TRIAL_NUMBER }'
-PROJECT_NAME = f"{PROJECT_NAME}_meta_{meta_trial_number}"
+PROJECT_NAME = f'{TIME}_cerebros_auto_ml_test'
+PROJECT_NAME = f"{PROJECT_NAME}-meta-{META_TRIAL_NUMBER}"
 
 def hash_a_row(row):
     """casts a row of a Pandas DataFrame as a String, hashes it, and casts it
