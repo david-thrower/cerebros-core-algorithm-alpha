@@ -566,18 +566,29 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         print(f"metric_to_rank_by is: '{self.metric_to_rank_by}'")
         print(
             f"Type of metric_to_rank_by is: {str(type(self.metric_to_rank_by))}")
+        def has_valid_metric(num):
+            try:
+                float(num)
+                return True
+            except Exception as exc:
+                print(exc)
+                return False
+        rows_having_a_valid_metric = oracles[self.metric_to_rank_by].apply(lambda x: has_valid_metric(x))
+        oracles_having_valid_metrics = oracles[rows_having_a_valid_metric]
+        
         if self.direction == "maximize" or self.direction == "max":
-
-            best = float(oracles[oracles[self.metric_to_rank_by]
-                         != self.metric_to_rank_by]
-                         [self.metric_to_rank_by].astype(float).max())
+            best = float(oracles_having_valid_metrics[self.metric_to_rank_by].astype(float).max())
+            # best = float(oracles[oracles[self.metric_to_rank_by]
+            #              != self.metric_to_rank_by]
+            #              [self.metric_to_rank_by].astype(float).max())
         else:
             print(f"metric_to_rank_by is: '{self.metric_to_rank_by}'")
             print(
                 f"Type of metric_to_rank_by is: {str(type(self.metric_to_rank_by))}")
-            best = float(oracles[oracles[self.metric_to_rank_by]
-                                 != self.metric_to_rank_by]
-                         [self.metric_to_rank_by].astype(float).min())
+            best = float(oracles_having_valid_metrics[self.metric_to_rank_by].astype(float).min())
+            # best = float(oracles[oracles[self.metric_to_rank_by]
+            #                      != self.metric_to_rank_by]
+            #              [self.metric_to_rank_by].astype(float).min())
         print(f"Best result this trial was: {best}")
         print(f"Type of best result: {type(best)}")
         self.best_model_path =\
