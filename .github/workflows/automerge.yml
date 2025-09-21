@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "218-fix-padding-token-mismatch-and-logging-tokenization-metadata" ]
+    branches: [ "main", "236-copy-of-234-error-handling-on-finding-best-metric" ]
 
 
 permissions:
