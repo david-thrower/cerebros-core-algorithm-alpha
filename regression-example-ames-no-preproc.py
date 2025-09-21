@@ -125,11 +125,13 @@ best_model_found = cerebros.get_best_model()
 print(best_model_found.summary())
 
 # Validate that purge_model_storage is NOT active by default 
+
 model_storage_path = f"{PROJECT_NAME}/models"
 assert exists(model_storage_path)
 num_items = len(listdir(model_storage_path))
-print(f"There are {num_items} in {model_storage_path}")
-assert num_items > 0
+print(f"There are {num_items} items in {model_storage_path}.")
+if num_items <= 0:
+    raise ValueError(f"Failed test: {model_storage_path} was deleted and should not have been.")
 
 print("result extracted from cerebros")
 print(f"Final result was (val_root_mean_squared_error): {result}")
