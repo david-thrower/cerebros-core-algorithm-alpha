@@ -125,7 +125,7 @@ best_model_found = cerebros.get_best_model()
 print(best_model_found.summary())
 
 # Validate that purge_model_storage is NOT active by default 
-model_storage_path = f"{PROJECT_MAME}/models"
+model_storage_path = f"{PROJECT_NAME}/models"
 assert exists(model_storage_path)
 num_items = len(listdir(model_storage_path))
 print(f"There are {num_items} in {model_storage_path}")
