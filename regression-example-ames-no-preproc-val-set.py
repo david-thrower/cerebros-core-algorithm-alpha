@@ -10,7 +10,7 @@ from cerebros.units.units import DenseUnit
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 from ast import literal_eval
-from os import listdir
+from os.path import exists
 
 NUMBER_OF_TRAILS_PER_BATCH = 2
 NUMBER_OF_BATCHES_OF_TRIALS = 2
@@ -222,11 +222,12 @@ print("Best model: (May need to re-initialize weights, and retrain with early st
 best_model_found = cerebros.get_best_model(purge_model_storage_files=True)
 print(best_model_found.summary())
 
+
 # Verify purge_model_storage_files works:
 model_storage_path = f"{PROJECT_NAME}/models"
-num_items = len(listdir(model_storage_path))
-print(f"There are {num_items} items in {model_storage_path}")
-assert num_items == 0
+if exists(model_storage_path):
+    raise ValueError(f"Failed test: Parh {model_storage_path}" should have beed deleted and was not.)
+
 
 print("result extracted from cerebros")
 print(f"Final result was (val_root_mean_squared_error): {result}")
