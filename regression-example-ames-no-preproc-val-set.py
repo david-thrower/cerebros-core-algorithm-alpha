@@ -226,7 +226,7 @@ print(best_model_found.summary())
 # Verify purge_model_storage_files works:
 model_storage_path = f"{PROJECT_NAME}/models"
 if exists(model_storage_path):
-    raise ValueError(f"Failed test: Parh {model_storage_path}" should have beed deleted and was not.)
+    raise ValueError(f"Failed test: Parh {model_storage_path}" should have beed deleted and was not.")
 
 
 print("result extracted from cerebros")
