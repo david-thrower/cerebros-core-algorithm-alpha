@@ -17,7 +17,7 @@ EXPERIMENT_ITERATION = "0002"
 N_TRIALS = 30
 
 
-mlflow.set_tracking_uri(uri="http://127.0.0.1:{MLFLOW_PORT}")
+mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
 
 mlflow.set_experiment(f"single-worker-1st-pass-tuning-{EXPERIMENT_ITERATION}-a")
 
