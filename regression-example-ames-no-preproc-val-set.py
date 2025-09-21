@@ -10,9 +10,12 @@ from cerebros.units.units import DenseUnit
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 from ast import literal_eval
+from os import listdir
 
 NUMBER_OF_TRAILS_PER_BATCH = 2
 NUMBER_OF_BATCHES_OF_TRIALS = 2
+
+META_TRIAL_NUMBER = 1
 
 ###
 
@@ -23,7 +26,8 @@ TIME = pendulum.now().__str__()[:16]\
     .replace('T', '_')\
     .replace(':', '_')\
     .replace('-', '_')
-PROJECT_NAME = f'{TIME}_cerebros_auto_ml_test'
+PROJECT_NAME = f'{TIME}_cerebros_auto_ml_test-{META_TRIAL_NUMBER }'
+PROJECT_NAME = f"{PROJECT_NAME}_meta_{meta_trial_number}"
 
 def hash_a_row(row):
     """casts a row of a Pandas DataFrame as a String, hashes it, and casts it
@@ -207,7 +211,7 @@ cerebros =\
         metrics=[tf.keras.metrics.RootMeanSquaredError()],
         epochs=epochs,
         patience=7,
-        project_name=f"{PROJECT_NAME}_meta_{meta_trial_number}",
+        project_name=PROJECT_NAME,
         # use_multiprocessing_for_multiple_neural_networks=False,  # pull this param
         model_graphs='model_graphs',
         batch_size=batch_size,
@@ -215,8 +219,14 @@ cerebros =\
 result = cerebros.run_random_search()
 
 print("Best model: (May need to re-initialize weights, and retrain with early stopping callback)")
-best_model_found = cerebros.get_best_model()
+best_model_found = cerebros.get_best_model(purge_model_storage_files=True)
 print(best_model_found.summary())
+
+# Verify purge_model_storage_files works:
+model_storage_path = f"{PROJECT_NAME}/models"
+num_items = len(listdir(model_storage_path))
+print(f"There are {num_items} items in {model_storage_path}")
+assert num_items == 0
 
 print("result extracted from cerebros")
 print(f"Final result was (val_root_mean_squared_error): {result}")
