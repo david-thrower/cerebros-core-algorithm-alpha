@@ -14,6 +14,7 @@ from cerebros.neuralnetworkfuture.neural_network_future \
 from multiprocessing import Process, Lock
 import os
 from gc import collect
+from shutil import rmtree
 
 
 # import optuna
@@ -596,8 +597,14 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         print(f"Best model name: {self.best_model_path}")
         return best
 
-    def get_best_model(self):
+    def purge_model_storage(self):
+        path_0 = f"{self.project_name}/models"
+        rmtree(path_0)
+
+    def get_best_model(self, purge_model_storage_files: bool=False):
         best_model = tf.keras.models.load_model(self.best_model_path)
+        if purge_model_storage_files:
+            self.purge_model_storage()        
         return best_model
 
 # ->
