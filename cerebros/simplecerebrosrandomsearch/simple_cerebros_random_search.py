@@ -573,7 +573,9 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
             except Exception as exc:
                 print(exc)
                 return False
-        rows_having_a_valid_metric = oracles[self.metric_to_rank_by].apply(lambda x: has_valid_metric(x))
+        # ~ pd.to_numeric(x['a'], errors="coerce").astype(float).isna()
+        # rows_having_a_valid_metric = oracles[self.metric_to_rank_by].apply(lambda x: has_valid_metric(x))
+        rows_having_a_valid_metric = ~ pd.to_numeric(oracles[self.metric_to_rank_by], errors="coerce").isna()
         oracles_having_valid_metrics = oracles[rows_having_a_valid_metric]
         
         if self.direction == "maximize" or self.direction == "max":
