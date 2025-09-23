@@ -599,7 +599,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         print(f"Best model name: {self.best_model_path}")
         return best
 
-    def purge_model_storage(self):
+    def purge_model_storage(self) -> None:
         """Slates all cached models. 
         Recommended when running in a container without a mounted volume.
         It is recommened to use an artifiact registry to accession the best model.
@@ -608,7 +608,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         rmtree(model_cache_path)
 
 
-    def purge_models_except_best_model(self)
+    def purge_models_except_best_model(self) -> None:
         """
         Recommended when running in a container without a mounted volume and building models that take considerable time to reproduce.
         It is recommened to use an artifiact registry to accession the best model, but this will preserve a redundant
@@ -623,7 +623,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         for file in files_str:
             file_path = f"{model_cache_path}/{file}"
             print(f"  {model_file_path}")
-            if file_path != self.best_model_path
+            if file_path != self.best_model_path:
                 print(f"Removing: {file_path}")
                 os.remove(file_path)
             # Temp debug code:
