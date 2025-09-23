@@ -515,6 +515,7 @@ cerebros_time_per_model = cerebros_time_all_models_min / models_tried
 
 
 
+
 print(f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
 print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model for 3 epochs. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
 print(f'Cerebros best accuracy achieved is {result}')
@@ -524,7 +525,7 @@ print(f'val set accuracy')
 
 MODEL_FILE_NAME = "cerebros-foundation-model.keras"
 
-best_model_found = cerebros_automl.get_best_model()
+best_model_found = cerebros_automl.get_best_model(purge_model_storage_files=1)
 best_model_found.save(MODEL_FILE_NAME)
 del(best_model_found)
 del(cerebros_automl)
