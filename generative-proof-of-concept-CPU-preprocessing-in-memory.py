@@ -731,7 +731,7 @@ def objective(trial: optuna.Trial) -> float:
         MODEL_FILE_NAME = "cerebros-foundation-model.keras"
         
         best_model_found = cerebros_automl.get_best_model(purge_model_storage_files='slate')
-        mlflow.keras.log_model(best_model_found, artifact_path="base")
+        # mlflow.keras.log_model(best_model_found, artifact_path="base")
         # best_model_found.save(MODEL_FILE_NAME)
         # del(best_model_found)
         # del(cerebros_automl)
