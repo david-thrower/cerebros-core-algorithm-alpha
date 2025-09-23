@@ -882,7 +882,7 @@ def objective(trial: optuna.Trial) -> float:
         )
         generator = CerebrosNotGPT(config)
         
-        mlflow.keras.log_model(generator, artifact_path="generator")
+        # mlflow.keras.log_model(generator, artifact_path="generator")
         print("########### BEFORE SEARIALIZING THE GENERATIVE MODEL")
         
         def complete_text(text):
