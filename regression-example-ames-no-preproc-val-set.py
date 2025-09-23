@@ -219,7 +219,7 @@ cerebros =\
 result = cerebros.run_random_search()
 
 print("Best model: (May need to re-initialize weights, and retrain with early stopping callback)")
-best_model_found = cerebros.get_best_model(purge_model_storage_files=True)
+best_model_found = cerebros.get_best_model(purge_model_storage_files='slate')
 print(best_model_found.summary())
 
 
