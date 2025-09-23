@@ -68,7 +68,7 @@ def objective(trial: optuna.Trial) -> float:
     # Text encoding / embedding related constants
     
     
-    MAX_SEQ_LENGTH = 196 # 1536 (Linear and directly proportional to RAM requirement)
+    MAX_SEQ_LENGTH = 96 # 1536 (Linear and directly proportional to RAM requirement)
 
     #
     # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
@@ -85,7 +85,7 @@ def objective(trial: optuna.Trial) -> float:
     # Begin MLflow trial run (nested inside parent run if any)
 
 
-    POSITIONAL_EMBEDDING_DROPOUT = trial.suggest_float('POSITIONAL_EMBEDDING_DROPOUT', 0.1, 0.96)
+    POSITIONAL_EMBEDDING_DROPOUT = trial.suggest_float('POSITIONAL_EMBEDDING_DROPOUT', 0.7, 0.99)
     
     activation = trial.suggest_categorical('activation', ['relu', 'gelu', 'swish', 'softsign', 'softplus'])
     
@@ -99,25 +99,25 @@ def objective(trial: optuna.Trial) -> float:
     
     num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 1, 40)
     
-    learning_rate = trial.suggest_float('learning_rate', 10 ** -6, 10 ** -1, log=True)
+    learning_rate = trial.suggest_float('learning_rate', 10 ** -4, 0.05, log=True)
     
     epochs = trial.suggest_int('epochs', 10, 50)
     
     batch_size = trial.suggest_int('batch_size', 5, 15)
     
-    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 4)
+    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 2)
     
     # Level constraints - ensure max >= min by setting min of max to value of min
-    minimum_levels = trial.suggest_int('minimum_levels', 1, 5)
-    maximum_levels = trial.suggest_int('maximum_levels', minimum_levels, 5)
+    minimum_levels = trial.suggest_int('minimum_levels', 1, 3)
+    maximum_levels = trial.suggest_int('maximum_levels', minimum_levels, 3)
     
     # Units per level - ensure max >= min by setting min of max to value of min
-    minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 1, 10)
-    maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 10)
+    minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 1, 3)
+    maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 4)
     
     # Neurons per unit - ensure max >= min by setting min of max to value of min
-    minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 1, 8)
-    maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 8)
+    minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 1, 3)
+    maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 4)
 
     
     tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B" # "HuggingFaceTB/SmolLM2-1.7B-Instruct" 
