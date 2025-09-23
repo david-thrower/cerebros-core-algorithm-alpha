@@ -621,14 +621,14 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         files_str = [str(p) for p in files_path_obj]
         print("Files in model cache:")
         for file in files_str:
-            file_path = f"{model_cache_path}/{file}"
+            model_file_path = f"{model_cache_path}/{file}"
             print(f"  {model_file_path}")
-            if file_path != self.best_model_path:
-                print(f"Removing: {file_path}")
-                os.remove(file_path)
+            if model_file_path != self.best_model_path:
+                print(f"Removing: {model_file_path}")
+                os.remove(model_file_path)
             # Temp debug code:
             else:
-                print(f"Not removing {file_path}")
+                print(f"Not removing {model_file_path}")
 
 
     def get_best_model(self, purge_model_storage_files=0) -> tf.keras.Model:
