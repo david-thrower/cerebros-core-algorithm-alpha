@@ -59,7 +59,7 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion
     
-    SAMPLES_TO_CREATE = 100 
+    SAMPLES_TO_CREATE = 10 
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -135,7 +135,7 @@ def objective(trial: optuna.Trial) -> float:
     # embedding output dim must be an even number
     # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-    EMBEDDING_N = 12
+    EMBEDDING_N = 6 # 12
     EMBEDDING_DIM = int(EMBEDDING_N * 2)
     
     PROJECTION_N = 1 # Punatuve increase of ram, leaving this as 1 until we are running on HPC
