@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "234-error-handling-on-finding-best-metric" ]
+    branches: [ "main", "230-new-hpo-study-ready-to-run" ]
 
 permissions:
   contents: read
