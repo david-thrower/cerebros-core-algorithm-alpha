@@ -652,7 +652,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
             self.purge_models_except_best_model()
         elif purge_model_storage_files == "slate":
             self.purge_model_storage()
-        elif purge_model_storage_files == 0
+        elif purge_model_storage_files == 0:
             pass
         else:
             raise ValueError("The paramerter purge_model_storage_files in the method get_best_model() has 3 values: 0 (Don't purge),1 (Purge all but the best model), 'slate' (remove all cached models) ")
