@@ -664,7 +664,7 @@ def objective(trial: optuna.Trial) -> float:
             labels=y_train_packaged,
             validation_split=0.2,
             direction='minimize',
-            metric_to_rank_by="val_perplexity",
+            metric_to_rank_by="perplexity",
             minimum_levels=minimum_levels,
             maximum_levels=maximum_levels,
             minimum_units_per_level=minimum_units_per_level,
@@ -941,7 +941,7 @@ def objective(trial: optuna.Trial) -> float:
             
             print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
             counter += 1
-        mlflow.log_metric("val_perplexity", result, step=trial.number)
+        mlflow.log_metric("perplexity", result, step=trial.number)
         del(best_model_found)
         del(generator)
         collect()
