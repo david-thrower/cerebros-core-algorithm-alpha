@@ -600,13 +600,62 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         return best
 
     def purge_model_storage(self):
-        path_0 = f"{self.project_name}/models"
-        rmtree(path_0)
+        """Slates all cached models. 
+        Recommended when running in a container without a mounted volume.
+        It is recommened to use an artifiact registry to accession the best model.
+        """
+        model_cache_path = f"{self.project_name}/models"
+        rmtree(model_cache_path)
 
-    def get_best_model(self, purge_model_storage_files: bool=False):
+
+    def purge_models_except_best_model(self)
+        """
+        Recommended when running in a container without a mounted volume and building models that take considerable time to reproduce.
+        It is recommened to use an artifiact registry to accession the best model, but this will preserve a redundant
+        copy in case accessioning it to a registry is unsuccessful.
+        """
+        if not self.best_model_path:
+            return ValueError("The function purge_models_except_best_model was called prematurely: self.best_model_path is not set, maining there is no 'Best model'.")
+        model_cache_path = f"{self.project_name}/models"
+        files_path_obj = os.listdir(model_cache_path)
+        files_str = [str(p) for p in files_path_obj]
+        print("Files in model cache:")
+        for file in files_str:
+            file_path = f"{model_cache_path}/{file}"
+            print(f"  {model_file_path}")
+            if file_path != self.best_model_path
+                print(f"Removing: {file_path}")
+                os.remove(file_path)
+            # Temp debug code:
+            else:
+                print(f"Not removing {file_path}")
+
+
+    def get_best_model(self, purge_model_storage_files=0) -> tf.keras.Model:
+        """Returns the best model from this meta-trial. 
+        Optionally, purges cache of models stored on disk.
+
+        Params:
+            - purge_model_storage_files Union[str, int]
+                - Set to 0: Does not purge the cached modelsl, just returns the best model.
+                - Set to 1: Purges all models except the best model found.
+                - Set to "slate": Removes all models, whether the best or otherwise.
+        When running ephemeral trials in a container without a mounted volume (to prevent 
+        memory pressure accumulating from ephemeral files in memory) or are otherwise working
+        with hard disk space limitations, we recommend setting this:
+            - 'slate': if you are working on models that are quick to reproduce and an accidental model loss is not problematic as long as you have the parameters to reproduce it approximately.
+            - 1: If you are are workign on models that take considerable time to reproduce a given model or a small performance difference from another model from the same parameters is problematic.
+            - 0 If you have unlimited disk space and are not in a container or in one with a suitable mounted volume.  
+        """
         best_model = tf.keras.models.load_model(self.best_model_path)
-        if purge_model_storage_files:
-            self.purge_model_storage()        
+        if  purge_model_storage_files == 1:
+            self.purge_models_except_best_model()
+        elif purge_model_storage_files == "slate":
+            self.purge_model_storage()
+        elif purge_model_storage_files == 0
+            pass
+        else:
+            raise ValueError("The paramerter purge_model_storage_files in the method get_best_model() has 3 values: 0 (Don't purge),1 (Purge all but the best model), 'slate' (remove all cached models) ")
         return best_model
 
 # ->
