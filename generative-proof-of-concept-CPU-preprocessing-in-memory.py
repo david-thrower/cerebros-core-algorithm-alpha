@@ -12,14 +12,14 @@ answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
 print(answer.stdout)
 
 
-EXPERIMENT_ITERATION = "0002"
+EXPERIMENT_ITERATION = "0001"
 
 N_TRIALS = 30
 
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
 
-mlflow.set_experiment(f"single-worker-femto-scale-tuning-200-samples-{EXPERIMENT_ITERATION}-a")
+mlflow.set_experiment(f"single-worker-femto-scale-tuning-50-samples-{EXPERIMENT_ITERATION}-a")
 
 
 
