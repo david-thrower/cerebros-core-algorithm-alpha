@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "218-fix-padding-token-mismatch-and-logging-tokenization-metadata" ]
+    branches: [ "main", "237-copy-purge-model-storage-functionality-for-main" ]
 
 
 permissions:

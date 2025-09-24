@@ -14,6 +14,7 @@ from cerebros.neuralnetworkfuture.neural_network_future \
 from multiprocessing import Process, Lock
 import os
 from gc import collect
+from shutil import rmtree
 
 
 # import optuna
@@ -565,18 +566,31 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         print(f"metric_to_rank_by is: '{self.metric_to_rank_by}'")
         print(
             f"Type of metric_to_rank_by is: {str(type(self.metric_to_rank_by))}")
+        def has_valid_metric(num):
+            try:
+                float(num)
+                return True
+            except Exception as exc:
+                print(exc)
+                return False
+        # ~ pd.to_numeric(x['a'], errors="coerce").astype(float).isna()
+        # rows_having_a_valid_metric = oracles[self.metric_to_rank_by].apply(lambda x: has_valid_metric(x))
+        rows_having_a_valid_metric = ~ pd.to_numeric(oracles[self.metric_to_rank_by], errors="coerce").isna()
+        oracles_having_valid_metrics = oracles[rows_having_a_valid_metric]
+        
         if self.direction == "maximize" or self.direction == "max":
-
-            best = float(oracles[oracles[self.metric_to_rank_by]
-                         != self.metric_to_rank_by]
-                         [self.metric_to_rank_by].astype(float).max())
+            best = float(oracles_having_valid_metrics[self.metric_to_rank_by].astype(float).max())
+            # best = float(oracles[oracles[self.metric_to_rank_by]
+            #              != self.metric_to_rank_by]
+            #              [self.metric_to_rank_by].astype(float).max())
         else:
             print(f"metric_to_rank_by is: '{self.metric_to_rank_by}'")
             print(
                 f"Type of metric_to_rank_by is: {str(type(self.metric_to_rank_by))}")
-            best = float(oracles[oracles[self.metric_to_rank_by]
-                                 != self.metric_to_rank_by]
-                         [self.metric_to_rank_by].astype(float).min())
+            best = float(oracles_having_valid_metrics[self.metric_to_rank_by].astype(float).min())
+            # best = float(oracles[oracles[self.metric_to_rank_by]
+            #                      != self.metric_to_rank_by]
+            #              [self.metric_to_rank_by].astype(float).min())
         print(f"Best result this trial was: {best}")
         print(f"Type of best result: {type(best)}")
         self.best_model_path =\
@@ -585,8 +599,63 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         print(f"Best model name: {self.best_model_path}")
         return best
 
-    def get_best_model(self):
+    def purge_model_storage(self) -> None:
+        """Slates all cached models. 
+        Recommended when running in a container without a mounted volume.
+        It is recommened to use an artifiact registry to accession the best model.
+        """
+        model_cache_path = f"{self.project_name}/models"
+        rmtree(model_cache_path)
+
+
+    def purge_models_except_best_model(self) -> None:
+        """
+        Recommended when running in a container without a mounted volume and building models that take considerable time to reproduce.
+        It is recommened to use an artifiact registry to accession the best model, but this will preserve a redundant
+        copy in case accessioning it to a registry is unsuccessful.
+        """
+        if not self.best_model_path:
+            return ValueError("The function purge_models_except_best_model was called prematurely: self.best_model_path is not set, maining there is no 'Best model'.")
+        model_cache_path = f"{self.project_name}/models"
+        files_path_obj = os.listdir(model_cache_path)
+        files_str = [str(p) for p in files_path_obj]
+        print("Files in model cache:")
+        for file in files_str:
+            model_file_path = f"{model_cache_path}/{file}"
+            print(f"  {model_file_path}")
+            if model_file_path != self.best_model_path:
+                print(f"Removing: {model_file_path}")
+                os.remove(model_file_path)
+            # Temp debug code:
+            else:
+                print(f"Not removing {model_file_path}")
+
+
+    def get_best_model(self, purge_model_storage_files=0) -> tf.keras.Model:
+        """Returns the best model from this meta-trial. 
+        Optionally, purges cache of models stored on disk.
+
+        Params:
+            - purge_model_storage_files Union[str, int]
+                - Set to 0: Does not purge the cached modelsl, just returns the best model.
+                - Set to 1: Purges all models except the best model found.
+                - Set to "slate": Removes all models, whether the best or otherwise.
+        When running ephemeral trials in a container without a mounted volume (to prevent 
+        memory pressure accumulating from ephemeral files in memory) or are otherwise working
+        with hard disk space limitations, we recommend setting this:
+            - 'slate': if you are working on models that are quick to reproduce and an accidental model loss is not problematic as long as you have the parameters to reproduce it approximately.
+            - 1: If you are are workign on models that take considerable time to reproduce a given model or a small performance difference from another model from the same parameters is problematic.
+            - 0 If you have unlimited disk space and are not in a container or in one with a suitable mounted volume.  
+        """
         best_model = tf.keras.models.load_model(self.best_model_path)
+        if  purge_model_storage_files == 1:
+            self.purge_models_except_best_model()
+        elif purge_model_storage_files == "slate":
+            self.purge_model_storage()
+        elif purge_model_storage_files == 0:
+            pass
+        else:
+            raise ValueError("The paramerter purge_model_storage_files in the method get_best_model() has 3 values: 0 (Don't purge),1 (Purge all but the best model), 'slate' (remove all cached models) ")
         return best_model
 
 # ->

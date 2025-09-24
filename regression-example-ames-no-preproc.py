@@ -10,6 +10,9 @@ from cerebros.units.units import DenseUnit
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 from ast import literal_eval
+from os import listdir
+from os.path import exists
+
 
 NUMBER_OF_TRAILS_PER_BATCH = 2
 NUMBER_OF_BATCHES_OF_TRIALS = 2
@@ -20,15 +23,15 @@ LABEL_COLUMN = 'price'
 
 ## your data:
 
+META_TRIAL_NUMBER = 1
 
 TIME = pendulum.now().__str__()[:16]\
     .replace('T', '_')\
     .replace(':', '_')\
     .replace('-', '_')
-PROJECT_NAME = f'{TIME}_cerebros_auto_ml_test'
+PROJECT_NAME = f"{TIME}_cerebros_auto_ml_test"
+PROJECT_NAME = f"{PROJECT_NAME}_meta_{META_TRIAL_NUMBER}"
 
-
-# white = pd.read_csv('wine_data.csv')
 
 raw_data = pd.read_csv('ames.csv')
 needed_cols = [
@@ -110,7 +113,7 @@ cerebros =\
         metrics=[tf.keras.metrics.RootMeanSquaredError()],
         epochs=epochs,
         patience=7,
-        project_name=f"{PROJECT_NAME}_meta_{meta_trial_number}",
+        project_name=PROJECT_NAME,
         # use_multiprocessing_for_multiple_neural_networks=False,  # pull this param
         model_graphs='model_graphs',
         batch_size=batch_size,
@@ -120,6 +123,15 @@ result = cerebros.run_random_search()
 print("Best model: (May need to re-initialize weights, and retrain with early stopping callback)")
 best_model_found = cerebros.get_best_model()
 print(best_model_found.summary())
+
+# Validate that purge_model_storage is NOT active by default 
+
+model_storage_path = f"{PROJECT_NAME}/models"
+assert exists(model_storage_path)
+num_items = len(listdir(model_storage_path))
+print(f"There are {num_items} items in {model_storage_path}.")
+if num_items <= 0:
+    raise ValueError(f"Failed test: {model_storage_path} was deleted and should not have been.")
 
 print("result extracted from cerebros")
 print(f"Final result was (val_root_mean_squared_error): {result}")
