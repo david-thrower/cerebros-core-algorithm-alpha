@@ -4,7 +4,7 @@ import mlflow
 from datetime import datetime
 from subprocess import run
 
-MLFLOW_PORT = 5000
+MLFLOW_PORT = 7777
 
 answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
    shell=True,
@@ -19,7 +19,7 @@ N_TRIALS = 30
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
 
-mlflow.set_experiment(f"single-worker-1st-pass-tuning-{EXPERIMENT_ITERATION}-a")
+mlflow.set_experiment(f"single-worker-femto-scale-tuning-200-samples-{EXPERIMENT_ITERATION}-a")
 
 
 
@@ -28,11 +28,11 @@ def objective(trial: optuna.Trial) -> float:
     Objective function for Optuna hyperparameter optimization
     Returns the validation loss or metric to minimize
     """
-    
+
     import tensorflow as tf
-    import tensorflow_text
-    from keras_nlp.models import GPT2Tokenizer, GPT2Preprocessor, GPT2Backbone
-    from keras_nlp.layers import PositionEmbedding
+    # import tensorflow_text
+    # from keras_nlp.models import GPT2Tokenizer, GPT2Preprocessor, GPT2Backbone
+    # from keras_nlp.layers import PositionEmbedding
     from transformers import AutoTokenizer
     from sklearn.model_selection import train_test_split
     from sklearn.utils import shuffle
@@ -59,7 +59,7 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion
     
-    SAMPLES_TO_CREATE = 10 
+    SAMPLES_TO_CREATE = 200
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -93,19 +93,19 @@ def objective(trial: optuna.Trial) -> float:
     
     predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 0.1, 40.0)
     
-    max_consecutive_lateral_connections = trial.suggest_int('max_consecutive_lateral_connections', 2, 10)
+    max_consecutive_lateral_connections = trial.suggest_int('max_consecutive_lateral_connections', 6, 8)
     
-    p_lateral_connection = trial.suggest_float('p_lateral_connection', 0.01, 1.00)
+    p_lateral_connection = trial.suggest_float('p_lateral_connection', 0.04, 0.45)
     
-    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 1, 40)
+    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 10, 35)
     
     learning_rate = trial.suggest_float('learning_rate', 10 ** -4, 0.05, log=True)
     
-    epochs = trial.suggest_int('epochs', 10, 50)
+    epochs = trial.suggest_int('epochs', 23, 65)
     
     batch_size = trial.suggest_int('batch_size', 5, 15)
     
-    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 2)
+    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 3)
     
     # Level constraints - ensure max >= min by setting min of max to value of min
     minimum_levels = trial.suggest_int('minimum_levels', 1, 3)
@@ -971,5 +971,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
