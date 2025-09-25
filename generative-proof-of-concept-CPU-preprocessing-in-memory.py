@@ -789,62 +789,34 @@ def objective(trial: optuna.Trial) -> float:
                 config_obj = CerebrosNotGPTConfig.from_config(config['config'])
                 return cls(config=config_obj)
             
-            def generate(self, token_ids, do_sample=False, max_new_tokens=None):
-                """
-                Generate text autoregressively from token IDs.
+            def generate(self, token_ids, do_sample=False, max_new_tokens=None, temperature=1.0, top_k=None, top_p=None):
+                # (init code as existing)
                 
-                Args:
-                    token_ids: Iterable of integers representing token IDs
-                    do_sample: Boolean, if True use sampling, if False use greedy argmax
-                    max_new_tokens: Maximum number of new tokens to generate
-                    
-                Returns:
-                    List of token IDs including original tokens and generated tokens
-                """
-                # Convert token_ids to list if it's not already
-                if not isinstance(token_ids, list):
-                    token_ids = list(token_ids)
-                    
-                # Determine the actual maximum number of new tokens
-                if max_new_tokens is None:
-                    max_new_tokens = self.max_sequence_length - len(token_ids)
-                else:
-                    max_new_tokens = min(max_new_tokens, self.max_sequence_length - len(token_ids))
-                    
-                # Initialize the generated tokens list
-                generated_tokens = []
-                current_tokens = token_ids.copy()
-                
-                # Autoregressive generation loop
-                # temp_gen_count = 0 # <--------<< Debug code to remove later
                 for _ in range(max_new_tokens):
-                    # Pad or truncate to max_sequence_length (CORRECTED PADDING LOGIC)
-                    if len(current_tokens) > self.max_sequence_length:
-                        input_tokens = current_tokens[:self.max_sequence_length]
-                    else:
-                        # Manual padding with padding token
-                        padding_needed = self.max_sequence_length - len(current_tokens)
-                        input_tokens = current_tokens + [self.padding_token] * padding_needed
-                    
-                    # Convert to tensor and get model prediction
+                    # (padding code as existing)
                     input_tensor = tf.constant([input_tokens], dtype=tf.int32)
-                    logits = self.model(input_tensor)  # Shape: (batch_size, VOCABULARY_SIZE)
+                    logits = self.model(input_tensor)
                     
-                    # Get next token based on sampling strategy
+                    # Apply temperature scaling (logits->probs because your model returns softmax)
+                    probs = logits[0]  # logits[0] is already softmax
+                    
                     if do_sample:
-                        # Sample from the distribution
-                        # probabilities = tf.nn.softmax(logits[0], axis=-1) # Model already applies softmax
-                        next_token_id = tf.random.categorical(tf.math.log(logits[0])[None, :], 1)[0, 0].numpy()
+                        # 1. Temperature: convert back to logits, scale, resoftmax
+                        if temperature != 1.0:
+                            temp_logits = tf.math.log(probs + 1e-20) / temperature
+                            probs = tf.nn.softmax(temp_logits)
+                        # 2. Top-k filtering
+                        if top_k is not None and top_k > 0:
+                            probs = apply_top_k_probs(probs, top_k)
+                        # 3. Top-p filtering
+                        if top_p is not None and top_p < 1.0:
+                            probs = apply_top_p_probs(probs, top_p)
+                        # Sample
+                        next_token_id = tf.random.categorical(tf.math.log(probs[None, :]), 1)[0,0].numpy()
                     else:
                         # Greedy sampling (argmax)
-                        next_token_id = int(tf.argmax(logits[0], axis=-1).numpy())
-                    # Debug code to removel later
-                    # print(f"Generating {temp_gen_count}")
-                    # print(f"... next_token_id: {next_token_id}")
-                    # next_word = tokenizer.decode(next_token_id)
-                    # print(f"Next decoded word: {next_word}")
-                    # temp_gen_count +=1
-        
+                        next_token_id = int(tf.argmax(probs, axis=-1).numpy())
+
                     # Check for termination condition
                     if next_token_id == self.padding_token:
                         break
@@ -864,6 +836,8 @@ def objective(trial: optuna.Trial) -> float:
                     total_tokens.extend([self.padding_token] * padding_needed)
                     
                 return total_tokens
+
+
         
             def call(self, inputs):
                 # This is just for compatibility, the main logic is in generate()
@@ -929,9 +903,13 @@ def objective(trial: optuna.Trial) -> float:
             
             # Now pass the list of integers to your generate method
             generated_tokens = generator.generate(
+               # do_sample=False, max_new_tokens=None, temperature=1.0, top_k=None, top_p=None
                 token_ids=token_ids,  # Just the actual tokens, no padding
-                do_sample=False,
-                max_new_tokens=40
+                do_sample=True,
+                max_new_tokens=20,
+                temperature=0.6,
+                top_k=20,
+                top_p=0.9,
             )
             
             # Decode the result
