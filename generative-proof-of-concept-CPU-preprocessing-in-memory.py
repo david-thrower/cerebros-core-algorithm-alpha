@@ -69,7 +69,7 @@ def objective(trial: optuna.Trial) -> float:
     # Text encoding / embedding related constants
     
     
-    MAX_SEQ_LENGTH = 50 # 1536 (Linear and directly proportional to RAM requirement)
+    MAX_SEQ_LENGTH = 40 # 1536 (Linear and directly proportional to RAM requirement)
 
     #
     # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
@@ -136,7 +136,7 @@ def objective(trial: optuna.Trial) -> float:
     # embedding output dim must be an even number
     # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-    EMBEDDING_N = 4 # 12
+    EMBEDDING_N = 3 # 12
     EMBEDDING_DIM = int(EMBEDDING_N * 2)
     
     PROJECTION_N = 1 # Punatuve increase of ram, leaving this as 1 until we are running on HPC
