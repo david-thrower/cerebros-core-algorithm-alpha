@@ -788,7 +788,37 @@ def objective(trial: optuna.Trial) -> float:
             def from_config(cls, config):
                 config_obj = CerebrosNotGPTConfig.from_config(config['config'])
                 return cls(config=config_obj)
-            
+
+            @staticmethod
+            def apply_top_k_probs(probs, k):
+                if k is None or k <= 0:
+                    return probs
+                # Flatten and argsort for indices
+                sorted_indices = tf.argsort(probs, direction='DESCENDING')
+                keep_indices = sorted_indices[:k]
+                mask = tf.zeros_like(probs, dtype=tf.bool)
+                mask = tf.tensor_scatter_nd_update(mask, tf.reshape(keep_indices, (-1,1)), tf.ones((k,), dtype=tf.bool))
+                filtered_probs = tf.where(mask, probs, tf.zeros_like(probs))
+                # Renormalize
+                filtered_probs = filtered_probs / tf.reduce_sum(filtered_probs)
+                return filtered_probs
+
+            @staticmethod
+            def apply_top_p_probs(probs, p):
+                if p is None or p >= 1.0:
+                    return probs
+                sorted_indices = tf.argsort(probs, direction='DESCENDING')
+                sorted_probs = tf.gather(probs, sorted_indices)
+                cumulative_probs = tf.cumsum(sorted_probs)
+                mask = cumulative_probs <= p
+                # Always keep at least 1 token
+                mask = tf.concat([tf.constant([True]), mask[1:]], axis=0)
+                keep_indices = tf.boolean_mask(sorted_indices, mask)
+                filtered_probs = tf.where(tf.reduce_any(tf.equal(tf.range(tf.shape(probs)[0])[:,None], keep_indices), axis=1), probs, tf.zeros_like(probs))
+                # Renormalize
+                filtered_probs = filtered_probs / tf.reduce_sum(filtered_probs)
+                return filtered_probs
+
             def generate(self, token_ids, do_sample=False, max_new_tokens=None, temperature=1.0, top_k=None, top_p=None):
                 # (init code as existing)
                 
@@ -813,10 +843,10 @@ def objective(trial: optuna.Trial) -> float:
                             probs = tf.nn.softmax(temp_logits)
                         # 2. Top-k filtering
                         if top_k is not None and top_k > 0:
-                            probs = apply_top_k_probs(probs, top_k)
+                            probs = self.apply_top_k_probs(probs, top_k)
                         # 3. Top-p filtering
                         if top_p is not None and top_p < 1.0:
-                            probs = apply_top_p_probs(probs, top_p)
+                            probs = self.apply_top_p_probs(probs, top_p)
                         # Sample
                         next_token_id = tf.random.categorical(tf.math.log(probs[None, :]), 1)[0,0].numpy()
                     else:
