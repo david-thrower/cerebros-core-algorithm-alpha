@@ -998,13 +998,12 @@ def objective(trial: optuna.Trial) -> float:
             
             # Now pass the list of integers to your generate method
             generated_tokens = generator.generate(
-               # do_sample=False, max_new_tokens=None, temperature=1.0, top_k=None, top_p=None
                 token_ids=token_ids,  # Just the actual tokens, no padding
                 do_sample=True,
                 max_new_tokens=20,
                 temperature=0.6,
-                top_k=20,
-                top_p=0.9,
+                top_k=30,
+                top_p=0.8,
             )
             
             # Decode the result
