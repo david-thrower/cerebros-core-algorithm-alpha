@@ -1,4 +1,4 @@
-import optuna 
+import optuna
 import os
 import mlflow
 from datetime import datetime
@@ -875,7 +875,7 @@ def objective(trial: optuna.Trial) -> float:
                             probs = tf.where(top_k_mask, probs, tf.zeros_like(probs))
                             # Renormalize
                             probs = probs / tf.reduce_sum(probs)
-                            print(f">>> After top_k: {tf.shape(probs)}")
+                            print(f">>> After top_k: {tf.shape(probs)} shape, {tf.reduce_sum(tf.cast(probs > 1e-8, tf.int32))} non-zero probs")
                         
                         # Apply top-p filtering (if specified)
                         if top_p is not None and top_p < 1.0:
@@ -898,7 +898,7 @@ def objective(trial: optuna.Trial) -> float:
                             # Apply mask and renormalize
                             probs = tf.where(filter_mask, probs, tf.zeros_like(probs))
                             probs = probs / tf.reduce_sum(probs)
-                            print(f">>> After top_p: {tf.shape(probs)}")
+                            print(f">>> After top_p: {tf.shape(probs)} shape, {tf.reduce_sum(tf.cast(probs > 1e-8, tf.int32))} non-zero probs")
                         
                         # Sample from the final filtered distribution
                         # Get non-zero indices and their probabilities
