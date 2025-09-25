@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "241-add-sampling-to-vanilla-scale-llm" ]
+    branches: [ "main", "patch-241-sampling-fixes" ]
 
 permissions:
   contents: read
