@@ -794,7 +794,7 @@ def objective(trial: optuna.Trial) -> float:
                 
                 for _ in range(max_new_tokens):
                     # (padding code as existing)
-                    input_tensor = tf.constant([input_tokens], dtype=tf.int32)
+                    input_tensor = tf.constant([token_ids], dtype=tf.int32)
                     logits = self.model(input_tensor)
                     
                     # Apply temperature scaling (logits->probs because your model returns softmax)
