@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "240-branch-to-diverge-cicd-scale-nlp-hpo-from-at-scale-study" ]
+    branches: [ "main", "241-add-sampling-to-vanilla-scale-llm" ]
 
 permissions:
   contents: read
