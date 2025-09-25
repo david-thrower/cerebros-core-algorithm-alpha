@@ -3,6 +3,7 @@ import os
 import mlflow
 from datetime import datetime
 from subprocess import run
+from warnings import warn
 
 MLFLOW_PORT = 5000
 
@@ -822,17 +823,7 @@ def objective(trial: optuna.Trial) -> float:
             def generate(self, token_ids, do_sample=False, max_new_tokens=None, temperature=1.0, top_k=None, top_p=None):
                 """
                 Generate text autoregressively from token IDs.
-                
-                Args:
-                    token_ids: Iterable of integers representing token IDs
-                    do_sample: Boolean, if True use sampling, if False use greedy argmax
-                    max_new_tokens: Maximum number of new tokens to generate
-                    temperature: Temperature for sampling (1.0 = no change)
-                    top_k: Top-k filtering parameter
-                    top_p: Top-p (nucleus) filtering parameter
-                    
-                Returns:
-                    List of token IDs including original tokens and generated tokens
+                Applies filtering in sequence: temperature -> top-k -> top-p
                 """
                 # Convert token_ids to list if it's not already
                 if not isinstance(token_ids, list):
@@ -850,42 +841,81 @@ def objective(trial: optuna.Trial) -> float:
                 
                 # Autoregressive generation loop
                 for _ in range(max_new_tokens):
-                    # Pad or truncate to max_sequence_length (CORRECTED PADDING LOGIC)
+                    # Pad or truncate to max_sequence_length
                     if len(current_tokens) > self.max_sequence_length:
-                        input_tokens = current_tokens[-self.max_sequence_length:]  # Take last tokens
+                        input_tokens = current_tokens[-self.max_sequence_length:]
                     else:
-                        # Manual padding with padding token
                         padding_needed = self.max_sequence_length - len(current_tokens)
                         input_tokens = current_tokens + [self.padding_token] * padding_needed
                     
                     # Convert to tensor and get model prediction
                     input_tensor = tf.constant([input_tokens], dtype=tf.int32)
-                    logits = self.model(input_tensor)  # Shape: (batch_size, VOCABULARY_SIZE)
-                    # Model already applies softmax, so logits[0] contains probabilities
+                    logits = self.model(input_tensor)
+                    probs = logits[0]  # Already softmax probabilities
                     
                     if do_sample:
-                        probs = logits[0]  # Already softmax probabilities
-                        
-                        # 1. Temperature scaling
+                        # Apply temperature first (to full distribution)
                         if temperature != 1.0:
-                            # Convert back to logits, apply temperature, then softmax
                             log_probs = tf.math.log(probs + 1e-20)
                             temp_logits = log_probs / temperature
                             probs = tf.nn.softmax(temp_logits)
                         
-                        # 2. Top-k filtering
+                        # Apply top-k filtering (if specified)
                         if top_k is not None and top_k > 0:
-                            probs = self.apply_top_k_probs(probs, top_k)
+                            k = min(top_k, tf.shape(probs)[0])
+                            # Get top-k values and indices
+                            top_k_values, top_k_indices = tf.nn.top_k(probs, k=k, sorted=False)
+                            # Create mask for top-k positions
+                            top_k_mask = tf.scatter_nd(
+                                tf.expand_dims(top_k_indices, 1),
+                                tf.ones_like(top_k_values, dtype=tf.bool),
+                                tf.shape(probs)
+                            )
+                            # Zero out non-top-k probabilities
+                            probs = tf.where(top_k_mask, probs, tf.zeros_like(probs))
+                            # Renormalize
+                            probs = probs / tf.reduce_sum(probs)
                         
-                        # 3. Top-p filtering
+                        # Apply top-p filtering (if specified)
                         if top_p is not None and top_p < 1.0:
-                            probs = self.apply_top_p_probs(probs, top_p)
+                            # Sort probabilities in descending order
+                            sorted_indices = tf.argsort(probs, direction='DESCENDING')
+                            sorted_probs = tf.gather(probs, sorted_indices)
+                            cumulative_probs = tf.cumsum(sorted_probs)
+                            # Create mask for top-p
+                            mask = cumulative_probs <= top_p
+                            # Always keep at least one token
+                            mask = tf.concat([tf.constant([True]), mask[1:]], axis=0)
+                            # Get indices to keep
+                            keep_indices = tf.boolean_mask(sorted_indices, mask)
+                            # Create mask for original indices
+                            filter_mask = tf.scatter_nd(
+                                tf.expand_dims(keep_indices, 1),
+                                tf.ones_like(keep_indices, dtype=tf.bool),
+                                tf.shape(probs)
+                            )
+                            # Apply mask and renormalize
+                            probs = tf.where(filter_mask, probs, tf.zeros_like(probs))
+                            probs = probs / tf.reduce_sum(probs)
                         
-                        # Sample from the distribution
-                        next_token_id = tf.random.categorical(tf.math.log(logits[0])[None, :], 1)[0, 0].numpy()
+                        # Sample from the final filtered distribution
+                        # Get non-zero indices and their probabilities
+                        non_zero_mask = probs > 1e-8
+                        if tf.reduce_any(non_zero_mask):
+                            filtered_indices = tf.where(non_zero_mask)[:, 0]  # Get indices
+                            filtered_probs = tf.boolean_mask(probs, non_zero_mask)  # Get probabilities
+                            # Sample
+                            sampled_local_index = tf.random.categorical(tf.math.log(filtered_probs)[None, :], 1)[0, 0]
+                            # Map back to vocabulary index
+                            next_token_id = int(filtered_indices[sampled_local_index].numpy())
+                        else:
+                            # Fallback if all probabilities are zero
+                            warn("Token had to revert to greedy sampling, becasue of 0 probs >0")
+                            next_token_id = int(tf.argmax(probs, axis=-1).numpy())
+                            
                     else:
                         # Greedy sampling (argmax)
-                        next_token_id = int(tf.argmax(logits[0], axis=-1).numpy())
+                        next_token_id = int(tf.argmax(probs, axis=-1).numpy())
             
                     # Check for termination condition
                     if next_token_id == self.padding_token:
