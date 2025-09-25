@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "patch-241-sampling-fixes" ]
+    branches: [ "main", "0002-patch-241-sampling-fixes" ]
 
 permissions:
   contents: read
