@@ -875,6 +875,7 @@ def objective(trial: optuna.Trial) -> float:
                             probs = tf.where(top_k_mask, probs, tf.zeros_like(probs))
                             # Renormalize
                             probs = probs / tf.reduce_sum(probs)
+                            print(f">>> After top_k: {tf.shape(probs)}")
                         
                         # Apply top-p filtering (if specified)
                         if top_p is not None and top_p < 1.0:
@@ -897,6 +898,7 @@ def objective(trial: optuna.Trial) -> float:
                             # Apply mask and renormalize
                             probs = tf.where(filter_mask, probs, tf.zeros_like(probs))
                             probs = probs / tf.reduce_sum(probs)
+                            print(f">>> After top_p: {tf.shape(probs)}")
                         
                         # Sample from the final filtered distribution
                         # Get non-zero indices and their probabilities
@@ -910,7 +912,7 @@ def objective(trial: optuna.Trial) -> float:
                             next_token_id = int(filtered_indices[sampled_local_index].numpy())
                         else:
                             # Fallback if all probabilities are zero
-                            warn("Token had to revert to greedy sampling, becasue of 0 probs >0")
+                            warn("Token sampling had to revert to greedy sampling, because no probs had a value > 0, unexpected")
                             next_token_id = int(tf.argmax(probs, axis=-1).numpy())
                             
                     else:
