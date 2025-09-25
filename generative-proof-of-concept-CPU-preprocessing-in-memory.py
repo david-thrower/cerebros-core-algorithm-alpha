@@ -818,63 +818,88 @@ def objective(trial: optuna.Trial) -> float:
                 # Renormalize
                 filtered_probs = filtered_probs / tf.reduce_sum(filtered_probs)
                 return filtered_probs
-   
+
             def generate(self, token_ids, do_sample=False, max_new_tokens=None, temperature=1.0, top_k=None, top_p=None):
-                # Initialize tracking variables
-                generated_tokens = []
-                current_tokens = token_ids.copy()  # Working copy of tokens
+                """
+                Generate text autoregressively from token IDs.
                 
-                # Set default max_new_tokens based on available space
+                Args:
+                    token_ids: Iterable of integers representing token IDs
+                    do_sample: Boolean, if True use sampling, if False use greedy argmax
+                    max_new_tokens: Maximum number of new tokens to generate
+                    temperature: Temperature for sampling (1.0 = no change)
+                    top_k: Top-k filtering parameter
+                    top_p: Top-p (nucleus) filtering parameter
+                    
+                Returns:
+                    List of token IDs including original tokens and generated tokens
+                """
+                # Convert token_ids to list if it's not already
+                if not isinstance(token_ids, list):
+                    token_ids = list(token_ids)
+                    
+                # Determine the actual maximum number of new tokens
                 if max_new_tokens is None:
                     max_new_tokens = self.max_sequence_length - len(token_ids)
-                    max_new_tokens = max(0, max_new_tokens)  # Ensure non-negative
+                else:
+                    max_new_tokens = min(max_new_tokens, self.max_sequence_length - len(token_ids))
+                    
+                # Initialize the generated tokens list
+                generated_tokens = []
+                current_tokens = token_ids.copy()
                 
+                # Autoregressive generation loop
                 for _ in range(max_new_tokens):
-                    # Prepare input tokens with proper padding/truncation
+                    # Pad or truncate to max_sequence_length (CORRECTED PADDING LOGIC)
                     if len(current_tokens) > self.max_sequence_length:
-                        input_tokens = current_tokens[-self.max_sequence_length:]  # Take last max_seq_length tokens
+                        input_tokens = current_tokens[-self.max_sequence_length:]  # Take last tokens
                     else:
+                        # Manual padding with padding token
                         padding_needed = self.max_sequence_length - len(current_tokens)
                         input_tokens = current_tokens + [self.padding_token] * padding_needed
-            
-                    # Convert to tensor and wrap in list (model expects list of tensors)
-                    input_tensor = tf.constant([input_tokens], dtype=tf.int32)  # Shape (1, max_sequence_length)
                     
-                    # Call model - output is [softmax_tensor], so logits[0] is correct
-                    logits = self.model([input_tensor])  # Input as list
-                    probs = logits[0][0]  # Output: [batch_outputs][0] = softmax probabilities for first batch item
+                    # Convert to tensor and get model prediction
+                    input_tensor = tf.constant([input_tokens], dtype=tf.int32)
+                    logits = self.model(input_tensor)  # Shape: (batch_size, VOCABULARY_SIZE)
+                    # Model already applies softmax, so logits[0] contains probabilities
                     
                     if do_sample:
+                        probs = logits[0]  # Already softmax probabilities
+                        
                         # 1. Temperature scaling
                         if temperature != 1.0:
-                            temp_logits = tf.math.log(probs + 1e-20) / temperature
+                            # Convert back to logits, apply temperature, then softmax
+                            log_probs = tf.math.log(probs + 1e-20)
+                            temp_logits = log_probs / temperature
                             probs = tf.nn.softmax(temp_logits)
+                        
                         # 2. Top-k filtering
                         if top_k is not None and top_k > 0:
                             probs = self.apply_top_k_probs(probs, top_k)
+                        
                         # 3. Top-p filtering
                         if top_p is not None and top_p < 1.0:
                             probs = self.apply_top_p_probs(probs, top_p)
-                        # Sample
-                        next_token_id = tf.random.categorical(tf.math.log(probs[None, :]), 1)[0, 0].numpy()
+                        
+                        # Sample from the distribution
+                        next_token_id = tf.random.categorical(tf.math.log(probs + 1e-20), 1)[0, 0].numpy()
                     else:
                         # Greedy sampling (argmax)
-                        next_token_id = int(tf.argmax(probs, axis=-1).numpy())
+                        next_token_id = int(tf.argmax(logits[0], axis=-1).numpy())
             
                     # Check for termination condition
                     if next_token_id == self.padding_token:
                         break
                         
                     # Add to generated tokens and update current tokens
-                    next_token_id = int(next_token_id)
-                    generated_tokens.append(next_token_id)
-                    current_tokens.append(next_token_id)
+                    generated_tokens.append(int(next_token_id))
+                    current_tokens.append(int(next_token_id))
                     
                     # Check if we've reached max sequence length
                     if len(current_tokens) >= self.max_sequence_length:
                         break
                 
-                return token_ids + generated_tokens  # Return original + generated tokens
+                return token_ids + generated_tokens
 
 
             def call(self, inputs):
