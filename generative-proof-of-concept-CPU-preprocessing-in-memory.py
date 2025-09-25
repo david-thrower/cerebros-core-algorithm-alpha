@@ -14,7 +14,7 @@ print(answer.stdout)
 
 EXPERIMENT_ITERATION = "0002"
 
-N_TRIALS = 30
+N_TRIALS = 10
 
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
@@ -59,7 +59,7 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion
     
-    SAMPLES_TO_CREATE = 10 
+    SAMPLES_TO_CREATE = 10
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -68,7 +68,7 @@ def objective(trial: optuna.Trial) -> float:
     # Text encoding / embedding related constants
     
     
-    MAX_SEQ_LENGTH = 96 # 1536 (Linear and directly proportional to RAM requirement)
+    MAX_SEQ_LENGTH = 50 # 1536 (Linear and directly proportional to RAM requirement)
 
     #
     # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
@@ -86,18 +86,18 @@ def objective(trial: optuna.Trial) -> float:
 
 
     POSITIONAL_EMBEDDING_DROPOUT = trial.suggest_float('POSITIONAL_EMBEDDING_DROPOUT', 0.7, 0.99)
-    
-    activation = trial.suggest_categorical('activation', ['relu', 'gelu', 'swish', 'softsign', 'softplus'])
-    
-    predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 0.01, 35.0)
-    
-    predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 0.1, 40.0)
-    
-    max_consecutive_lateral_connections = trial.suggest_int('max_consecutive_lateral_connections', 2, 10)
-    
-    p_lateral_connection = trial.suggest_float('p_lateral_connection', 0.01, 1.00)
-    
-    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 1, 40)
+
+    activation = trial.suggest_categorical('activation', ['relu', 'gelu', 'swish', 'softsign'])
+
+    predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 0.01, 20.0)
+
+    predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 0.1, 20.0)
+
+    max_consecutive_lateral_connections = trial.suggest_int('max_consecutive_lateral_connections', 2, 7)
+
+    p_lateral_connection = trial.suggest_float('p_lateral_connection', 0.01, 0.5)
+
+    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 1, 17)
     
     learning_rate = trial.suggest_float('learning_rate', 10 ** -4, 0.05, log=True)
     
@@ -135,7 +135,7 @@ def objective(trial: optuna.Trial) -> float:
     # embedding output dim must be an even number
     # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-    EMBEDDING_N = 6 # 12
+    EMBEDDING_N = 4 # 12
     EMBEDDING_DIM = int(EMBEDDING_N * 2)
     
     PROJECTION_N = 1 # Punatuve increase of ram, leaving this as 1 until we are running on HPC
@@ -894,7 +894,7 @@ def objective(trial: optuna.Trial) -> float:
             generated_tokens = generator.generate(
                 token_ids=input_ids,  # Just the actual tokens, no padding
                 do_sample=False,
-                max_new_tokens=40
+                max_new_tokens=10
             )
             generated_text =\
                     tokenizer.decode(generated_tokens).replace(text, "")
@@ -953,7 +953,7 @@ def main():
     # n_trials = int(os.getenv("CEREBROS_N_TRIALS", "3" if fast else "20"))
     n_trials = N_TRIALS
     # mlflow_parent = mlflow.start_run(run_name=os.getenv("MLFLOW_PARENT_RUN_NAME", "cerebros_poc_parent"), tags={"phase": "poc", "mode": "fast" if fast else "full"})
-    sampler = optuna.samplers.TPESampler(multivariate=True)
+    sampler = optuna.samplers.TPESampler(multivariate=True, n_startup_trials=5)
     study = optuna.create_study(direction="minimize", sampler=sampler)
     study.optimize(objective, n_trials=n_trials)
     # mlflow.log_param("n_trials", n_trials)
