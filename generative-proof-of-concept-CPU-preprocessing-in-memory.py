@@ -30,13 +30,13 @@ def objective(trial: optuna.Trial) -> float:
     """
     
     import tensorflow as tf
-    import tensorflow_text
-    from keras_nlp.models import GPT2Tokenizer, GPT2Preprocessor, GPT2Backbone
-    from keras_nlp.layers import PositionEmbedding
+    # import tensorflow_text
+    # from keras_nlp.models import GPT2Tokenizer, GPT2Preprocessor, GPT2Backbone
+    # from keras_nlp.layers import PositionEmbedding
     from transformers import AutoTokenizer
     from sklearn.model_selection import train_test_split
     from sklearn.utils import shuffle
-    from tensorflow.keras.utils import to_categorical
+    # from tensorflow.keras.utils import to_categorical
     from tensorflow.keras.optimizers import Adam
     from tensorflow.keras.models import Model
     from tensorflow.keras.layers import Input, Flatten
@@ -51,7 +51,7 @@ def objective(trial: optuna.Trial) -> float:
     from ast import literal_eval
     import time
     from gc import collect
-    from os.path import getsize
+    # from os.path import getsize
     import re
 
     ### Non - HP tuning parameters (Optimize to RAM / CPU / GPU capacity)
