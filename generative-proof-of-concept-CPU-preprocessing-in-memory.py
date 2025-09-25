@@ -818,26 +818,34 @@ def objective(trial: optuna.Trial) -> float:
                 # Renormalize
                 filtered_probs = filtered_probs / tf.reduce_sum(filtered_probs)
                 return filtered_probs
-
+   
             def generate(self, token_ids, do_sample=False, max_new_tokens=None, temperature=1.0, top_k=None, top_p=None):
-                # (init code as existing)
+                # Initialize tracking variables
+                generated_tokens = []
+                current_tokens = token_ids.copy()  # Working copy of tokens
+                
+                # Set default max_new_tokens based on available space
+                if max_new_tokens is None:
+                    max_new_tokens = self.max_sequence_length - len(token_ids)
+                    max_new_tokens = max(0, max_new_tokens)  # Ensure non-negative
                 
                 for _ in range(max_new_tokens):
-
-                    if len(token_ids) > self.max_sequence_length:
-                        input_tokens = token_ids[:self.max_sequence_length]
+                    # Prepare input tokens with proper padding/truncation
+                    if len(current_tokens) > self.max_sequence_length:
+                        input_tokens = current_tokens[-self.max_sequence_length:]  # Take last max_seq_length tokens
                     else:
-                        padding_needed = self.max_sequence_length - len(token_ids)
-                        input_tokens = token_ids + [self.padding_token] * padding_needed
-
+                        padding_needed = self.max_sequence_length - len(current_tokens)
+                        input_tokens = current_tokens + [self.padding_token] * padding_needed
+            
+                    # Convert to tensor and wrap in list (model expects list of tensors)
                     input_tensor = tf.constant([input_tokens], dtype=tf.int32)  # Shape (1, max_sequence_length)
-                    logits = self.model(input_tensor)
                     
-                    # Apply temperature scaling (logits->probs because your model returns softmax)
-                    probs = logits[0]  # logits[0] is already softmax
+                    # Call model - output is [softmax_tensor], so logits[0] is correct
+                    logits = self.model([input_tensor])  # Input as list
+                    probs = logits[0][0]  # Output: [batch_outputs][0] = softmax probabilities for first batch item
                     
                     if do_sample:
-                        # 1. Temperature: convert back to logits, scale, resoftmax
+                        # 1. Temperature scaling
                         if temperature != 1.0:
                             temp_logits = tf.math.log(probs + 1e-20) / temperature
                             probs = tf.nn.softmax(temp_logits)
@@ -848,33 +856,27 @@ def objective(trial: optuna.Trial) -> float:
                         if top_p is not None and top_p < 1.0:
                             probs = self.apply_top_p_probs(probs, top_p)
                         # Sample
-                        next_token_id = tf.random.categorical(tf.math.log(probs[None, :]), 1)[0,0].numpy()
+                        next_token_id = tf.random.categorical(tf.math.log(probs[None, :]), 1)[0, 0].numpy()
                     else:
                         # Greedy sampling (argmax)
                         next_token_id = int(tf.argmax(probs, axis=-1).numpy())
-
+            
                     # Check for termination condition
                     if next_token_id == self.padding_token:
                         break
                         
                     # Add to generated tokens and update current tokens
-                    generated_tokens.append(int(next_token_id))
-                    current_tokens.append(int(next_token_id))
+                    next_token_id = int(next_token_id)
+                    generated_tokens.append(next_token_id)
+                    current_tokens.append(next_token_id)
                     
                     # Check if we've reached max sequence length
                     if len(current_tokens) >= self.max_sequence_length:
                         break
                 
-                # Pad the result to the required length if necessary (CORRECTED PADDING LOGIC)
-                total_tokens = token_ids + generated_tokens
-                if len(total_tokens) < len(token_ids) + max_new_tokens:
-                    padding_needed = len(token_ids) + max_new_tokens - len(total_tokens)
-                    total_tokens.extend([self.padding_token] * padding_needed)
-                    
-                return total_tokens
+                return token_ids + generated_tokens  # Return original + generated tokens
 
 
-        
             def call(self, inputs):
                 # This is just for compatibility, the main logic is in generate()
                 return self.model(inputs)
