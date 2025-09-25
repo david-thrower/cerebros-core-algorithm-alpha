@@ -793,8 +793,14 @@ def objective(trial: optuna.Trial) -> float:
                 # (init code as existing)
                 
                 for _ in range(max_new_tokens):
-                    # (padding code as existing)
-                    input_tensor = tf.constant([token_ids], dtype=tf.int32)
+
+                    if len(token_ids) > self.max_sequence_length:
+                        input_tokens = token_ids[:self.max_sequence_length]
+                    else:
+                        padding_needed = self.max_sequence_length - len(token_ids)
+                        input_tokens = token_ids + [self.padding_token] * padding_needed
+
+                    input_tensor = tf.constant([input_tokens], dtype=tf.int32)  # Shape (1, max_sequence_length)
                     logits = self.model(input_tensor)
                     
                     # Apply temperature scaling (logits->probs because your model returns softmax)
