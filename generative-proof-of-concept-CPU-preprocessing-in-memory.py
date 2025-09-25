@@ -882,7 +882,7 @@ def objective(trial: optuna.Trial) -> float:
                             probs = self.apply_top_p_probs(probs, top_p)
                         
                         # Sample from the distribution
-                        next_token_id = tf.random.categorical(tf.math.log(probs + 1e-20), 1)[0, 0].numpy()
+                        next_token_id = tf.random.categorical(tf.math.log(logits[0])[None, :], 1)[0, 0].numpy()
                     else:
                         # Greedy sampling (argmax)
                         next_token_id = int(tf.argmax(logits[0], axis=-1).numpy())
