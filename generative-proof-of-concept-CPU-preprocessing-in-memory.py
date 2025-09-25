@@ -1002,8 +1002,8 @@ def objective(trial: optuna.Trial) -> float:
                 do_sample=True,
                 max_new_tokens=20,
                 temperature=0.6,
-                top_k=30,
-                top_p=0.8,
+                top_k=40,
+                top_p=0.9,
             )
             
             # Decode the result
