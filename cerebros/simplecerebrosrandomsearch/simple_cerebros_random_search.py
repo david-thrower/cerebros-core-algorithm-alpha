@@ -415,33 +415,35 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
             jnp.arange(self.minimum_units_per_level,
                        self.maximum_units_per_level + 1))
 
-    def parse_prototype_for_level(self,
-                                  num_units_this_level):
-        units_neuron_choices =\
-            [np.random.choice(jnp.arange(self.minimum_neurons_per_unit,
-                                         self.maximum_neurons_per_unit + 1))
-             for _ in jnp.arange(num_units_this_level)]
-        level_prototype =\
-            [{f"{units}": self.unit_type}
-             for units in units_neuron_choices]
-        return level_prototype
+    # def parse_prototype_for_level(self,
+    #                               num_units_this_level):
+    #     units_neuron_choices =\
+    #         [np.random.choice(jnp.arange(self.minimum_neurons_per_unit,
+    #                                      self.maximum_neurons_per_unit + 1))
+    #          for _ in jnp.arange(num_units_this_level)]
+    #     level_prototype =\
+    #         [{f"{units}": self.unit_type}
+    #          for units in units_neuron_choices]
+    #     return level_prototype
 
-    def parse_neural_network_structural_spec_random(self):
+    def parse_neural_network_structural_spec_mv_tpe(self, trial):
 
         __neural_network_spec = {"0": self.inputs}
-        self.num_levels =\
-            np.random.choice(jnp.arange(self.minimum_levels,
-                                        self.maximum_levels + 1))
-        # __oracle_entry['num_levels'] = self.num_levels
+        self.num_levels = trial.suggest_int('num_levels', self.minimum_levels, self.maximum_levels)
+
         last_level = int(jnp.arange(self.num_levels)[-1])
         for i in jnp.arange(self.num_levels):
             level_index = str(i + 1)  # 0 is taken by InputLevel
-            num_units_this_level =\
-                self.pick_num_units()
+            
+            num_units_this_level = trial.suggest_int(f'level_{level_index}_num_units')
             for j in jnp.arange(num_units_this_level):
                 if int(i) != last_level:
-                    __neural_network_spec[str(level_index)] =\
-                        self.parse_prototype_for_level(num_units_this_level)
+		    units_neuron_choices =\
+			    [trial.suggest_int(f"level_{level_index}_unit_{j}_num_units", self.minimum_neurons_per_unit, self.maximum_neurons_per_unit)]
+		    level_prototype =\
+			    [{f"{units}": self.unit_type}
+			     for units in units_neuron_choices]
+                    __neural_network_spec[level_index] = level_prototype
                 else:
                     __neural_network_spec[str(int(i) + 1)] =\
                         self.outputs
@@ -535,33 +537,37 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         for i in tqdm(np.arange(self.number_of_architecture_moities_to_try),
                       desc="Global task progress",
                       colour="#16ceeb"):
+            def objective(trial)
+                self.parse_neural_network_structural_spec_mv_tpe(trial)
+                spec = self.get_neural_network_spec()
 
-            self.parse_neural_network_structural_spec_random()
-            spec = self.get_neural_network_spec()
+                oracles = []
+                processes = []
+                subtrial_number = 0
+                lock = Lock()
+                for i in np.arange(
+                        self.number_of_tries_per_architecture_moity):
+                    result = self.run_moity_permutations(spec=spec, subtrial_number=subtrial_number, lock=lock)
+                # Where we left off
 
-            oracles = []
-            processes = []
-            subtrial_number = 0
-            lock = Lock()
-            for i in np.arange(
-                    self.number_of_tries_per_architecture_moity):
-                processes.append(
-                    Process(target=self.run_moity_permutations(spec=spec, subtrial_number=subtrial_number, lock=lock)))
-                subtrial_number += 1
-                self.seed += 1
-            for p in processes:
-                p.start()
-            for p in processes:
-                p.join()
-            # final_oracles = pd.concat(oracles, ignore_index=False)
-            # if self.direction == "maximize":
-            #     return float(final_oracles[self.metric_to_rank_by].values.max())
-            # elif self.direction == "minimize":
-            #     return float(final_oracles[self.metric_to_rank_by].values.min())
-            # raise ValueError("direction must be 'maximize' or 'minimize'.")
+                          
+                #     processes.append(
+                #         Process(target=))
+                #     subtrial_number += 1
+                #     self.seed += 1
+                # for p in processes:
+                #     p.start()
+                # for p in processes:
+                #     p.join()
+                # final_oracles = pd.concat(oracles, ignore_index=False)
+                # if self.direction == "maximize":
+                #     return float(final_oracles[self.metric_to_rank_by].values.max())
+                # elif self.direction == "minimize":
+                #     return float(final_oracles[self.metric_to_rank_by].values.min())
+                # raise ValueError("direction must be 'maximize' or 'minimize'.")
 
             self.trial_number += 1
-        oracles = pd.read_csv(f'{self.project_name}/oracle.csv')
+            oracles = pd.read_csv(f'{self.project_name}/oracle.csv')
         print(oracles.columns)
         print(f"metric_to_rank_by is: '{self.metric_to_rank_by}'")
         print(
