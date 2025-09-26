@@ -5,7 +5,7 @@ from datetime import datetime
 from subprocess import run
 from warnings import warn
 
-MLFLOW_PORT = 5000
+MLFLOW_PORT = 7777
 
 answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
    shell=True,
@@ -13,14 +13,16 @@ answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
 print(answer.stdout)
 
 
-EXPERIMENT_ITERATION = "0002"
+EXPERIMENT_ITERATION = "2025-09-26--0001"
 
-N_TRIALS = 10
+EXPERIMENT_ROOT_NAME = "single-worker-75-SPL-96-seq-optimization"
+
+N_TRIALS = 50
 
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
 
-mlflow.set_experiment(f"single-worker-1st-pass-tuning-{EXPERIMENT_ITERATION}-a")
+mlflow.set_experiment(f"{EXPERIMENT_ROOT_NAME}-{EXPERIMENT_ITERATION}-a")
 
 
 
@@ -60,7 +62,7 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion
     
-    SAMPLES_TO_CREATE = 10
+    SAMPLES_TO_CREATE = 75
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -69,7 +71,7 @@ def objective(trial: optuna.Trial) -> float:
     # Text encoding / embedding related constants
     
     
-    MAX_SEQ_LENGTH = 40 # 1536 (Linear and directly proportional to RAM requirement)
+    MAX_SEQ_LENGTH = 96 # 1536 (Linear and directly proportional to RAM requirement)
 
     #
     # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
@@ -90,15 +92,15 @@ def objective(trial: optuna.Trial) -> float:
 
     activation = trial.suggest_categorical('activation', ['relu', 'gelu', 'swish', 'softsign'])
 
-    predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 0.01, 20.0)
+    predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 0.01, 40.0)
 
-    predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 0.1, 20.0)
+    predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 0.1, 35.0)
 
     max_consecutive_lateral_connections = trial.suggest_int('max_consecutive_lateral_connections', 2, 7)
 
     p_lateral_connection = trial.suggest_float('p_lateral_connection', 0.01, 0.5)
 
-    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 1, 17)
+    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 1, 40)
     
     learning_rate = trial.suggest_float('learning_rate', 10 ** -4, 0.05, log=True)
     
@@ -110,15 +112,15 @@ def objective(trial: optuna.Trial) -> float:
     
     # Level constraints - ensure max >= min by setting min of max to value of min
     minimum_levels = trial.suggest_int('minimum_levels', 1, 3)
-    maximum_levels = trial.suggest_int('maximum_levels', minimum_levels, 3)
+    maximum_levels = trial.suggest_int('maximum_levels', minimum_levels, 4)
     
     # Units per level - ensure max >= min by setting min of max to value of min
     minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 1, 3)
     maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 4)
     
     # Neurons per unit - ensure max >= min by setting min of max to value of min
-    minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 1, 3)
-    maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 4)
+    minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 1, 5)
+    maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 5)
 
     
     tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B" # "HuggingFaceTB/SmolLM2-1.7B-Instruct" 
@@ -136,7 +138,7 @@ def objective(trial: optuna.Trial) -> float:
     # embedding output dim must be an even number
     # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-    EMBEDDING_N = 3 # 12
+    EMBEDDING_N = trial.suggest_int("embedding_n", 2, 7)  # 12
     EMBEDDING_DIM = int(EMBEDDING_N * 2)
     
     PROJECTION_N = 1 # Punatuve increase of ram, leaving this as 1 until we are running on HPC
@@ -875,7 +877,7 @@ def objective(trial: optuna.Trial) -> float:
                             probs = tf.where(top_k_mask, probs, tf.zeros_like(probs))
                             # Renormalize
                             probs = probs / tf.reduce_sum(probs)
-                            print(f">>> After top_k: {tf.shape(probs)} shape, {tf.reduce_sum(tf.cast(probs > 1e-8, tf.int32))} non-zero probs")
+                            # print(f">>> After top_k: {tf.shape(probs)} shape, {tf.reduce_sum(tf.cast(probs > 1e-8, tf.int32))} non-zero probs")
                         
                         # Apply top-p filtering (if specified)
                         if top_p is not None and top_p < 1.0:
@@ -898,7 +900,7 @@ def objective(trial: optuna.Trial) -> float:
                             # Apply mask and renormalize
                             probs = tf.where(filter_mask, probs, tf.zeros_like(probs))
                             probs = probs / tf.reduce_sum(probs)
-                            print(f">>> After top_p: {tf.shape(probs)} shape, {tf.reduce_sum(tf.cast(probs > 1e-8, tf.int32))} non-zero probs")
+                            # print(f">>> After top_p: {tf.shape(probs)} shape, {tf.reduce_sum(tf.cast(probs > 1e-8, tf.int32))} non-zero probs")
                         
                         # Sample from the final filtered distribution
                         # Get non-zero indices and their probabilities
