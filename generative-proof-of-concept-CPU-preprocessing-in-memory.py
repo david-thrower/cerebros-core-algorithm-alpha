@@ -860,11 +860,12 @@ def objective(trial: optuna.Trial) -> float:
                     
                     # Convert to tensor and get model prediction
                     input_tensor = tf.constant([input_tokens], dtype=tf.int32)
-                    logits = self.model(input_tensor)
-                    logits = logits[0]  # Raw logits from model
+                    probs_nested = self.model(input_tensor)
+                    probs = probs_nested[0]  # Already softmax probabilities (NOT logits as comment says)
+                    logits = tf.math.log(probs + 10 ** -20)  # Convert to logits for penalty application
             
                     if do_sample:
-                        # Apply repetition/frequency/presence penalties to raw logits
+                        # Apply repetition/frequency/presence penalties to logits
                         if frequency_penalty is not None or presence_penalty is not None:
                             # Collect token counts from current_tokens
                             token_counts = {}
