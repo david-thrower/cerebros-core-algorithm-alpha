@@ -1069,7 +1069,8 @@ def objective(trial: optuna.Trial) -> float:
                 temperature=0.6,
                 top_k=40,
                 top_p=0.95,
-                repetition_penalty=1.1
+                # repetition_penalty=1.1,
+                frequency_penalty=1.2
             )
             
             # Decode the result
