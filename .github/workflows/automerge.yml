@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "240-branch-to-diverge-cicd-scale-nlp-hpo-from-at-scale-study" ]
+    branches: [ "main", "247-2025-09-27--new-hpo-study-with-sampling-plus-penalties" ]
 
 permissions:
   contents: read
