@@ -13,7 +13,7 @@ answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
 print(answer.stdout)
 
 
-EXPERIMENT_ITERATION = "2025-09-26--0001"
+EXPERIMENT_ITERATION = "2025-09-26--0002"
 
 EXPERIMENT_ROOT_NAME = "2025-09-27--with-sampling-single-worker-75-SPL-96-seq-optimization"
 
@@ -62,7 +62,7 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion
     
-    SAMPLES_TO_CREATE = 75
+    SAMPLES_TO_CREATE = 200
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -100,22 +100,22 @@ def objective(trial: optuna.Trial) -> float:
 
     p_lateral_connection = trial.suggest_float('p_lateral_connection', 0.01, 0.5)
 
-    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 1, 40)
+    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 1, 35)
     
     learning_rate = trial.suggest_float('learning_rate', 10 ** -4, 0.05, log=True)
     
     epochs = trial.suggest_int('epochs', 10, 50)
     
-    batch_size = trial.suggest_int('batch_size', 5, 15)
+    batch_size = trial.suggest_int('batch_size', 5, 10)
     
-    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 2)
+    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 3)
     
     # Level constraints - ensure max >= min by setting min of max to value of min
     minimum_levels = trial.suggest_int('minimum_levels', 1, 3)
     maximum_levels = trial.suggest_int('maximum_levels', minimum_levels, 4)
     
     # Units per level - ensure max >= min by setting min of max to value of min
-    minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 1, 3)
+    minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 1, 4)
     maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 4)
     
     # Neurons per unit - ensure max >= min by setting min of max to value of min
@@ -732,8 +732,9 @@ def objective(trial: optuna.Trial) -> float:
         """### Testing the best model found"""
         
         MODEL_FILE_NAME = "cerebros-foundation-model.keras"
-        
-        best_model_found = cerebros_automl.get_best_model(purge_model_storage_files='slate')
+
+        # preserve best model to study later.
+        best_model_found = cerebros_automl.get_best_model(purge_model_storage_files=1)
         # mlflow.keras.log_model(best_model_found, artifact_path="base")
         # best_model_found.save(MODEL_FILE_NAME)
         # del(best_model_found)
