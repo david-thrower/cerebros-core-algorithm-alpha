@@ -15,7 +15,7 @@ print(answer.stdout)
 
 EXPERIMENT_ITERATION = "2025-09-26--0001"
 
-EXPERIMENT_ROOT_NAME = "single-worker-75-SPL-96-seq-optimization"
+EXPERIMENT_ROOT_NAME = "2025-09-27--with-sampling-single-worker-75-SPL-96-seq-optimization"
 
 N_TRIALS = 50
 
@@ -965,7 +965,7 @@ def objective(trial: optuna.Trial) -> float:
             generated_tokens = generator.generate(
                 token_ids=input_ids,  # Just the actual tokens, no padding
                 do_sample=False,
-                max_new_tokens=10
+                max_new_tokens=37
             )
             generated_text =\
                     tokenizer.decode(generated_tokens).replace(text, "")
@@ -1002,7 +1002,7 @@ def objective(trial: optuna.Trial) -> float:
             generated_tokens = generator.generate(
                 token_ids=token_ids,  # Just the actual tokens, no padding
                 do_sample=True,
-                max_new_tokens=20,
+                max_new_tokens=37,
                 temperature=0.6,
                 top_k=40,
                 top_p=0.95,
