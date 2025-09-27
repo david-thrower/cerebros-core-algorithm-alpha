@@ -1068,10 +1068,10 @@ def objective(trial: optuna.Trial) -> float:
                 token_ids=token_ids,  # Just the actual tokens, no padding
                 do_sample=True,
                 max_new_tokens=20,
-                temperature=0.6,
+                temperature=0.73,
                 # One set of recommendations
                 top_k=75,
-                top_p=0.95,
+                top_p=0.97,
                 # Previous semi-working values
                 # top_k=40,
                 # top_p=0.985,
