@@ -13,14 +13,17 @@ answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
 print(answer.stdout)
 
 
-EXPERIMENT_ITERATION = "0002"
+BASE_EXPERIMENT_NAME = "247-2025-09-27--hpo-study-with-sampling-plus-penalties"
+EXPERIMENT_ITERATION = "0001"
+EXPERIMENT_SCALE = "single-worker"
+SAMPLES_N = "75"
 
 N_TRIALS = 50
 
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
 
-mlflow.set_experiment(f"single-worker-1st-pass-tuning-{EXPERIMENT_ITERATION}-a")
+mlflow.set_experiment(f"{BASE_EXPERIMENT_NAME}--{SAMPLES_N}--{EXPERIMENT_SCALE}--{EXPERIMENT_ITERATION}-a")
 
 
 
@@ -60,7 +63,7 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion
     
-    SAMPLES_TO_CREATE = 10
+    SAMPLES_TO_CREATE = 75
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
