@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "245-add-repetition-penalties-to-generate" ]
+    branches: [ "main", "240-branch-to-diverge-cicd-scale-nlp-hpo-from-at-scale-study" ]
 
 permissions:
   contents: read
