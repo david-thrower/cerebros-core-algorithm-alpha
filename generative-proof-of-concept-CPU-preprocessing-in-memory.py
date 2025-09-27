@@ -23,7 +23,7 @@ N_TRIALS = 50
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
 
-mlflow.set_experiment(f"{BASE_EXPERIMENT_NAME}--{SAMPLES_N}--{EXPERIMENT_SCALE}--{EXPERIMENT_ITERATION}-a")
+mlflow.set_experiment(f"{BASE_EXPERIMENT_NAME}--{SAMPLES_N}-samples--{EXPERIMENT_SCALE}--{EXPERIMENT_ITERATION}-a")
 
 
 
