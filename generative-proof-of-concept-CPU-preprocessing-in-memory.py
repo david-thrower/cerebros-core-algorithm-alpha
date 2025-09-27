@@ -1069,8 +1069,12 @@ def objective(trial: optuna.Trial) -> float:
                 do_sample=True,
                 max_new_tokens=20,
                 temperature=0.6,
-                top_k=40,
-                top_p=0.985,
+                # One set of recommendations
+                top_k=75,
+                top_p=0.95,
+                # Previous semi-working values
+                # top_k=40,
+                # top_p=0.985,
                 # repetition_penalty=1.2,
                 presence_penalty=1.2,
                 frequency_penalty=1.4
