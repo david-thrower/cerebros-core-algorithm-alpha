@@ -15,7 +15,7 @@ print(answer.stdout)
 
 EXPERIMENT_ITERATION = "0002"
 
-N_TRIALS = 10
+N_TRIALS = 50
 
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
@@ -86,39 +86,39 @@ def objective(trial: optuna.Trial) -> float:
     # Begin MLflow trial run (nested inside parent run if any)
 
 
-    POSITIONAL_EMBEDDING_DROPOUT = trial.suggest_float('POSITIONAL_EMBEDDING_DROPOUT', 0.7, 0.99)
+    POSITIONAL_EMBEDDING_DROPOUT = trial.suggest_float('POSITIONAL_EMBEDDING_DROPOUT', 0.7, 0.8)
 
-    activation = trial.suggest_categorical('activation', ['relu', 'gelu', 'swish', 'softsign'])
+    activation = trial.suggest_categorical('activation', [ 'swish', 'softsign'])
 
-    predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 0.01, 20.0)
+    predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 3.0, 35.0)
 
-    predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 0.1, 20.0)
+    predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 9.0, 22.0)
 
-    max_consecutive_lateral_connections = trial.suggest_int('max_consecutive_lateral_connections', 2, 7)
+    max_consecutive_lateral_connections = trial.suggest_int('max_consecutive_lateral_connections', 3, 6)
 
-    p_lateral_connection = trial.suggest_float('p_lateral_connection', 0.01, 0.5)
+    p_lateral_connection = trial.suggest_float('p_lateral_connection', 0.1, 0.5)
 
-    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 1, 17)
+    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 18, 33)
     
     learning_rate = trial.suggest_float('learning_rate', 10 ** -4, 0.05, log=True)
     
-    epochs = trial.suggest_int('epochs', 10, 50)
+    epochs = trial.suggest_int('epochs', 44, 75)
     
-    batch_size = trial.suggest_int('batch_size', 5, 15)
+    batch_size = trial.suggest_int('batch_size', 7, 20)
     
-    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 2)
+    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 2, 5)
     
     # Level constraints - ensure max >= min by setting min of max to value of min
-    minimum_levels = trial.suggest_int('minimum_levels', 1, 3)
+    minimum_levels = trial.suggest_int('minimum_levels', 2, 3)
     maximum_levels = trial.suggest_int('maximum_levels', minimum_levels, 3)
     
     # Units per level - ensure max >= min by setting min of max to value of min
     minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 1, 3)
-    maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 4)
+    maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 3)
     
     # Neurons per unit - ensure max >= min by setting min of max to value of min
     minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 1, 3)
-    maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 4)
+    maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 3)
 
     
     tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B" # "HuggingFaceTB/SmolLM2-1.7B-Instruct" 
@@ -136,7 +136,7 @@ def objective(trial: optuna.Trial) -> float:
     # embedding output dim must be an even number
     # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-    EMBEDDING_N = 3 # 12
+    EMBEDDING_N = 7 # trial.suggest_int('embedding_n',6,8) # 12
     EMBEDDING_DIM = int(EMBEDDING_N * 2)
     
     PROJECTION_N = 1 # Punatuve increase of ram, leaving this as 1 until we are running on HPC
