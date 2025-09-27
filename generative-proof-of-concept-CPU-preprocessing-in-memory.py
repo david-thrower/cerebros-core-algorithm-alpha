@@ -820,10 +820,20 @@ def objective(trial: optuna.Trial) -> float:
                 filtered_probs = filtered_probs / tf.reduce_sum(filtered_probs)
                 return filtered_probs
 
-            def generate(self, token_ids, do_sample=False, max_new_tokens=None, temperature=1.0, top_k=None, top_p=None):
+
+            def generate(self, 
+                         token_ids,
+                         do_sample=False,
+                         max_new_tokens=None,
+                         temperature=1.0,
+                         top_k=None,
+                         top_p=None,
+                         frequency_penalty=None,
+                         presence_penalty=None,
+                         repetition_penalty=None):
                 """
                 Generate text autoregressively from token IDs.
-                Applies filtering in sequence: temperature -> top-k -> top-p
+                Applies filtering in sequence: penalties -> temperature -> top-k -> top-p
                 """
                 # Convert token_ids to list if it's not already
                 if not isinstance(token_ids, list):
@@ -850,15 +860,61 @@ def objective(trial: optuna.Trial) -> float:
                     
                     # Convert to tensor and get model prediction
                     input_tensor = tf.constant([input_tokens], dtype=tf.int32)
-                    logits = self.model(input_tensor)
-                    probs = logits[0]  # Already softmax probabilities
-                    
+                    probs_nested = self.model(input_tensor)
+                    probs = probs_nested[0]  # Already softmax probabilities (NOT logits as comment says)
+                    logits = tf.math.log(probs + 10 ** -20)  # Convert to logits for penalty application
+            
                     if do_sample:
-                        # Apply temperature first (to full distribution)
+                        # Apply repetition/frequency/presence penalties to logits
+                        if frequency_penalty is not None or presence_penalty is not None:
+                            # Collect token counts from current_tokens
+                            token_counts = {}
+                            for t in current_tokens:
+                                token_counts[t] = token_counts.get(t, 0) + 1
+            
+                            # Prepare penalty tensor
+                            vocab_size = tf.shape(logits)[0]
+                            penalties = tf.zeros_like(logits)
+            
+                            for token_id, count in token_counts.items():
+                                if token_id >= vocab_size:
+                                    continue
+                                penalty = 0.0
+                                if presence_penalty is not None:
+                                    penalty += presence_penalty
+                                if frequency_penalty is not None:
+                                    penalty += frequency_penalty * count
+            
+                                penalties = tf.tensor_scatter_nd_add(
+                                    penalties,
+                                    [[token_id]],
+                                    [penalty]
+                                )
+            
+                            # Subtract penalties from logits
+                            logits = logits - penalties
+            
+                        # Apply repetition penalty (standard approach)
+                        if repetition_penalty is not None and repetition_penalty != 1.0:
+                            # Collect unique tokens that have appeared
+                            unique_tokens = list(set(current_tokens))
+                            vocab_size = tf.shape(logits)[0]
+                            
+                            for token_id in unique_tokens:
+                                if token_id < vocab_size:
+                                    # Divide logits of repeated tokens by penalty
+                                    logits = tf.tensor_scatter_nd_update(
+                                        logits,
+                                        [[token_id]],
+                                        [logits[token_id] / repetition_penalty]
+                                    )
+            
+                        # Apply temperature
                         if temperature != 1.0:
-                            log_probs = tf.math.log(probs + 1e-20)
-                            temp_logits = log_probs / temperature
-                            probs = tf.nn.softmax(temp_logits)
+                            logits = logits / temperature
+                        
+                        # Convert to probabilities
+                        probs = tf.nn.softmax(logits)
                         
                         # Apply top-k filtering (if specified)
                         if top_k is not None and top_k > 0:
@@ -916,8 +972,19 @@ def objective(trial: optuna.Trial) -> float:
                             next_token_id = int(tf.argmax(probs, axis=-1).numpy())
                             
                     else:
-                        # Greedy sampling (argmax)
-                        next_token_id = int(tf.argmax(probs, axis=-1).numpy())
+                        # Greedy sampling (argmax) - apply repetition penalty if needed
+                        if repetition_penalty is not None and repetition_penalty != 1.0:
+                            unique_tokens = list(set(current_tokens))
+                            vocab_size = tf.shape(logits)[0]
+                            for token_id in unique_tokens:
+                                if token_id < vocab_size:
+                                    logits = tf.tensor_scatter_nd_update(
+                                        logits,
+                                        [[token_id]],
+                                        [logits[token_id] / repetition_penalty]
+                                    )
+                        
+                        next_token_id = int(tf.argmax(logits, axis=-1).numpy())
             
                     # Check for termination condition
                     if next_token_id == self.padding_token:
@@ -1003,7 +1070,10 @@ def objective(trial: optuna.Trial) -> float:
                 max_new_tokens=20,
                 temperature=0.6,
                 top_k=40,
-                top_p=0.95,
+                top_p=0.985,
+                # repetition_penalty=1.2,
+                presence_penalty=1.2,
+                frequency_penalty=1.4
             )
             
             # Decode the result

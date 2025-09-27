@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "0002-patch-241-sampling-fixes" ]
+    branches: [ "main", "245-add-repetition-penalties-to-generate" ]
 
 permissions:
   contents: read
