@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "249-improve-text-generation-samples-in-cicd-scale-test" ]
+    branches: [ "main", "240-branch-to-diverge-cicd-scale-nlp-hpo-from-at-scale-study" ]
 
 permissions:
   contents: read
