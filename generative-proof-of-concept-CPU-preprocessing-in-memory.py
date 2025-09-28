@@ -14,7 +14,7 @@ print(answer.stdout)
 
 
 BASE_EXPERIMENT_NAME = "247-2025-09-27--hpo-study-with-sampling-plus-penalties"
-EXPERIMENT_ITERATION = "0001"
+EXPERIMENT_ITERATION = "0002"
 EXPERIMENT_SCALE = "single-worker"
 SAMPLES_N = "1000"
 
