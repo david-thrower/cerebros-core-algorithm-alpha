@@ -79,6 +79,16 @@ def objective(trial: optuna.Trial) -> float:
     moities_to_try = 3 # ++ Accuracy, linear increase in computation time (Raise this before resorting to raising the next one)
     tries_per_moity = 1 # ++ Modest ++ Accuracy, quadratic increase in computation time 
 
+    ## Generation time configurables: ##########
+
+    GENERATION_PROMPT_LEN = 25
+    MAX_NEW_TOKENS = 14
+    RESULT_CUTOFF = 11 # Only print out verbose text samples when perplexity is < RESULT_CUTOFF
+
+    if GENERATION_PROMPT_LEN + MAX_NEW_TOKENS > MAX_SEQ_LENGTH:
+       raise ValueError("Sequence length overflow: Generated text length (GENERATION_PROMPT_LEN + MAX_NEW_TOKENS) "
+                        "should be less than or equal to MAX_SEQ_LENGTH.")
+
     ##### HP Tuning Parameters: ######### (Parameters to be optimized by TPE or SOBOL) 
 
     
@@ -1020,8 +1030,9 @@ def objective(trial: optuna.Trial) -> float:
         
         # mlflow.keras.log_model(generator, artifact_path="generator")
         print("########### BEFORE SEARIALIZING THE GENERATIVE MODEL")
-        
-        def complete_text(text):
+
+        # Utility function to generate text from greedy sampling:
+        def complete_text_greedy(text: str, max_new_tokens:int=10) -> str:
             input_ids = tokenizer(
                 text,
                 add_special_tokens=False
@@ -1030,62 +1041,123 @@ def objective(trial: optuna.Trial) -> float:
             generated_tokens = generator.generate(
                 token_ids=input_ids,  # Just the actual tokens, no padding
                 do_sample=False,
-                max_new_tokens=10
+                max_new_tokens=max_new_tokens
             )
             generated_text =\
                     tokenizer.decode(generated_tokens).replace(text, "")
             return generated_text
-        
-        test_text = "I saw the sun and it was as"
-        response = complete_text(test_text)
-        
-        print(f"I ask the generator: {test_text}... It responds:")
-        print(response)
-        
-        counter = 0
-        for sample in non_instruct_samples:
-        
-            
-            # Tokenize the text without padding first to get actual tokens
-            sample_tokenized = tokenizer(
-                sample,
+
+        # Utility function to generate text from beam sampling:
+        def complete_text_beam(text: str,
+                               max_new_tokens: int=10, 
+                               temperature: float=0.75, 
+                               top_k: int=75, 
+                               top_p: float=0.98, 
+                               repetition_penalty: float=None, 
+                               presence_penalty: float=1.3, 
+                               frequency_penalty: float=1.4) -> str:
+
+            input_ids = tokenizer(
+                text,
                 add_special_tokens=False
             )['input_ids']
-            start_generate_index = int(np.ceil(len(sample_tokenized) * 0.5))
-            half_sample_tokenized = sample_tokenized[:start_generate_index]
-            
-            # Convert to Python list of integers
-            if hasattr(half_sample_tokenized, 'numpy'):
-                token_ids = half_sample_tokenized.numpy().tolist()
-            else:
-                token_ids = [int(token_id) for token_id in half_sample_tokenized]
-            
-            print(f"Actual token count: {len(token_ids)}")
-            print(f"First 10 tokens: {token_ids[:10]}")
-            
-            # Now pass the list of integers to your generate method
+        
             generated_tokens = generator.generate(
-                token_ids=token_ids,  # Just the actual tokens, no padding
+                token_ids=input_ids,  # Just the actual tokens, no padding
                 do_sample=True,
-                max_new_tokens=20,
-                temperature=0.73,
-                # One set of recommendations
-                top_k=75,
-                top_p=0.97,
-                # Previous semi-working values
-                # top_k=40,
-                # top_p=0.985,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+                top_k=top_k,
+                top_p=top_p,
                 # repetition_penalty=1.2,
-                presence_penalty=1.2,
-                frequency_penalty=1.4
+                presence_penalty= presence_penalty,
+                frequency_penalty=frequency_penalty
             )
+            generated_text =\
+                    tokenizer.decode(generated_tokens).replace(text, "")
+            return generated_text
+       
+        test_text = "I saw the sun and it was as shining on the"
+        response = complete_text_greedy(test_text)
+        print(f"I ask the generator (greedy): {test_text}... It responds: '{response}'.")
+        response = complete_text_beam(test_text)
+        print(f"I ask the generator (Beam defaults - max_new_tokens: 10,  temperature: 0.75, top_k: 75, top_p: 0.98, repetition_penalty: None, presence_penalty: 1.3, frequency_penalty: 1.4): {test_text}... It responds: '{response}'.")
+
+        def test_text(test_prompt: str, max_new_tokens: int, sample_number: int, result: float, result_cutoff) -> None:
+            """
+            If the result < result_cutoff, this will run a matrix of different sampling values and print out the resulting text for human subjective evaluation.
+
+            Parameters:
+                - test_prompt: a string to prompt generation
+                - max_new_tokens: int, number of tokens to generate unless we generate a stop token. 
+                - sample_number: Metadata for sample...
+                - result: Perplexity score from this run
+                - result cutoff: Perplexity score that would be expected to indicate a trial worth running this pn
             
-            # Decode the result
-            half_sample = tokenizer.decode(half_sample_tokenized)
-            full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)\
-                    .replace(half_sample, "")
+            """
+            response1 = response = complete_text_greedy(text=test_prompt, max_new_tokens=max_new_tokens)
+            print(f"Sample {sample_number}: I ask the generator (greedy): {test_prompt}... It responds: '{response1}'.")
+            response2 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens)
+            print(f"Sample {sample_number}: I ask the generator (Beam defaults - max_new_tokens: 10,  temperature: 0.75, top_k: 75, top_p: 0.98, repetition_penalty: None, presence_penalty: 1.3, frequency_penalty: 1.4): {test_prompt}... It responds: '{response2}'.")
+            response_3 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.6, top_k=75, top_p: 0.98, repetition_penalty=None, presence_penalty: 1.3 = frequency_penalty = 1.4)
+            print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.6, top_k=75, top_p: 0.98, repetition_penalty=None, presence_penalty: 1.3 = frequency_penalty = 1.4): {test_prompt}... It responds: '{response2}'.")
+            response_4 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.7, top_k=75, top_p: 0.98, repetition_penalty=None, presence_penalty: 1.3 = frequency_penalty = 1.4)      
+            print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.7, top_k=75, top_p: 0.98, repetition_penalty=None, presence_penalty: 1.3 = frequency_penalty = 1.4): {test_prompt}... It responds: '{response3}'.")
+            response_4 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.7, top_k=75, top_p: 0.97, repetition_penalty=None, presence_penalty: 1.3 = frequency_penalty = 1.4)
+            print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.7, top_k=75, top_p: 0.97, repetition_penalty=None, presence_penalty: 1.3 = frequency_penalty = 1.4): {test_prompt}... It responds: '{response_4}'.")      
+
+
+        prompt_samples = [
+                "In the beginning God created the ",
+                "And the earth was without form, and",
+                "And God said, Let there be light: and there ",
+                "And God said, Let the waters under the heaven be gathered"]
+
+
+        counter = 0
+        for sample in prompt_samples:
+            test_text(test_prompt=sample, max_new_tokens=MAX_NEW_TOKENS, sample_number= counter, result=result, result cutoff = RESULT_CUTOFF)
             
-            print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
+            # # Tokenize the text without padding first to get actual tokens
+            # sample_tokenized = tokenizer(
+            #     sample,
+            #     add_special_tokens=False
+            # )['input_ids']
+            # start_generate_index = int(np.ceil(len(sample_tokenized) * 0.5))
+            # half_sample_tokenized = sample_tokenized[:start_generate_index]
+            
+            # # Convert to Python list of integers
+            # if hasattr(half_sample_tokenized, 'numpy'):
+            #     token_ids = half_sample_tokenized.numpy().tolist()
+            # else:
+            #     token_ids = [int(token_id) for token_id in half_sample_tokenized]
+            
+            # print(f"Actual token count: {len(token_ids)}")
+            # print(f"First 10 tokens: {token_ids[:10]}")
+            
+            # # Now pass the list of integers to your generate method
+            # generated_tokens = generator.generate(
+            #     token_ids=token_ids,  # Just the actual tokens, no padding
+            #     do_sample=True,
+            #     max_new_tokens=20,
+            #     temperature=0.73,
+            #     # One set of recommendations
+            #     top_k=75,
+            #     top_p=0.97,
+            #     # Previous semi-working values
+            #     # top_k=40,
+            #     # top_p=0.985,
+            #     # repetition_penalty=1.2,
+            #     presence_penalty=1.2,
+            #     frequency_penalty=1.4
+            # )
+            
+            # # Decode the result
+            # half_sample = tokenizer.decode(half_sample_tokenized)
+            # full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)\
+            #         .replace(half_sample, "")
+            
+            # print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
             counter += 1
         mlflow.log_metric("perplexity", result, step=trial.number)
         del(best_model_found)
