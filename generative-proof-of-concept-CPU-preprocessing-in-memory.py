@@ -1099,12 +1099,12 @@ def objective(trial: optuna.Trial) -> float:
             print(f"Sample {sample_number}: I ask the generator (greedy): {test_prompt}... It responds: '{response1}'.")
             response2 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens)
             print(f"Sample {sample_number}: I ask the generator (Beam defaults - max_new_tokens: 10,  temperature: 0.75, top_k: 75, top_p: 0.98, repetition_penalty: None, presence_penalty: 1.3, frequency_penalty: 1.4): {test_prompt}... It responds: '{response2}'.")
-            response_3 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.6, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty: 1.3 = frequency_penalty = 1.4)
-            print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.6, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty: 1.3 = frequency_penalty = 1.4): {test_prompt}... It responds: '{response2}'.")
-            response_4 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.7, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty: 1.3 = frequency_penalty = 1.4)      
-            print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.7, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty: 1.3 = frequency_penalty = 1.4): {test_prompt}... It responds: '{response3}'.")
-            response_4 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.7, top_k=75, top_p=0.97, repetition_penalty=None, presence_penalty: 1.3 = frequency_penalty = 1.4)
-            print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.7, top_k=75, top_p=0.97, repetition_penalty=None, presence_penalty: 1.3 = frequency_penalty = 1.4): {test_prompt}... It responds: '{response_4}'.")      
+            response_3 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.6, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty: 1.3, frequency_penalty = 1.4)
+            print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.6, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty: 1.3, frequency_penalty = 1.4): {test_prompt}... It responds: '{response2}'.")
+            response_4 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.7, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty: 1.3, frequency_penalty = 1.4)      
+            print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.7, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty: 1.3, frequency_penalty = 1.4): {test_prompt}... It responds: '{response3}'.")
+            response_4 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.7, top_k=75, top_p=0.97, repetition_penalty=None, presence_penalty: 1.3, frequency_penalty = 1.4)
+            print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.7, top_k=75, top_p=0.97, repetition_penalty=None, presence_penalty: 1.3, frequency_penalty = 1.4): {test_prompt}... It responds: '{response_4}'.")      
 
 
         prompt_samples = [
