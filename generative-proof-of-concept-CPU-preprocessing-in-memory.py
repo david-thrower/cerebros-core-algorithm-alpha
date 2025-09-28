@@ -5,7 +5,7 @@ from datetime import datetime
 from subprocess import run
 from warnings import warn
 
-MLFLOW_PORT = 5000
+MLFLOW_PORT = 7777
 
 answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
    shell=True,
