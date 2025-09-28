@@ -16,7 +16,7 @@ print(answer.stdout)
 BASE_EXPERIMENT_NAME = "247-2025-09-27--hpo-study-with-sampling-plus-penalties"
 EXPERIMENT_ITERATION = "0001"
 EXPERIMENT_SCALE = "single-worker"
-SAMPLES_N = "75"
+SAMPLES_N = "1000"
 
 N_TRIALS = 50
 
@@ -116,12 +116,12 @@ def objective(trial: optuna.Trial) -> float:
     maximum_levels = trial.suggest_int('maximum_levels', minimum_levels, 3)
     
     # Units per level - ensure max >= min by setting min of max to value of min
-    minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 1, 3)
-    maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 3)
+    minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 1, 4)
+    maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 4)
     
     # Neurons per unit - ensure max >= min by setting min of max to value of min
-    minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 1, 3)
-    maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 3)
+    minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 1, 4)
+    maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 4)
 
     
     tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B" # "HuggingFaceTB/SmolLM2-1.7B-Instruct" 
@@ -139,7 +139,7 @@ def objective(trial: optuna.Trial) -> float:
     # embedding output dim must be an even number
     # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-    EMBEDDING_N = 7 # trial.suggest_int('embedding_n',6,8) # 12
+    EMBEDDING_N = trial.suggest_int('embedding_n',6,9) # 12
     EMBEDDING_DIM = int(EMBEDDING_N * 2)
     
     PROJECTION_N = 1 # Punatuve increase of ram, leaving this as 1 until we are running on HPC
