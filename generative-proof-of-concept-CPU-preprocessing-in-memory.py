@@ -1092,7 +1092,7 @@ def objective(trial: optuna.Trial) -> float:
                 - max_new_tokens: int, number of tokens to generate unless we generate a stop token. 
                 - sample_number: Metadata for sample...
                 - result: Perplexity score from this run
-                - result cutoff: Perplexity score that would be expected to indicate a trial worth running this pn
+                - result_cutoff: Perplexity score that would be expected to indicate a trial worth running this pn
             
             """
             response1 = response = complete_text_greedy(text=test_prompt, max_new_tokens=max_new_tokens)
@@ -1116,7 +1116,7 @@ def objective(trial: optuna.Trial) -> float:
 
         counter = 0
         for sample in prompt_samples:
-            test_text(test_prompt=sample, max_new_tokens=MAX_NEW_TOKENS, sample_number= counter, result=result, result cutoff = RESULT_CUTOFF)
+            test_text(test_prompt=sample, max_new_tokens=MAX_NEW_TOKENS, sample_number= counter, result=result, result_cutoff = RESULT_CUTOFF)
             
             # # Tokenize the text without padding first to get actual tokens
             # sample_tokenized = tokenizer(
