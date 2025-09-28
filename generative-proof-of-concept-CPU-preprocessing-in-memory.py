@@ -325,7 +325,7 @@ def objective(trial: optuna.Trial) -> float:
             
             # Add the final sample if we have any remaining sentences
             if current_sample_sentences and len(samples) < desired_samples:
-                sample = " ".join(current_sample_sentences)
+                sample = " ".join(current_sample_sentences).replace("\n",' ')
                 samples.append(sample)
             
             return samples
