@@ -43,6 +43,8 @@ jobs:
     # - name: Test image classifier - small subset of CIFAR10 # add back
     #   timeout-minutes: 90
     #   run: python3 cifar10-example.py
+    - name: build the HPO container
+      run: docker build -t hpo-study-single-pod-container:0001 .
     - name: Generative Proof Of Concept
       timeout-minutes: 180
       run: python3 generative-proof-of-concept-CPU-preprocessing-in-memory.py
