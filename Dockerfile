@@ -1,8 +1,8 @@
 FROM tensorflow/tensorflow:2.19.0
 
-RUN apt update
-RUN apt upgrade
-RUN apt install git
+RUN apt update -y
+RUN apt upgrade -y
+RUN apt install git -y
 
 WORKDIR /app
 
