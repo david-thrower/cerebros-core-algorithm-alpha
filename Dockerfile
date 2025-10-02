@@ -1,5 +1,9 @@
 FROM tensorflow/tensorflow:2.19.0
 
+RUN apt update
+RUN apt upgrade
+RUN apt install git
+
 WORKDIR /app
 
 RUN git clone https://github.com/david-thrower/cerebros-core-algorithm-alpha.git
