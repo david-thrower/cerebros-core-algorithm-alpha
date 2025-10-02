@@ -12,7 +12,7 @@ WORKDIR /app/cerebros-core-algorithm-alpha
 
 RUN git checkout 247-2025-09-27--new-hpo-study-with-sampling-plus-penalties
 
-RUN pip3 install -r requirements.txt
-RUN pip3 install -r cicd-requirements.txt
+RUN pip3 install -r  --ignore-installed requirements.txt
+RUN pip3 install -r  --ignore-installed cicd-requirements.txt
 
 ENTRYPOINT ["python3", "generative-proof-of-concept-CPU-preprocessing-in-memory.py" ]
