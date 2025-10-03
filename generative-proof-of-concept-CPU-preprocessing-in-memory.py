@@ -15,7 +15,7 @@ print(answer.stdout)
 
 EXPERIMENT_ITERATION = "0002"
 
-N_TRIALS = 10
+N_TRIALS = 40
 
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
@@ -83,7 +83,7 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion
     
-    SAMPLES_TO_CREATE = 10
+    SAMPLES_TO_CREATE = 150
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
