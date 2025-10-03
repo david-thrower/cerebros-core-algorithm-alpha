@@ -22,7 +22,30 @@ mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
 
 mlflow.set_experiment(f"single-worker-1st-pass-tuning-{EXPERIMENT_ITERATION}-a")
 
-
+import tensorflow as tf
+# import tensorflow_text
+# from keras_nlp.models import GPT2Tokenizer, GPT2Preprocessor, GPT2Backbone
+# from keras_nlp.layers import PositionEmbedding
+from transformers import AutoTokenizer
+from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
+# from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Flatten
+import pandas as pd
+import numpy as np
+from cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search\
+    import SimpleCerebrosRandomSearch
+import pendulum
+from cerebros.units.units import DenseUnit
+from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
+    import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
+from ast import literal_eval
+import time
+from gc import collect
+# from os.path import getsize
+import re
 
 def objective(trial: optuna.Trial) -> float:
     """
@@ -30,30 +53,30 @@ def objective(trial: optuna.Trial) -> float:
     Returns the validation loss or metric to minimize
     """
     
-    import tensorflow as tf
-    # import tensorflow_text
-    # from keras_nlp.models import GPT2Tokenizer, GPT2Preprocessor, GPT2Backbone
-    # from keras_nlp.layers import PositionEmbedding
-    from transformers import AutoTokenizer
-    from sklearn.model_selection import train_test_split
-    from sklearn.utils import shuffle
-    # from tensorflow.keras.utils import to_categorical
-    from tensorflow.keras.optimizers import Adam
-    from tensorflow.keras.models import Model
-    from tensorflow.keras.layers import Input, Flatten
-    import pandas as pd
-    import numpy as np
-    from cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search\
-        import SimpleCerebrosRandomSearch
-    import pendulum
-    from cerebros.units.units import DenseUnit
-    from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
-        import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
-    from ast import literal_eval
-    import time
-    from gc import collect
-    # from os.path import getsize
-    import re
+    # import tensorflow as tf
+    # # import tensorflow_text
+    # # from keras_nlp.models import GPT2Tokenizer, GPT2Preprocessor, GPT2Backbone
+    # # from keras_nlp.layers import PositionEmbedding
+    # from transformers import AutoTokenizer
+    # from sklearn.model_selection import train_test_split
+    # from sklearn.utils import shuffle
+    # # from tensorflow.keras.utils import to_categorical
+    # from tensorflow.keras.optimizers import Adam
+    # from tensorflow.keras.models import Model
+    # from tensorflow.keras.layers import Input, Flatten
+    # import pandas as pd
+    # import numpy as np
+    # from cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search\
+    #     import SimpleCerebrosRandomSearch
+    # import pendulum
+    # from cerebros.units.units import DenseUnit
+    # from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
+    #     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
+    # from ast import literal_eval
+    # import time
+    # from gc import collect
+    # # from os.path import getsize
+    # import re
 
     ### Non - HP tuning parameters (Optimize to RAM / CPU / GPU capacity)
     
