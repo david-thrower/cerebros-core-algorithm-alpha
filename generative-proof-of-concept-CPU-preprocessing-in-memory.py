@@ -106,7 +106,7 @@ def objective(trial: optuna.Trial) -> float:
 
     GENERATION_PROMPT_LEN = 25
     MAX_NEW_TOKENS = 14
-    RESULT_CUTOFF = 11 # Only print out verbose text samples when perplexity is < RESULT_CUTOFF
+    RESULT_CUTOFF = 21 # Only print out verbose text samples when perplexity is < RESULT_CUTOFF
 
     if GENERATION_PROMPT_LEN + MAX_NEW_TOKENS > MAX_SEQ_LENGTH:
        raise ValueError("Sequence length overflow: Generated text length (GENERATION_PROMPT_LEN + MAX_NEW_TOKENS) "
