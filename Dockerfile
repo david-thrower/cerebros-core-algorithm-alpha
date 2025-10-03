@@ -1,6 +1,7 @@
 
 # FROM tensorflow/tensorflow:2.19.0
-FROM python:3.14.0rc3-trixie
+# FROM python:3.14.0rc3-trixie
+FROM python:3.13.7-trixie
 
 RUN apt update -y
 RUN apt upgrade -y
