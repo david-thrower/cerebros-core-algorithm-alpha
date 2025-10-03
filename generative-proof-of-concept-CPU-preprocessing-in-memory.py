@@ -123,15 +123,15 @@ def objective(trial: optuna.Trial) -> float:
 
     activation = trial.suggest_categorical('activation', ['swish', 'softsign']) # ['relu', 'gelu', 'swish', 'softsign'])
 
-    predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 25.0, 35.0)
+    predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 10, 30.0)
 
     predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 16.0, 25.0)
 
     max_consecutive_lateral_connections = trial.suggest_int('max_consecutive_lateral_connections', 5, 7)
 
-    p_lateral_connection = trial.suggest_float('p_lateral_connection', 0.01, 0.5)
+    p_lateral_connection = trial.suggest_float('p_lateral_connection', 0.12, 0.3)
 
-    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 1, 17)
+    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 25, 33)
     
     learning_rate = trial.suggest_float('learning_rate', 0.0005, 0.0012, log=True)
     
@@ -146,11 +146,11 @@ def objective(trial: optuna.Trial) -> float:
     maximum_levels = 3 # trial.suggest_int('maximum_levels', minimum_levels, 3)
     
     # Units per level - ensure max >= min by setting min of max to value of min
-    minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 1, 3)
+    minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 1, 4)
     maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 4)
     
     # Neurons per unit - ensure max >= min by setting min of max to value of min
-    minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 1, 3)
+    minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 1, 4)
     maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 4)
 
     
