@@ -5,7 +5,7 @@ from datetime import datetime
 from subprocess import run
 from warnings import warn
 
-MLFLOW_PORT = 5000
+MLFLOW_PORT = 7777
 
 answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
    shell=True,
@@ -63,7 +63,7 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion
     
-    SAMPLES_TO_CREATE = 10
+    SAMPLES_TO_CREATE = 1000
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -84,9 +84,9 @@ def objective(trial: optuna.Trial) -> float:
 
     ## Generation time configurables: ##########
 
-    GENERATION_PROMPT_LEN = 25
-    MAX_NEW_TOKENS = 14
-    RESULT_CUTOFF = 11 # Only print out verbose text samples when perplexity is < RESULT_CUTOFF
+    GENERATION_PROMPT_LEN = 20
+    MAX_NEW_TOKENS = 20
+    RESULT_CUTOFF = 20 # Only print out verbose text samples when perplexity is < RESULT_CUTOFF
 
     if GENERATION_PROMPT_LEN + MAX_NEW_TOKENS > MAX_SEQ_LENGTH:
        raise ValueError("Sequence length overflow: Generated text length (GENERATION_PROMPT_LEN + MAX_NEW_TOKENS) "
@@ -103,23 +103,23 @@ def objective(trial: optuna.Trial) -> float:
 
     activation = trial.suggest_categorical('activation', ['relu', 'gelu', 'swish', 'softsign'])
 
-    predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 0.01, 20.0)
+    predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 10.0, 35.0)
 
-    predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 0.1, 20.0)
+    predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 16.0, 25.0)
 
     max_consecutive_lateral_connections = trial.suggest_int('max_consecutive_lateral_connections', 2, 7)
 
-    p_lateral_connection = trial.suggest_float('p_lateral_connection', 0.01, 0.5)
+    p_lateral_connection = trial.suggest_float('p_lateral_connection', 0.12, 0.35)
 
-    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 1, 17)
+    num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 10, 35)
     
-    learning_rate = trial.suggest_float('learning_rate', 10 ** -4, 0.05, log=True)
+    learning_rate = trial.suggest_float('learning_rate', 0.0006, 0.01, log=True)
     
-    epochs = trial.suggest_int('epochs', 10, 50)
+    epochs = trial.suggest_int('epochs', 10, 85)
     
-    batch_size = trial.suggest_int('batch_size', 5, 15)
+    batch_size = trial.suggest_int('batch_size', 5, 10)
     
-    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 2)
+    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 7)
     
     # Level constraints - ensure max >= min by setting min of max to value of min
     minimum_levels = trial.suggest_int('minimum_levels', 1, 3)
@@ -149,7 +149,7 @@ def objective(trial: optuna.Trial) -> float:
     # embedding output dim must be an even number
     # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-    EMBEDDING_N = 3 # 12
+    EMBEDDING_N = trial.suggest_int('embedding_n',6, 9) # 12
     EMBEDDING_DIM = int(EMBEDDING_N * 2)
     
     PROJECTION_N = 1 # Punatuve increase of ram, leaving this as 1 until we are running on HPC
