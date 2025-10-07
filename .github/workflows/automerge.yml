@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "252-vanila-test-generative-with-web-english-bible-genesis-set" ]
+    branches: [ "main", "253-new-hpo-study-850-samples-web-bible-train-set" ]
 
 permissions:
   contents: read
