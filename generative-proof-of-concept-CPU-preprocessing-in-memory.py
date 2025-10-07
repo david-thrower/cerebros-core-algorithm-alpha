@@ -271,7 +271,7 @@ def objective(trial: optuna.Trial) -> float:
         
         ## Only add re, tokenizer already in script
         
-        from vanilla-datasets.web-english-bible.py import samples as bible
+        from vanilla-datasets.web-english-bible import samples as bible
         # with open('king-james-bible.txt', 'r') as kjv:
         #     # bible = kjv.read()
         #     #
