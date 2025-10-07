@@ -63,7 +63,7 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion
     
-    SAMPLES_TO_CREATE = 1000
+    SAMPLES_TO_CREATE = 2000
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -84,8 +84,8 @@ def objective(trial: optuna.Trial) -> float:
 
     ## Generation time configurables: ##########
 
-    GENERATION_PROMPT_LEN = 20
-    MAX_NEW_TOKENS = 20
+    GENERATION_PROMPT_LEN = 10
+    MAX_NEW_TOKENS = MAX_SEQ_LENGTH - GENERATION_PROMPT_LEN
     RESULT_CUTOFF = 20 # Only print out verbose text samples when perplexity is < RESULT_CUTOFF
 
     if GENERATION_PROMPT_LEN + MAX_NEW_TOKENS > MAX_SEQ_LENGTH:
@@ -99,11 +99,11 @@ def objective(trial: optuna.Trial) -> float:
     # Begin MLflow trial run (nested inside parent run if any)
 
 
-    POSITIONAL_EMBEDDING_DROPOUT = trial.suggest_float('POSITIONAL_EMBEDDING_DROPOUT', 0.7, 0.99)
+    POSITIONAL_EMBEDDING_DROPOUT = trial.suggest_float('POSITIONAL_EMBEDDING_DROPOUT', 0.7, 0.9)
 
     activation = trial.suggest_categorical('activation', ['relu', 'gelu', 'swish', 'softsign'])
 
-    predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 10.0, 35.0)
+    predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 10.0, 30.0)
 
     predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 16.0, 25.0)
 
@@ -117,9 +117,9 @@ def objective(trial: optuna.Trial) -> float:
     
     epochs = trial.suggest_int('epochs', 10, 85)
     
-    batch_size = trial.suggest_int('batch_size', 5, 10)
+    batch_size = 5 # trial.suggest_int('batch_size', 5, 10)
     
-    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 7)
+    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 15)
     
     # Level constraints - ensure max >= min by setting min of max to value of min
     minimum_levels = trial.suggest_int('minimum_levels', 1, 3)
