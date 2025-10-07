@@ -333,12 +333,12 @@ def objective(trial: optuna.Trial) -> float:
             return samples
         
         # Separate into samples
-        non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=SAMPLES_TO_CREATE, max_length_tokens=int(np.ceil(MAX_SEQ_LENGTH * .8))) ##
+        # non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=SAMPLES_TO_CREATE, max_length_tokens=int(np.ceil(MAX_SEQ_LENGTH * .8))) ##
         
-        del(bible)
-        collect()
-        
-        print(f"Samples from KJV bible consisting of {len(non_instruct_samples)} look like this (sub-sample of 3): {non_instruct_samples[:3]}") 
+        # del(bible)
+        # collect()
+        non_instruct_samples = bible[:SAMPLES_TO_CREATE]
+        print(f"Samples from KJV bible consisting of {len(non_instruct_samples)} look like this (sub-sample of 3): {non_instruct_samples[:3]}")
         
         
         # Replace with imported text
