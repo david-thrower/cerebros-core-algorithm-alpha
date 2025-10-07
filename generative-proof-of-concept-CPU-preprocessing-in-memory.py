@@ -271,9 +271,11 @@ def objective(trial: optuna.Trial) -> float:
         
         ## Only add re, tokenizer already in script
         
-        
-        with open('king-james-bible.txt', 'r') as kjv:
-            bible = kjv.read()
+        from vanilla-datasets.web-english-bible.py import samples as bible
+        # with open('king-james-bible.txt', 'r') as kjv:
+        #     # bible = kjv.read()
+        #     #
+        #     bible = samples
         
         
         def package_non_instruct_text(text: str, desired_samples: int, max_length_tokens: int) -> list[str]:
