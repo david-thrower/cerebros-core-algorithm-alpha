@@ -13,14 +13,17 @@ answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
 print(answer.stdout)
 
 
-EXPERIMENT_ITERATION = "0002"
+EXPERIMENT_ITERATION = "0001"
+EXPERIMENT_NAME = "single-worker-1st-pass"
+DATA_SET_NAME = "WEB-Bible-Genesis-40-context-681-SPL"
 
-N_TRIALS = 10
+
+N_TRIALS = 50
 
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
 
-mlflow.set_experiment(f"single-worker-1st-pass-tuning-{EXPERIMENT_ITERATION}-a")
+mlflow.set_experiment(f"{EXPERIMENT_NAME}-{DATA_SET_NAME}-{EXPERIMENT_ITERATION}-a")
 
 
 
