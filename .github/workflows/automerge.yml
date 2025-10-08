@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "253-new-hpo-study-850-samples-web-bible-train-set" ]
+    branches: [ "main", "254-more-optimizations-to-notgpt-hpo-script" ]
 
 permissions:
   contents: read
