@@ -1163,9 +1163,9 @@ def objective(trial: optuna.Trial) -> float:
 
                 ]
                 # Default cases, no params
-                response1 = response = complete_text_greedy(text=test_prompt, max_new_tokens=max_new_tokens)
+                response_1 = response = complete_text_greedy(text=test_prompt, max_new_tokens=max_new_tokens)
                 print(f"Trial #: {trial_id} Text Sample #: {test_sample_number} Perplexity: {result_0}  GENERATE SAMPLING PARAMS: Greedy max_new_tokens=10 otherwise - N/A: PROMPT: '{test_prompt}' RESPONSE: '{response_1}'")
-                # print(f"Sample {sample_number}: I ask the generator (greedy): {test_prompt}... It responds: '{response1}'.")
+                # print(f"Sample {sample_number}: I ask the generator (greedy): {test_prompt}... It responds: '{response_1}'.")
                 response_2 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens)
                 print(f"Trial #: {trial_id} Text Sample #: {test_sample_number} Perplexity: {result_0} GENERATE PARAMS: Beam Default - max_new_tokens = 10, temperature=0.75, top_k=75,  top_p=0.98, repetition_penalty=None, presence_penalty=1.3, frequency_penalty=1.4: PROMPT: '{test_prompt}' RESPONSE: '{response_2}'.")
                 # print(f"Sample {sample_number}: I ask the generator (Beam defaults - max_new_tokens: 10,  temperature: 0.75, top_k: 75, top_p: 0.98, repetition_penalty: None, presence_penalty: 1.3, frequency_penalty: 1.4): {test_prompt}... It responds: '{response_2}'.")
