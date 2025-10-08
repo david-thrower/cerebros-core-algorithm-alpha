@@ -13,7 +13,7 @@ answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
 print(answer.stdout)
 
 
-EXPERIMENT_ITERATION = "0001"
+EXPERIMENT_ITERATION = "0003"
 EXPERIMENT_NAME = "single-worker-1st-pass"
 DATA_SET_NAME = "WEB-Bible-Genesis-40-context-681-SPL"
 
@@ -63,7 +63,7 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion
     
-    SAMPLES_TO_CREATE = 2000
+    SAMPLES_TO_CREATE = 681
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -105,7 +105,7 @@ def objective(trial: optuna.Trial) -> float:
 
     predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 10.0, 30.0)
 
-    predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 16.0, 25.0)
+    predecessor_level_connection_affinity_factor_main = trial.suggest_float('predecessor_level_connection_affinity_factor_main', 10.0, 25.0)
 
     max_consecutive_lateral_connections = trial.suggest_int('max_consecutive_lateral_connections', 2, 7)
 
@@ -117,9 +117,9 @@ def objective(trial: optuna.Trial) -> float:
     
     epochs = trial.suggest_int('epochs', 10, 85)
     
-    batch_size = 5 # trial.suggest_int('batch_size', 5, 10)
+    batch_size = 10 # trial.suggest_int('batch_size', 5, 10)
     
-    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 15)
+    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 6)
     
     # Level constraints - ensure max >= min by setting min of max to value of min
     minimum_levels = trial.suggest_int('minimum_levels', 1, 3)
