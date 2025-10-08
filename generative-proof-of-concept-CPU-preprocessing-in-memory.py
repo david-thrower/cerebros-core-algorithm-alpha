@@ -1164,9 +1164,11 @@ def objective(trial: optuna.Trial) -> float:
                 ]
                 # Default cases, no params
                 response1 = response = complete_text_greedy(text=test_prompt, max_new_tokens=max_new_tokens)
-                print(f"Sample {sample_number}: I ask the generator (greedy): {test_prompt}... It responds: '{response1}'.")
+                print(f"Trial #: {trial_id} Text Sample #: {test_sample_number} Perplexity: {result_0}  GENERATE SAMPLING PARAMS: Greedy max_new_tokens=10 otherwise - N/A: PROMPT: '{test_prompt}' RESPONSE: '{response_1}'")
+                # print(f"Sample {sample_number}: I ask the generator (greedy): {test_prompt}... It responds: '{response1}'.")
                 response_2 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens)
-                print(f"Sample {sample_number}: I ask the generator (Beam defaults - max_new_tokens: 10,  temperature: 0.75, top_k: 75, top_p: 0.98, repetition_penalty: None, presence_penalty: 1.3, frequency_penalty: 1.4): {test_prompt}... It responds: '{response_2}'.")
+                print(f"Trial #: {trial_id} Text Sample #: {test_sample_number} Perplexity: {result_0} GENERATE PARAMS: Beam Default - max_new_tokens = 10, temperature=0.75, top_k=75,  top_p=0.98, repetition_penalty=None, presence_penalty=1.3, frequency_penalty=1.4: PROMPT: '{test_prompt}' RESPONSE: '{response_2}'.")
+                # print(f"Sample {sample_number}: I ask the generator (Beam defaults - max_new_tokens: 10,  temperature: 0.75, top_k: 75, top_p: 0.98, repetition_penalty: None, presence_penalty: 1.3, frequency_penalty: 1.4): {test_prompt}... It responds: '{response_2}'.")
 
                 for perm_0 in generation_param_permutations:
                     response_0 = complete_text_beam(text=test_prompt,
@@ -1177,14 +1179,13 @@ def objective(trial: optuna.Trial) -> float:
                                                 repetition_penalty=perm_0['repetition_penalty'],
                                                 presence_penalty=perm_0['presence_penalty'],
                                                 frequency_penalty=perm_0['frequency_penalty'])
-                    print(f"Trial #: {trial_id} Text Sample #: {test_sample_number} Perplexity: {result_0} GENERATE PARAMS: max_new_tokens: {perm_0['max_new_tokens']} temperature={perm_0['temperature']}, top_k={perm_0['top_k']}, top_p={perm_0['top_p']}, repetition_penalty={perm_0['repetition_penalty']} presence_penalty={perm_0['presence_penalty']} frequency_penalty{perm_0['frequency_penalty']} PROMPT: '{test_prompt}' RESPONSE: '{response_0}'")
+                    print(f"Trial #: {trial_id} Text Sample #: {test_sample_number} Perplexity: {result_0} GENERATE PARAMS: max_new_tokens={perm_0['max_new_tokens']} temperature={perm_0['temperature']}, top_k={perm_0['top_k']}, top_p={perm_0['top_p']}, repetition_penalty={perm_0['repetition_penalty']} presence_penalty={perm_0['presence_penalty']} frequency_penalty{perm_0['frequency_penalty']} PROMPT: '{test_prompt}' RESPONSE: '{response_0}'")
                 #
                 # print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.6, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4): {test_prompt}... It responds: '{response_3}'.")
                 # response_4 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.7, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4)
                 # print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.7, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4): {test_prompt}... It responds: '{response_4}'.")
                 # response_5 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.7, top_k=75, top_p=0.97, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4)
                 # print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.7, top_k=75, top_p=0.97, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4): {test_prompt}... It responds: '{response_5}'.")
-                # Reorder printouts to the format f"Trial #: {trial_id} Text Sample #: {text_sample_number} generate_params temperature={temperature}, top_k={top_k}, top_p={top_p}, presence_penalty={presence_penalty} frequency_penalty{frequency_penalty} PROMPT: {prompt} RESPONSE: {}"
 
        # Sample prompts to test:
    
