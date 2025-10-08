@@ -1082,13 +1082,14 @@ def objective(trial: optuna.Trial) -> float:
                     tokenizer.decode(generated_tokens).replace(text, "")
             return generated_text
        
-        test_text = "I saw the sun and it was as shining on the"
-        response = complete_text_greedy(test_text)
-        print(f"I ask the generator (greedy): {test_text}... It responds: '{response}'.")
-        response = complete_text_beam(test_text)
-        print(f"I ask the generator (Beam defaults - max_new_tokens: 10,  temperature: 0.75, top_k: 75, top_p: 0.98, repetition_penalty: None, presence_penalty: 1.3, frequency_penalty: 1.4): {test_text}... It responds: '{response}'.")
+        test_text_block = "I saw the sun and it was as shining on the"
+        response = complete_text_greedy(test_text_block)
+        print(f"I ask the generator (greedy): {test_text_block}... It responds: '{response}'.")
+        response = complete_text_beam(test_text_blcok)
+        print(f"I ask the generator (Beam defaults - max_new_tokens: 10,  temperature: 0.75, top_k: 75, top_p: 0.98, repetition_penalty: None, presence_penalty: 1.3, frequency_penalty: 1.4): {test_text_block}... It responds: '{response}'.")
 
-        def test_text(test_prompt: str, max_new_tokens: int, sample_number: int, result: float, result_cutoff) -> None:
+        trial_number = int(trial.number)
+        def test_text(test_prompt: str, max_new_tokens: int, sample_number: int, result: float, result_cutoff, trial_id=trial_number) -> None:
             """
             If the result < result_cutoff, this will run a matrix of different sampling values and print out the resulting text for human subjective evaluation.
 
@@ -1101,17 +1102,63 @@ def objective(trial: optuna.Trial) -> float:
             
             """
             if result < result_cutoff:
+                generation_param_permutations = [
+                        # #3 
+                        {
+                                'max_new_tokens': max_new_tokens,
+                                'temperature': 0.6, 
+                                'top_k': 75, 
+                                'top_p': 0.98, 
+                                'repetition_penalty': None, 
+                                'presence_penalty': 1.3, 
+                                'frequency_penalty': 1.4
+                        },
+                        # #4
+                        {
+                                'max_new_tokens': max_new_tokens,
+                                'temperature': 0.7,
+                                'top_k': 75, 
+                                'top_p': 0.98, 
+                                'repetition_penalty': None, 
+                                'presence_penalty': 1.3, 
+                                'frequency_penalty': 1.4
+                        },
+                        # #5
+                        {
+                                'max_new_tokens': max_new_tokens,
+                                'temperature': 0.7,
+                                'top_k': 75,
+                                'top_p': 0.97, 
+                                'repetition_penalty': None, 
+                                'presence_penalty': 1.3, 
+                                'frequency_penalty': 1.4},
+                        # #6
+                        {
+                                'max_new_tokens': max_new_tokens, 
+                                'temperature': 0.75, 
+                                'top_k': 75, 
+                                'top_p': 0.98, 
+                                'repetition_penalty': None,  
+                                'presence_penalty': 1.4, 
+                                'frequency_penalty': 1.4},
+                        # #7
+                        {'max_new_tokens': max_new_tokens, temperature=0.7, top_k=75, top_p=0.98, presence_penalty=1.4, frequency_penalty = 1.4 },
+                        {'max_new_tokens': max_new_tokens}
+
+                ]
+                # Default cases, no params
                 response1 = response = complete_text_greedy(text=test_prompt, max_new_tokens=max_new_tokens)
                 print(f"Sample {sample_number}: I ask the generator (greedy): {test_prompt}... It responds: '{response1}'.")
                 response_2 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens)
                 print(f"Sample {sample_number}: I ask the generator (Beam defaults - max_new_tokens: 10,  temperature: 0.75, top_k: 75, top_p: 0.98, repetition_penalty: None, presence_penalty: 1.3, frequency_penalty: 1.4): {test_prompt}... It responds: '{response_2}'.")
+                
                 response_3 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.6, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4)
                 print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.6, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4): {test_prompt}... It responds: '{response_3}'.")
                 response_4 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.7, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4)
                 print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.7, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4): {test_prompt}... It responds: '{response_4}'.")
                 response_5 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.7, top_k=75, top_p=0.97, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4)
                 print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.7, top_k=75, top_p=0.97, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4): {test_prompt}... It responds: '{response_5}'.")
-
+                # Reorder printouts to the format f"Trial #: {trial_id} Text Sample #: {text_sample_number} generate_params temperature={temperature}, top_k={top_k}, top_p={top_p}, presence_penalty={presence_penalty} frequency_penalty{frequency_penalty} PROMPT: {prompt} RESPONSE: {}"
 
         prompt_samples = [
                 "In the beginning God created the ",
