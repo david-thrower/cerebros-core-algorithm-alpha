@@ -13,8 +13,8 @@ answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
 print(answer.stdout)
 
 
-EXPERIMENT_ITERATION = "0003"
-EXPERIMENT_NAME = "single-worker-1st-pass"
+EXPERIMENT_ITERATION = "0001"
+EXPERIMENT_NAME = "more-optimizations-br-254-single-machine"
 DATA_SET_NAME = "WEB-Bible-Genesis-40-context-681-SPL"
 
 
