@@ -1159,8 +1159,25 @@ def objective(trial: optuna.Trial) -> float:
                                 'repetition_penalty': None,
                                 'presence_penalty': 1.4,
                                 'frequency_penalty': 1.4
+                        },
+                        {
+                                'max_new_tokens': max_new_tokens, 
+                                'temperature': 0.6,
+                                'top_k': 40,
+                                'top_p': 0.96,
+                                'repetition_penalty': None,
+                                'presence_penalty': 1.4,
+                                'frequency_penalty': 1.4
+                        },
+                        {
+                                'max_new_tokens': max_new_tokens, 
+                                'temperature': 0.7,
+                                'top_k': 45,
+                                'top_p': 0.97,
+                                'repetition_penalty': None,
+                                'presence_penalty': 1.4,
+                                'frequency_penalty': 1.3
                         }
-
                 ]
                 # Default cases, no params
                 response_1 = response = complete_text_greedy(text=test_prompt, max_new_tokens=max_new_tokens)
@@ -1190,19 +1207,19 @@ def objective(trial: optuna.Trial) -> float:
        # Sample prompts to test:
    
         prompt_samples = [
-                # "I saw the sun and it was as shining on the",
+                "I saw the sun and it was as shining on the",
                 # "And God said to Moses:",
                 # "In the beginning God created the ",
                 # "And the earth was without form, and",
-                # "And God said, Let there be light: and there ",
+                "And God said, Let there be light: and there ",
                 # "Shall we all go to the river and"
                 "Try to",
-                "You must go and",
+                # "You must go and",
                 "In the beginning God created the heavens",
                 "The earth was formless and empty, with darkness over",
-                "God called the light 'day' and the darkness 'night,' marking evening and morning",
-                "God called the expanse 'sky,' and there was",
-                "The earth brought forth grass, seed-bearing"
+                # "God called the light 'day' and the darkness 'night,' marking evening and morning",
+                # "God called the expanse 'sky,' and there was",
+                # "The earth brought forth grass, seed-bearing"
         ]
 
 
