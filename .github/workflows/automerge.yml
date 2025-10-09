@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "254-more-optimizations-to-notgpt-hpo-script" ]
+    branches: [ "main", "255-copy-of-branch-254-updated-hpo-script-for-cicd-scale-testing" ]
 
 permissions:
   contents: read
