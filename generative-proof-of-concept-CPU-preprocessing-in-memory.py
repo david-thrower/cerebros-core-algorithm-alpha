@@ -1109,10 +1109,16 @@ def objective(trial: optuna.Trial) -> float:
 
 
         prompt_samples = [
-                "In the beginning God created the ",
-                "And the earth was without form, and",
-                "And God said, Let there be light: and there ",
-                "And God said, Let the waters under the heaven be gathered"]
+                # "In the beginning God created the ",
+                # "And the earth was without form, and",
+                # "And God said, Let there be light: and there ",
+                # "And God said, Let the waters under the heaven be gathered"
+                "In the beginning God created the heavens",
+                "The earth was formless and empty, with darkness over",
+                "God called the light 'day' and the darkness 'night,' marking evening and morning",
+                "God called the expanse 'sky,' and there was",
+                "The earth brought forth grass, seed-bearing"
+        ]
 
 
         counter = 0
