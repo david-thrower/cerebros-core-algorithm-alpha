@@ -1177,6 +1177,15 @@ def objective(trial: optuna.Trial) -> float:
                                 'repetition_penalty': None,
                                 'presence_penalty': 1.4,
                                 'frequency_penalty': 1.3
+                        }, # 
+                        {
+                                'max_new_tokens': max_new_tokens,
+                                'temperature': 0.6, 
+                                'top_k': 75, 
+                                'top_p': 0.99, 
+                                'repetition_penalty': None, 
+                                'presence_penalty': 1.4,
+                                'frequency_penalty': 1.4
                         }
                 ]
                 # Default cases, no params
