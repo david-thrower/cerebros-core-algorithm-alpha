@@ -1186,6 +1186,15 @@ def objective(trial: optuna.Trial) -> float:
                                 'repetition_penalty': None, 
                                 'presence_penalty': 1.4,
                                 'frequency_penalty': 1.4
+                        },
+                        {
+                                'max_new_tokens': max_new_tokens,
+                                'temperature': 0.65,
+                                'top_k': 75, 
+                                'top_p': 0.985, 
+                                'repetition_penalty': None, 
+                                'presence_penalty': 1.4,
+                                'frequency_penalty': 1.4
                         }
                 ]
                 # Default cases, no params
@@ -1222,10 +1231,10 @@ def objective(trial: optuna.Trial) -> float:
                 # "And the earth was without form, and",
                 "And God said, Let there be light: and there ",
                 # "Shall we all go to the river and"
-                "Try to",
+                # "Try to",
                 # "You must go and",
                 "In the beginning God created the heavens",
-                "The earth was formless and empty, with darkness over",
+                # "The earth was formless and empty, with darkness over",
                 # "God called the light 'day' and the darkness 'night,' marking evening and morning",
                 # "God called the expanse 'sky,' and there was",
                 # "The earth brought forth grass, seed-bearing"
