@@ -63,7 +63,7 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion
     
-    SAMPLES_TO_CREATE = 10 # 681
+    SAMPLES_TO_CREATE = 20 # 681
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -117,9 +117,9 @@ def objective(trial: optuna.Trial) -> float:
     
     epochs = trial.suggest_int('epochs', 10, 85)
     
-    batch_size = 10 # trial.suggest_int('batch_size', 5, 10)
+    batch_size = 5 # trial.suggest_int('batch_size', 5, 10)
     
-    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 6)
+    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 10)
     
     # Level constraints - ensure max >= min by setting min of max to value of min
     minimum_levels = trial.suggest_int('minimum_levels', 1, 3)
