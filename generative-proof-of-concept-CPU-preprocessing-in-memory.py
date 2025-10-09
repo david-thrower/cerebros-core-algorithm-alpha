@@ -84,7 +84,7 @@ def objective(trial: optuna.Trial) -> float:
 
     ## Generation time configurables: ##########
 
-    GENERATION_PROMPT_LEN = 10
+    GENERATION_PROMPT_LEN = 25
     MAX_NEW_TOKENS = MAX_SEQ_LENGTH - GENERATION_PROMPT_LEN
     RESULT_CUTOFF = 20 # Only print out verbose text samples when perplexity is < RESULT_CUTOFF
 
