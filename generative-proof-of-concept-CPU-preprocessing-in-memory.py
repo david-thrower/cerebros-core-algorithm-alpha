@@ -61,9 +61,9 @@ def objective(trial: optuna.Trial) -> float:
     ### Non - HP tuning parameters (Optimize to RAM / CPU / GPU capacity)
     
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
-    # Raises RAM in a linear fashion
-    
-    SAMPLES_TO_CREATE = 681
+    # Raises RAM in a linear fashion    
+
+    SAMPLES_TO_CREATE = 20 # 681
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -86,7 +86,7 @@ def objective(trial: optuna.Trial) -> float:
 
     GENERATION_PROMPT_LEN = 25
     MAX_NEW_TOKENS = MAX_SEQ_LENGTH - GENERATION_PROMPT_LEN
-    RESULT_CUTOFF = 20 # Only print out verbose text samples when perplexity is < RESULT_CUTOFF
+    RESULT_CUTOFF = 20 # 100 # <---<< In production 100 # Only print out verbose text samples when perplexity is < RESULT_CUTOFF
 
     if GENERATION_PROMPT_LEN + MAX_NEW_TOKENS > MAX_SEQ_LENGTH:
        raise ValueError("Sequence length overflow: Generated text length (GENERATION_PROMPT_LEN + MAX_NEW_TOKENS) "
@@ -117,9 +117,10 @@ def objective(trial: optuna.Trial) -> float:
     
     epochs = trial.suggest_int('epochs', 50, 75)
     
-    batch_size = 10 # trial.suggest_int('batch_size', 5, 10)
-    
+    batch_size = 5 # trial.suggest_int('batch_size', 5, 10)
+
     gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 7)
+    
     
     # Level constraints - ensure max >= min by setting min of max to value of min
     minimum_levels = 2 # trial.suggest_int('minimum_levels', 1, 3)
@@ -1159,8 +1160,52 @@ def objective(trial: optuna.Trial) -> float:
                                 'repetition_penalty': None,
                                 'presence_penalty': 1.4,
                                 'frequency_penalty': 1.4
+                        },
+                        {
+                                'max_new_tokens': max_new_tokens, 
+                                'temperature': 0.6,
+                                'top_k': 40,
+                                'top_p': 0.96,
+                                'repetition_penalty': None,
+                                'presence_penalty': 1.4,
+                                'frequency_penalty': 1.4
+                        },
+                        {
+                                'max_new_tokens': max_new_tokens, 
+                                'temperature': 0.7,
+                                'top_k': 45,
+                                'top_p': 0.97,
+                                'repetition_penalty': None,
+                                'presence_penalty': 1.4,
+                                'frequency_penalty': 1.3
+                        }, # 
+                        {
+                                'max_new_tokens': max_new_tokens,
+                                'temperature': 0.6, 
+                                'top_k': 75, 
+                                'top_p': 0.99, 
+                                'repetition_penalty': None, 
+                                'presence_penalty': 1.4,
+                                'frequency_penalty': 1.4
+                        },
+                        {
+                                'max_new_tokens': max_new_tokens,
+                                'temperature': 0.65,
+                                'top_k': 75, 
+                                'top_p': 0.985, 
+                                'repetition_penalty': None, 
+                                'presence_penalty': 1.4,
+                                'frequency_penalty': 1.4
+                        },
+                        {
+                                'max_new_tokens': max_new_tokens,
+                                'temperature': 0.8,
+                                'top_k': 75,
+                                'top_p': 0.99,
+                                'repetition_penalty': None, 
+                                'presence_penalty': 0.7,
+                                'frequency_penalty': 0.7
                         }
-
                 ]
                 # Default cases, no params
                 response_1 = response = complete_text_greedy(text=test_prompt, max_new_tokens=max_new_tokens)
@@ -1191,11 +1236,18 @@ def objective(trial: optuna.Trial) -> float:
    
         prompt_samples = [
                 "I saw the sun and it was as shining on the",
-                "And God said to Moses:",
-                "In the beginning God created the ",
-                "And the earth was without form, and",
+                # "And God said to Moses:",
+                # "In the beginning God created the ",
+                # "And the earth was without form, and",
                 "And God said, Let there be light: and there ",
-                "Shall we all go to the river and"
+                # "Shall we all go to the river and"
+                # "Try to",
+                # "You must go and",
+                "In the beginning God created the heavens",
+                # "The earth was formless and empty, with darkness over",
+                # "God called the light 'day' and the darkness 'night,' marking evening and morning",
+                # "God called the expanse 'sky,' and there was",
+                # "The earth brought forth grass, seed-bearing"
         ]
 
 
