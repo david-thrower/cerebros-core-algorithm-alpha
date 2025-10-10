@@ -14,11 +14,11 @@ print(answer.stdout)
 
 
 EXPERIMENT_ITERATION = "0001"
-EXPERIMENT_NAME = "more-optimizations-br-254-single-machine"
+EXPERIMENT_NAME = "2025-10-10--more-optimizations-br-254-single-machine-jit"
 DATA_SET_NAME = "WEB-Bible-Genesis-40-context-681-SPL"
 
 
-N_TRIALS = 50
+N_TRIALS = 25
 
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
@@ -63,7 +63,7 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion    
 
-    SAMPLES_TO_CREATE = 20 # 681
+    SAMPLES_TO_CREATE = 681
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -119,7 +119,7 @@ def objective(trial: optuna.Trial) -> float:
     
     batch_size = 5 # trial.suggest_int('batch_size', 5, 10)
 
-    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 7)
+    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 13)
     
     
     # Level constraints - ensure max >= min by setting min of max to value of min
