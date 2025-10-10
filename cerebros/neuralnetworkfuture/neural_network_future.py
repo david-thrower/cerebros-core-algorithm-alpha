@@ -341,7 +341,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
                         weight_decay=0.004,  # Add weight decay parameter
                         gradient_accumulation_steps=self.gradient_accumulation_steps
                     ),
-                    jit_compile=Tree) # jit_compile)
+                    jit_compile=True) # jit_compile)
         elif self.gradient_accumulation_steps == 1:
             self.materialized_neural_network.compile(
                     loss=self.loss,
@@ -350,7 +350,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
                         learning_rate=self.learning_rate,
                         weight_decay=0.004,  # Add weight decay parameter
                     ),
-                    jit_compile=jit_compile)
+                    jit_compile=True) # jit_compile=jit_compile)
         else:
             raise ValueError("gradient_accumulation_steps must be an int >= 0. You set it as {self.gradient_accumulation_steps} type {type(self.gradient_accumulation_steps)}")
 
