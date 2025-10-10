@@ -13,12 +13,12 @@ answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
 print(answer.stdout)
 
 
-EXPERIMENT_ITERATION = "0003"
-EXPERIMENT_NAME = "single-worker-1st-pass"
+EXPERIMENT_ITERATION = "0001"
+EXPERIMENT_NAME = "more-optimizations-br-254-single-machine"
 DATA_SET_NAME = "WEB-Bible-Genesis-40-context-681-SPL"
 
 
-N_TRIALS = 10 # 50
+N_TRIALS = 50
 
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
@@ -61,8 +61,8 @@ def objective(trial: optuna.Trial) -> float:
     ### Non - HP tuning parameters (Optimize to RAM / CPU / GPU capacity)
     
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
-    # Raises RAM in a linear fashion
-    
+    # Raises RAM in a linear fashion    
+
     SAMPLES_TO_CREATE = 20 # 681
 
     # How many tokens to provide before expecting the next token to be predicted. 
@@ -84,7 +84,7 @@ def objective(trial: optuna.Trial) -> float:
 
     ## Generation time configurables: ##########
 
-    GENERATION_PROMPT_LEN = 10
+    GENERATION_PROMPT_LEN = 25
     MAX_NEW_TOKENS = MAX_SEQ_LENGTH - GENERATION_PROMPT_LEN
     RESULT_CUTOFF = 20 # 100 # <---<< In production 100 # Only print out verbose text samples when perplexity is < RESULT_CUTOFF
 
@@ -99,9 +99,9 @@ def objective(trial: optuna.Trial) -> float:
     # Begin MLflow trial run (nested inside parent run if any)
 
 
-    POSITIONAL_EMBEDDING_DROPOUT = trial.suggest_float('POSITIONAL_EMBEDDING_DROPOUT', 0.7, 0.9)
+    POSITIONAL_EMBEDDING_DROPOUT = trial.suggest_float('POSITIONAL_EMBEDDING_DROPOUT', 0.72, 0.8)
 
-    activation = trial.suggest_categorical('activation', ['relu', 'gelu', 'swish', 'softsign'])
+    activation = trial.suggest_categorical('activation', ['relu', 'gelu', 'swish', 'softsign', 'softplus'])
 
     predecessor_level_connection_affinity_factor_first = trial.suggest_float('predecessor_level_connection_affinity_factor_first', 10.0, 30.0)
 
@@ -113,25 +113,26 @@ def objective(trial: optuna.Trial) -> float:
 
     num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 10, 35)
     
-    learning_rate = trial.suggest_float('learning_rate', 0.0006, 0.01, log=True)
+    learning_rate = trial.suggest_float('learning_rate', 0.003, 0.006) # log=True)
     
-    epochs = trial.suggest_int('epochs', 10, 85)
+    epochs = trial.suggest_int('epochs', 50, 75)
     
     batch_size = 5 # trial.suggest_int('batch_size', 5, 10)
+
+    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 7)
     
-    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 10)
     
     # Level constraints - ensure max >= min by setting min of max to value of min
-    minimum_levels = trial.suggest_int('minimum_levels', 1, 3)
-    maximum_levels = trial.suggest_int('maximum_levels', minimum_levels, 3)
+    minimum_levels = 2 # trial.suggest_int('minimum_levels', 1, 3)
+    maximum_levels = 2 # trial.suggest_int('maximum_levels', minimum_levels, 3)
     
     # Units per level - ensure max >= min by setting min of max to value of min
-    minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 1, 3)
-    maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 4)
+    minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 2, 3)
+    maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 3)
     
     # Neurons per unit - ensure max >= min by setting min of max to value of min
-    minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 1, 3)
-    maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 4)
+    minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 1, 2)
+    maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 2)
 
     
     tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B" # "HuggingFaceTB/SmolLM2-1.7B-Instruct" 
@@ -149,7 +150,7 @@ def objective(trial: optuna.Trial) -> float:
     # embedding output dim must be an even number
     # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-    EMBEDDING_N = 6 # trial.suggest_int('embedding_n',6, 9) # 12
+    EMBEDDING_N = 9 # trial.suggest_int('embedding_n',6, 9) # 12
     EMBEDDING_DIM = int(EMBEDDING_N * 2)
     
     PROJECTION_N = 1 # Punatuve increase of ram, leaving this as 1 until we are running on HPC
