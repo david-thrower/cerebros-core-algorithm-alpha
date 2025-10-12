@@ -636,7 +636,7 @@ def objective(trial: optuna.Trial) -> float:
             .replace('T', '_')\
             .replace(':', '_')\
             .replace('-', '_')
-        PROJECT_NAME = f'{TIME}_cerebros_auto_ml_phishing_email_test'
+        PROJECT_NAME = f'{TIME}_cerebros-not-GPT'
         
         meta_trial_number = 42 # irrelevant unless in distributed training
         
@@ -1090,6 +1090,7 @@ def objective(trial: optuna.Trial) -> float:
         # print(f"I ask the generator (Beam defaults - max_new_tokens: 10,  temperature: 0.75, top_k: 75, top_p: 0.98, repetition_penalty: None, presence_penalty: 1.3, frequency_penalty: 1.4): {test_text_block}... It responds: '{response}'.")
 
         trial_number = int(trial.number)
+        generator.save(f"{PROJECT_NAME}-trial-{trial_number}.keras")
         def test_text(test_prompt: str, max_new_tokens: int, sample_number: int, result: float, result_cutoff: float, trial_id: int, test_sample_number: int, result_0: float) -> None:
             """
             If the result < result_cutoff, this will run a matrix of different sampling values and print out the resulting text for human subjective evaluation.
