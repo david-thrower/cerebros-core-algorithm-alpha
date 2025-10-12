@@ -13,7 +13,7 @@ answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
 print(answer.stdout)
 
 
-EXPERIMENT_ITERATION = "0002"
+EXPERIMENT_ITERATION = "0003"
 EXPERIMENT_NAME = "2025-10-10--more-optimizations-br-254-single-machine-jit"
 DATA_SET_NAME = "WEB-Bible-Genesis-40-context-681-SPL"
 
@@ -636,7 +636,7 @@ def objective(trial: optuna.Trial) -> float:
             .replace('T', '_')\
             .replace(':', '_')\
             .replace('-', '_')
-        PROJECT_NAME = f'{TIME}_cerebros-not-GPT'
+        PROJECT_NAME = f'{TIME}_cerebros-not-GPT'.replace(' ','-')
         
         meta_trial_number = 42 # irrelevant unless in distributed training
         
