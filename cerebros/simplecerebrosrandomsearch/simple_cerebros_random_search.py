@@ -368,7 +368,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.validation_split = validation_split
         self.validation_data = validation_data
         self.patience = patience
-        self.project_name = project_name
+        self.project_name = project_name.lower()
         self.oracle_table = f'{self.project_name}_oracle'
         self.learning_rate = learning_rate
         self.loss = loss
