@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "237-copy-purge-model-storage-functionality-for-main" ]
+    branches: [ "main", "258-bug-file-name-mismatch-if-acapital-letter-in-project-name" ]
 
 
 permissions:
