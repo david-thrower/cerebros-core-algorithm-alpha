@@ -25,7 +25,7 @@ TIME = pendulum.now().__str__()[:16]\
     .replace('T', '_')\
     .replace(':', '_')\
     .replace('-', '_')
-PROJECT_NAME = f'{TIME}_Cerebros_auto_ml_test'
+PROJECT_NAME = f'{TIME}_cerebros_auto_ml_test'
 
 
 # white = pd.read_csv('wine_data.csv')
