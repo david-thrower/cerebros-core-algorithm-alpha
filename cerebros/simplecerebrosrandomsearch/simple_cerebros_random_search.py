@@ -326,6 +326,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         # self.num_processes = int(np.max([1, np.ceil(cpu_count() * .3)]))
         #self.db_name = f"sqlite:///{project_name}/oracles.sqlite"
         # self.conn = sqlite3.connect(db_name)
+        project_name = project_name.lower()
         if not os.path.exists(project_name):
             os.makedirs(project_name)
         models_dir = f"{project_name}/models"
@@ -368,7 +369,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.validation_split = validation_split
         self.validation_data = validation_data
         self.patience = patience
-        self.project_name = project_name.lower()
+        self.project_name = project_name
         self.oracle_table = f'{self.project_name}_oracle'
         self.learning_rate = learning_rate
         self.loss = loss
