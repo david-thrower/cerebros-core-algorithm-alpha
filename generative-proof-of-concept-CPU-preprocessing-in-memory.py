@@ -1089,19 +1089,19 @@ def objective(trial: optuna.Trial) -> float:
         # print(f"I ask the generator (Beam defaults - max_new_tokens: 10,  temperature: 0.75, top_k: 75, top_p: 0.98, repetition_penalty: None, presence_penalty: 1.3, frequency_penalty: 1.4): {test_text_block}... It responds: '{response}'.")
 
         trial_number = int(trial.number)
-        def test_text(test_prompt: str, max_new_tokens: int, sample_number: int, result: float, result_cutoff: float, trial_id: int, test_sample_number: int, result_0: float) -> None:
+        def test_text(test_prompt: str, max_new_tokens: int, sample_number: int, result_cutoff: float, trial_id: int, test_sample_number: int, result_0: float) -> None:
             """
-            If the result < result_cutoff, this will run a matrix of different sampling values and print out the resulting text for human subjective evaluation.
+            If the result_0 < result_cutoff, this will run a matrix of different sampling values and print out the resulting text for human subjective evaluation.
 
             Parameters:
                 - test_prompt: a string to prompt generation
                 - max_new_tokens: int, number of tokens to generate unless we generate a stop token. 
                 - sample_number: Metadata for sample...
-                - result: Perplexity score from this run
+                - result_0: Perplexity score from this run
                 - result_cutoff: Perplexity score that would be expected to indicate a trial worth running this pn
             
             """
-            if result < result_cutoff:
+            if result_0 < result_cutoff:
                 generation_param_permutations = [
                         # #3 
                         {
@@ -1258,11 +1258,10 @@ def objective(trial: optuna.Trial) -> float:
                    test_prompt=sample,
                    max_new_tokens=MAX_NEW_TOKENS,
                    sample_number=counter,
-                   result=phase_i_a_result,
                    result_cutoff=RESULT_CUTOFF,
                    trial_id=trial_number,
                    test_sample_number=counter,
-                   result_0=result)
+                   result_0=phase_i_a_result)
             counter += 1
             
             # # Tokenize the text without padding first to get actual tokens
