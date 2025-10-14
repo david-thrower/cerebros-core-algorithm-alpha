@@ -119,7 +119,7 @@ def objective(trial: optuna.Trial) -> float:
 
     
     epochs = trial.suggest_int('epochs', 50, 75)
-    phase_i_b_epochs =  trial.suggest_int('epochs', 50, 150)
+    phase_i_b_epochs =  trial.suggest_int('phase_i_b_epochs', 50, 150)
     
     batch_size = 5 # trial.suggest_int('batch_size', 5, 10)
 
