@@ -1315,7 +1315,7 @@ def objective(trial: optuna.Trial) -> float:
 
         # Create the Dataset Generaror:
         class SampleExpansionGenerator:
-            def __init__(self, raw_text_samples, tokenizer, sample_expansion_batch_size=100):
+            def __init__(self, raw_text_samples, tokenizer, sample_expansion_batch_size=5):
                 self.raw_text_samples = raw_text_samples
                 self.tokenizer = tokenizer
                 self.sample_expansion_batch_size = sample_expansion_batch_size
@@ -1324,9 +1324,11 @@ def objective(trial: optuna.Trial) -> float:
                 self.current_index = 0
 
             def _expand_next_batch(self):
+
                 # Determine the next meta-batch
                 start_idx = self.current_index
                 end_idx = min(start_idx + self.sample_expansion_batch_size, len(self.raw_text_samples))
+                collect()
                 if start_idx >= end_idx:
                     raise StopIteration("No more raw samples to process.")
 
@@ -1360,7 +1362,7 @@ def objective(trial: optuna.Trial) -> float:
 
 
         # Create the tf.data.Dataset
-        def create_dataset(raw_text_sample, tokenizer, sample_expansion_batch_size=10) -> tf.data.Dataset:
+        def create_dataset(raw_text_samples, tokenizer, sample_expansion_batch_size=10) -> tf.data.Dataset:
             generator = SampleExpansionGenerator(raw_text_samples, tokenizer, sample_expansion_batch_size)
 
             dataset = tf.data.Dataset.from_generator(
@@ -1372,7 +1374,7 @@ def objective(trial: optuna.Trial) -> float:
             )
             return dataset
 
-        phase_i_b_dataset = create_dataset(raw_text_sample=phase_i_b_samples, tokenizer=tokenizer, sample_expansion_batch_size=10)
+        phase_i_b_dataset = create_dataset(raw_text_samples=phase_i_b_samples, tokenizer=tokenizer, sample_expansion_batch_size=10)
        
         # To Do: Set .fit() params <------<<<
 
