@@ -115,8 +115,11 @@ def objective(trial: optuna.Trial) -> float:
     num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 10, 35)
     
     learning_rate = trial.suggest_float('learning_rate', 0.003, 0.006) # log=True)
+    # phase_i_b_learning_rate = trial.suggest_float('learning_rate', 0.0001, 0.006)
+
     
     epochs = trial.suggest_int('epochs', 50, 75)
+    phase_i_b_epochs =  trial.suggest_int('epochs', 50, 150)
     
     batch_size = 5 # trial.suggest_int('batch_size', 5, 10)
 
@@ -1372,19 +1375,22 @@ def objective(trial: optuna.Trial) -> float:
         phase_i_b_dataset = create_dataset(raw_text_sample=phase_i_b_samples, tokenizer, sample_expansion_batch_size=10)
        
         # To Do: Set .fit() params <------<<<
-        
+
+
         phase_i_b_history =\
                 best_model_found.fit(
                    x=phase_i_b_dataset,
-                   epochs=epochs,
+                   epochs=phase_i_b_epochs,
                    batch_size=batch_size,
                    validation_split=0.2)
 
         phase_i_b_history =\
                pd.DataFrame(phase_i_b_history.history)
-       # To Do: Find best metric: Reference: cerebros/simplecerebrosrandomsearch/simple_cerebros_random_search.py: Line ~ 590
-       # result = phase_i_b_history.
+        # To Do: Find best metric: Reference: cerebros/simplecerebrosrandomsearch/simple_cerebros_random_search.py: Line ~ 590
+        #  = phase_i_b_history.
+        result = int(phase_i_b_history['perplexity'].min())
 
+       
         return result            
 
 def main():
