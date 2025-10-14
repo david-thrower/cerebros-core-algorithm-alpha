@@ -1357,8 +1357,8 @@ def objective(trial: optuna.Trial) -> float:
                 # Pop and return one sample
                 # input_sample = [self.data.pop(0)]  # Nested as per model input spec
                 # label_sample = [self.labels.pop(0)]  # Nested as per model output spec
-                input_sample = [self.data.pop(0)]
-                label_sample = [self.labels.pop(0)]
+                input_sample = self.data.pop(0)
+                label_sample = self.labels.pop(0)
 
                 return (input_sample, label_sample)
 
