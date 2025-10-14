@@ -150,7 +150,7 @@ def objective(trial: optuna.Trial) -> float:
     # embedding output dim must be an even number
     # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-    EMBEDDING_N = 9 # trial.suggest_int('embedding_n',6, 9) # 12
+    EMBEDDING_N = 6 # trial.suggest_int('embedding_n',6, 9) # 12
     EMBEDDING_DIM = int(EMBEDDING_N * 2)
     
     PROJECTION_N = 1 # Punatuve increase of ram, leaving this as 1 until we are running on HPC
