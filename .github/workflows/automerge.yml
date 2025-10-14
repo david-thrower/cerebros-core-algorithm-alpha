@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "255-copy-of-branch-254-updated-hpo-script-for-cicd-scale-testing" ]
+    branches: [ "main", "260-integrate-suggested-solution-to-streaming-llm-phase-i-b-training-data" ]
 
 permissions:
   contents: read
