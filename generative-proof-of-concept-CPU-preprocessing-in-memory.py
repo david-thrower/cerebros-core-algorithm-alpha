@@ -1306,6 +1306,8 @@ def objective(trial: optuna.Trial) -> float:
 
         print(f"Trial: {trial_number} proceeding to phase I-b:")
 
+
+        # Create the Dataset Generaror:
         class SampleExpansionGenerator:
             def __init__(self, raw_text_samples, tokenizer, sample_expansion_batch_size=100):
                 self.raw_text_samples = raw_text_samples
@@ -1351,6 +1353,23 @@ def objective(trial: optuna.Trial) -> float:
                 return (input_sample, label_sample)
 
 
+        # Create the tf.data.Dataset
+        def create_dataset(raw_text_samples, tokenizer, sample_expansion_batch_size=100):
+            generator = SampleExpansionGenerator(raw_text_samples, tokenizer, sample_expansion_batch_size)
+
+            dataset = tf.data.Dataset.from_generator(
+                lambda: generator,
+                output_signature=(
+                    tf.TensorSpec(shape=(1, MAX_SEQ_LENGTH), dtype=tf.int32),       # Nested input
+                    tf.TensorSpec(shape=(1, VOCABULARY_SIZE), dtype=tf.float32)   # Nested one-hot label
+                )
+            )
+            return dataset
+
+
+
+
+       
         # To Do: Set .fit() params <------<<<       
         # phase_i_b_history = best_model_found.fit()
 
