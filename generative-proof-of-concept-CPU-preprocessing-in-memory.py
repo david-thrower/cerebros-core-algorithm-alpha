@@ -1375,16 +1375,14 @@ def objective(trial: optuna.Trial) -> float:
             return dataset
 
         phase_i_b_dataset = create_dataset(raw_text_samples=phase_i_b_samples, tokenizer=tokenizer, sample_expansion_batch_size=10)
-       
-        # To Do: Set .fit() params <------<<<
 
 
         phase_i_b_history =\
                 best_model_found.fit(
                    x=phase_i_b_dataset,
                    epochs=phase_i_b_epochs,
-                   batch_size=batch_size,
-                   validation_split=0.2)
+                   batch_size=batch_size) # ,
+                   # validation_split=0.2)
 
         phase_i_b_history =\
                pd.DataFrame(phase_i_b_history.history)
