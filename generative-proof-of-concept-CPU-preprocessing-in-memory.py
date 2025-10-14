@@ -63,7 +63,8 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion    
 
-    SAMPLES_TO_CREATE = 20 # 681
+    PHASE_I_A_SAMPLES_TO_CREATE = 20 # 681
+    PHASE_I_B_SAMPLES_TO_CREATE = 50
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -157,7 +158,7 @@ def objective(trial: optuna.Trial) -> float:
     
     # Prepare a record of params:
     # Log sampled hyperparameters to MLflow
-    params = {"SAMPLES_TO_CREATE":SAMPLES_TO_CREATE,
+    params = {"PHASE_I_A_SAMPLES_TO_CREATE":PHASE_I_A_SAMPLES_TO_CREATE,
               "PROMPT_LENGTH":PROMPT_LENGTH,
               "MAX_SEQ_LENGTH":MAX_SEQ_LENGTH,
               "POSITIONAL_EMBEDDING_DROPOUT":POSITIONAL_EMBEDDING_DROPOUT,
@@ -341,7 +342,8 @@ def objective(trial: optuna.Trial) -> float:
         
         # del(bible)
         # collect()
-        non_instruct_samples = bible[:SAMPLES_TO_CREATE]
+        non_instruct_samples = bible[:PHASE_I_A_SAMPLES_TO_CREATE]
+        phase_i_b_samples = bible[PHASE_I_A_SAMPLES_TO_CREATE:PHASE_I_B_SAMPLES_TO_CREATE + PHASE_I_A_SAMPLES_TO_CREATE] 
         print(f"Samples from KJV bible consisting of {len(non_instruct_samples)} look like this (sub-sample of 3): {non_instruct_samples[:3]}")
         
         
@@ -722,9 +724,9 @@ def objective(trial: optuna.Trial) -> float:
             train_data_dtype=tf.int32)  # Changed from tf.string to tf.int32
         
         cerebros_t0 = time.time()
-        result = cerebros_automl.run_random_search()
+        phase_i_a_result_0 = cerebros_automl.run_random_search()
         # Replace "inf" / "nan" with "worst result that can be bumerically registered"
-        result = float(result) # Deep copy that survives del() of parent object ...
+        phase_i_a_result = float(phase_i_a_result_0) # Deep copy that survives del() of parent object ...
         cerebros_t1 = time.time()
         cerebros_time_all_models_min = (cerebros_t1 - cerebros_t0) / 60
         models_tried = moities_to_try  * tries_per_moity
@@ -740,9 +742,10 @@ def objective(trial: optuna.Trial) -> float:
         
         """
         
-        print(f'Cerebros best accuracy achieved is {result}')
+        print(f'Cerebros best accuracy achieved in Phase I-a is {phase_i_a_result}')
         print(f'val set perplexity')
-        
+        # Log the metric to MlFLow
+        mlflow.log_metric("phase-i-a-perplexity", phase_i_a_result, step=trial.number)
         """### Testing the best model found"""
         
         MODEL_FILE_NAME = "cerebros-foundation-model.keras"
@@ -1299,7 +1302,7 @@ def objective(trial: optuna.Trial) -> float:
             
             # print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
 
-        mlflow.log_metric("phase-i-a-perplexity", result, step=trial.number)
+
         # del(best_model_found)
         del(generator)
         collect()
@@ -1354,7 +1357,7 @@ def objective(trial: optuna.Trial) -> float:
 
 
         # Create the tf.data.Dataset
-        def create_dataset(raw_text_samples, tokenizer, sample_expansion_batch_size=100):
+        def create_dataset(raw_text_sample, tokenizer, sample_expansion_batch_size=10) -> tf.data.Dataset:
             generator = SampleExpansionGenerator(raw_text_samples, tokenizer, sample_expansion_batch_size)
 
             dataset = tf.data.Dataset.from_generator(
@@ -1366,13 +1369,21 @@ def objective(trial: optuna.Trial) -> float:
             )
             return dataset
 
-
-
-
+        phase_i_b_dataset = create_dataset(raw_text_sample=phase_i_b_samples, tokenizer, sample_expansion_batch_size=10)
        
-        # To Do: Set .fit() params <------<<<       
-        # phase_i_b_history = best_model_found.fit()
+        # To Do: Set .fit() params <------<<<
+        
+        phase_i_b_history =\
+                best_model_found.fit(
+                   x=phase_i_b_dataset,
+                   epochs=epochs,
+                   batch_size=batch_size,
+                   validation_split=0.2)
 
+        phase_i_b_history =\
+               pd.DataFrame(phase_i_b_history.history)
+       # To Do: Find best metric: Reference: cerebros/simplecerebrosrandomsearch/simple_cerebros_random_search.py: Line ~ 590
+       # result = phase_i_b_history.
 
         return result            
 
