@@ -1329,11 +1329,14 @@ def objective(trial: optuna.Trial) -> float:
                 start_idx = self.current_index
                 end_idx = min(start_idx + self.sample_expansion_batch_size, len(self.raw_text_samples))
                 collect()
-                if start_idx >= end_idx:
-                    self.current_index = 0 # raise StopIteration("No more raw samples to process.")
-                    start_idx = 0
-                    end_idx = min(self.sample_expansion_batch_size, len(self.raw_text_samples))
+                # if start_idx >= end_idx:
+                #     self.current_index = 0 # raise StopIteration("No more raw samples to process.")
+                #     start_idx = 0
+                #     end_idx = min(self.sample_expansion_batch_size, len(self.raw_text_samples))
 
+                if start_idx >= end_idx:
+                    raise StopIteration("No more raw samples to process.")
+               
                 batch_samples = self.raw_text_samples[start_idx:end_idx]
                 self.current_index = end_idx
 
