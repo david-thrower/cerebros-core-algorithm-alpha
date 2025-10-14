@@ -1375,6 +1375,8 @@ def objective(trial: optuna.Trial) -> float:
             return dataset
 
         phase_i_b_dataset = create_dataset(raw_text_samples=phase_i_b_samples, tokenizer=tokenizer, sample_expansion_batch_size=10)
+        dataset = dataset.repeat()
+        dataset = dataset.batch(batch_size)
 
 
         phase_i_b_history =\
