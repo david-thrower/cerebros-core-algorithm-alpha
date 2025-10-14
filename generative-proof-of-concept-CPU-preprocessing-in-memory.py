@@ -1372,7 +1372,7 @@ def objective(trial: optuna.Trial) -> float:
             )
             return dataset
 
-        phase_i_b_dataset = create_dataset(raw_text_sample=phase_i_b_samples, tokenizer, sample_expansion_batch_size=10)
+        phase_i_b_dataset = create_dataset(raw_text_sample=phase_i_b_samples, tokenizer=tokenizer, sample_expansion_batch_size=10)
        
         # To Do: Set .fit() params <------<<<
 
