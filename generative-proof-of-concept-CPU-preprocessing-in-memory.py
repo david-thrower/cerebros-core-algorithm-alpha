@@ -763,12 +763,8 @@ def objective(trial: optuna.Trial) -> float:
         print("\n" + "="*50)
         print("GENERATED TEXT SAMPLES")
         print("="*50)
-        
-        
-        ## Proper model wrapper and generation method (under development):
-        
-        print("###### Output of the model wrapper (under development) ########### ")
-        
+
+
         # Register the config and model wrapper as serializable
         @tf.keras.utils.register_keras_serializable()
         class CerebrosNotGPTConfig:
@@ -1023,10 +1019,6 @@ def objective(trial: optuna.Trial) -> float:
         
         # Replace the generation code block with this:
         
-        print("\n" + "="*50)
-        print("GENERATED TEXT SAMPLES USING WRAPPER")
-        print("="*50)
-        
         # Create config and generator
         config = CerebrosNotGPTConfig(
             max_sequence_length=MAX_SEQ_LENGTH,
@@ -1035,7 +1027,7 @@ def objective(trial: optuna.Trial) -> float:
         generator = CerebrosNotGPT(config)
         
         # mlflow.keras.log_model(generator, artifact_path="generator")
-        print("########### BEFORE SEARIALIZING THE GENERATIVE MODEL")
+
 
         # Utility function to generate text from greedy sampling:
         def complete_text_greedy(text: str, max_new_tokens:int=10) -> str:
@@ -1233,7 +1225,9 @@ def objective(trial: optuna.Trial) -> float:
                 # print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.7, top_k=75, top_p=0.97, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4): {test_prompt}... It responds: '{response_5}'.")
 
        # Sample prompts to test:
-   
+
+        print("########### Phase I-a Model Checkpoint Generation Samples: ")
+       
         prompt_samples = [
                 "I saw the sun and it was as shining on the",
                 # "And God said to Moses:",
@@ -1305,10 +1299,62 @@ def objective(trial: optuna.Trial) -> float:
             
             # print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
 
-        mlflow.log_metric("perplexity", result, step=trial.number)
-        del(best_model_found)
+        mlflow.log_metric("phase-i-a-perplexity", result, step=trial.number)
+        # del(best_model_found)
         del(generator)
         collect()
+
+        print(f"Trial: {trial_number} proceeding to phase I-b:")
+
+        class SampleExpansionGenerator:
+            def __init__(self, raw_text_samples, tokenizer, sample_expansion_batch_size=100):
+                self.raw_text_samples = raw_text_samples
+                self.tokenizer = tokenizer
+                self.sample_expansion_batch_size = sample_expansion_batch_size
+                self.data = []
+                self.labels = []
+                self.current_index = 0
+
+            def _expand_next_batch(self):
+                # Determine the next meta-batch
+                start_idx = self.current_index
+                end_idx = min(start_idx + self.sample_expansion_batch_size, len(self.raw_text_samples))
+                if start_idx >= end_idx:
+                    raise StopIteration("No more raw samples to process.")
+
+                batch_samples = self.raw_text_samples[start_idx:end_idx]
+                self.current_index = end_idx
+
+                # Run prepare_data on this batch
+                input_ids_list, labels_list, _ = prepare_data(batch_samples, max_seq_length=MAX_SEQ_LENGTH)
+
+                # Assign to internal queues
+                self.data = input_ids_list
+                self.labels = labels_list
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                # Check for mismatched state
+                if (len(self.data) == 0) != (len(self.labels) == 0):
+                    raise ValueError("Data and labels queues are out of sync.")
+
+                # If queues are empty, expand next batch
+                if len(self.data) == 0:
+                    self._expand_next_batch()
+
+                # Pop and return one sample
+                input_sample = [self.data.pop(0)]  # Nested as per model input spec
+                label_sample = [self.labels.pop(0)]  # Nested as per model output spec
+
+                return (input_sample, label_sample)
+
+
+        # To Do: Set .fit() params <------<<<       
+        # phase_i_b_history = best_model_found.fit()
+
+
         return result            
 
 def main():
