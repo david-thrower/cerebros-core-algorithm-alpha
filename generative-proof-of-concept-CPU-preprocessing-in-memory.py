@@ -1355,8 +1355,10 @@ def objective(trial: optuna.Trial) -> float:
                     self._expand_next_batch()
 
                 # Pop and return one sample
-                input_sample = [self.data.pop(0)]  # Nested as per model input spec
-                label_sample = [self.labels.pop(0)]  # Nested as per model output spec
+                # input_sample = [self.data.pop(0)]  # Nested as per model input spec
+                # label_sample = [self.labels.pop(0)]  # Nested as per model output spec
+                input_sample = [self.data.pop(0)]
+                label_sample = [self.labels.pop(0)]
 
                 return (input_sample, label_sample)
 
@@ -1368,8 +1370,10 @@ def objective(trial: optuna.Trial) -> float:
             dataset = tf.data.Dataset.from_generator(
                 lambda: generator,
                 output_signature=(
-                    tf.TensorSpec(shape=(1, MAX_SEQ_LENGTH), dtype=tf.int32),       # Nested input
-                    tf.TensorSpec(shape=(1, VOCABULARY_SIZE), dtype=tf.float32)   # Nested one-hot label
+                    tf.TensorSpec(shape=(MAX_SEQ_LENGTH,), dtype=tf.float32),
+                    tf.TensorSpec(shape=(VOCABULARY_SIZE,), dtype=tf.float32)
+                    # tf.TensorSpec(shape=(1, MAX_SEQ_LENGTH), dtype=tf.int32),       # Nested input
+                    # tf.TensorSpec(shape=(1, VOCABULARY_SIZE), dtype=tf.float32)   # Nested one-hot label
                 )
             )
             # Set dataset to allow multiple epochs:
