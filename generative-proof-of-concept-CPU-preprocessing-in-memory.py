@@ -1,4 +1,6 @@
 import optuna
+from optuna.storages import JournalStorage, JournalFileBackend
+from optuna.storages.journal import JournalFileOpenLock
 import os
 import mlflow
 from datetime import datetime
@@ -22,11 +24,17 @@ N_TRIALS = 50
 
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
-
-
-
 mlflow.set_experiment(EXPERIMENT_NAME)
 
+
+# Optuna Storage Essentials
+# Use JournalFileStorage to ensure concurrency safety
+
+storage_file = f"./optuna_{EXPERIMENT_NAME}.log"
+lock_obj = JournalFileOpenLock(storage_file)
+
+# Create the JournalStorage instance
+optuna_storage = JournalStorage(JournalFileBackend(storage_file, lock_obj=lock_obj))
 
 
 def objective(trial: optuna.Trial) -> float:
@@ -1445,8 +1453,7 @@ def main():
     n_trials = N_TRIALS
     # mlflow_parent = mlflow.start_run(run_name=os.getenv("MLFLOW_PARENT_RUN_NAME", "cerebros_poc_parent"), tags={"phase": "poc", "mode": "fast" if fast else "full"})
     sampler = optuna.samplers.TPESampler(multivariate=True, n_startup_trials=5)
-    storage_name = f"sqlite:///{EXPERIMENT_NAME}.db
-    study = optuna.create_study(direction="minimize", sampler=sampler, storage=storage_name)
+    study = optuna.create_study(direction="minimize", sampler=sampler, storage=optuna_storage)
     study.optimize(objective, n_trials=n_trials)
     # mlflow.log_param("n_trials", n_trials)
     # Log fixed (non-tunable) generation control param once at parent level
