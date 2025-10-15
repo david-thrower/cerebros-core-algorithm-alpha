@@ -1407,7 +1407,8 @@ def objective(trial: optuna.Trial) -> float:
 
 
         phase_i_b_history =\
-                best_model_found.fit(
+                generator.model.fit(
+                   # best_model_found.fit(
                    x=phase_i_b_dataset,
                    epochs=phase_i_b_epochs,
                    batch_size=batch_size) # ,
