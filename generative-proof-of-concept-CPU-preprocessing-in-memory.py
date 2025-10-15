@@ -14,11 +14,11 @@ print(answer.stdout)
 
 
 EXPERIMENT_ITERATION = "0001"
-EXPERIMENT_NAME = "more-optimizations-br-254-single-machine"
-DATA_SET_NAME = "WEB-Bible-Genesis-40-context-681-SPL"
+EXPERIMENT_NAME = "phase-I-a-and-I-b-HPO-CPU-scale"
+DATA_SET_NAME = "WEB-Bible-40-ctx-350-SPL-phase-I--a-1450-SPL-phase-I-b"
 
 
-N_TRIALS = 50
+N_TRIALS = 25
 
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
@@ -63,8 +63,8 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion    
 
-    PHASE_I_A_SAMPLES_TO_CREATE = 20 # 681
-    PHASE_I_B_SAMPLES_TO_CREATE = 50
+    PHASE_I_A_SAMPLES_TO_CREATE = 350 # 681
+    PHASE_I_B_SAMPLES_TO_CREATE = 1800
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -121,9 +121,9 @@ def objective(trial: optuna.Trial) -> float:
     epochs = trial.suggest_int('epochs', 50, 75)
     phase_i_b_epochs =  trial.suggest_int('phase_i_b_epochs', 50, 150)
     
-    batch_size = 5 # trial.suggest_int('batch_size', 5, 10)
+    batch_size = 10 # trial.suggest_int('batch_size', 5, 10)
 
-    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 7)
+    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 10)
     
     
     # Level constraints - ensure max >= min by setting min of max to value of min
@@ -154,7 +154,7 @@ def objective(trial: optuna.Trial) -> float:
     # embedding output dim must be an even number
     # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-    EMBEDDING_N = 6 # trial.suggest_int('embedding_n',6, 9) # 12
+    EMBEDDING_N = trial.suggest_int('embedding_n',6, 9) # 12
     EMBEDDING_DIM = int(EMBEDDING_N * 2)
     
     PROJECTION_N = 1 # Punatuve increase of ram, leaving this as 1 until we are running on HPC
