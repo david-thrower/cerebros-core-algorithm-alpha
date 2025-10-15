@@ -1347,7 +1347,22 @@ def objective(trial: optuna.Trial) -> float:
                 self.data = input_ids_list
                 self.labels = labels_list
 
+            # def __iter__(self):
+            #     return self
+
+            # def __iter__(self):
+            #     # Create a fresh instance with the same parameters
+            #     return SampleExpansionGenerator(
+            #         self.raw_text_samples, 
+            #         self.tokenizer, 
+            #         self.sample_expansion_batch_size
+            #     )
+            
             def __iter__(self):
+                # Reset to initial state for new epoch
+                self.current_index = 0
+                self.data = []
+                self.labels = []
                 return self
 
             def __next__(self):
