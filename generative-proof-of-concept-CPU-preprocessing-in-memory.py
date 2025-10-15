@@ -1419,7 +1419,7 @@ def objective(trial: optuna.Trial) -> float:
         # To Do: Find best metric: Reference: cerebros/simplecerebrosrandomsearch/simple_cerebros_random_search.py: Line ~ 590
         #  = phase_i_b_history.
         result_phase_i_b = int(phase_i_b_history['perplexity'].min())
-        mlflow.log_metric("phase_i_b-perplexity", result_phase_i_b)
+        mlflow.log_metric("phase_i_b-perplexity", result_phase_i_b, step=trial_number)
 
         # Text samples after Phase I-b training
         counter = 0
