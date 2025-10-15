@@ -1,6 +1,4 @@
 import optuna
-from optuna.storages import JournalStorage, JournalFileBackend
-from optuna.storages.journal import JournalFileOpenLock
 import os
 import mlflow
 from datetime import datetime
@@ -31,10 +29,8 @@ mlflow.set_experiment(EXPERIMENT_NAME)
 # Use JournalFileStorage to ensure concurrency safety
 
 storage_file = f"./optuna_{EXPERIMENT_NAME}.log"
-lock_obj = JournalFileOpenLock(storage_file)
-
-# Create the JournalStorage instance
-optuna_storage = JournalStorage(JournalFileBackend(storage_file, lock_obj=lock_obj))
+journal_backend = optuna.storages.journal.JournalFileBackend(storage_file)
+optuna_storage = optuna.storages.JournalStorage(journal_backend)
 
 
 def objective(trial: optuna.Trial) -> float:
