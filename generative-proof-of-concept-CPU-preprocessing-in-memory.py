@@ -1307,7 +1307,7 @@ def objective(trial: optuna.Trial) -> float:
 
 
         # del(best_model_found)
-        del(generator)
+        # del(generator)
         collect()
 
         print(f"Trial: {trial_number} proceeding to phase I-b:")
