@@ -1085,7 +1085,7 @@ def objective(trial: optuna.Trial) -> float:
         # test_text_block = "I saw the sun and it was as shining on the"
         # response = complete_text_greedy(test_text_block)
         # print(f"I ask the generator (greedy): {test_text_block}... It responds: '{response}'.")
-        # response = complete_text_beam(test_text_blcok)
+        # response = complete_text_beam(test_text_block)
         # print(f"I ask the generator (Beam defaults - max_new_tokens: 10,  temperature: 0.75, top_k: 75, top_p: 0.98, repetition_penalty: None, presence_penalty: 1.3, frequency_penalty: 1.4): {test_text_block}... It responds: '{response}'.")
 
         trial_number = int(trial.number)
@@ -1418,7 +1418,7 @@ def objective(trial: optuna.Trial) -> float:
                pd.DataFrame(phase_i_b_history.history)
         # To Do: Find best metric: Reference: cerebros/simplecerebrosrandomsearch/simple_cerebros_random_search.py: Line ~ 590
         #  = phase_i_b_history.
-        result_phase_i_b = int(phase_i_b_history['perplexity'].min())
+        result_phase_i_b = float(phase_i_b_history['perplexity'].min())
         mlflow.log_metric("phase_i_b-perplexity", result_phase_i_b, step=trial_number)
 
         # Text samples after Phase I-b training
