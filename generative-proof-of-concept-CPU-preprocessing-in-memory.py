@@ -1382,7 +1382,7 @@ def objective(trial: optuna.Trial) -> float:
                 )
             )
             # Set dataset to allow multiple epochs:
-            dataset = dataset.repeat()
+            # dataset = dataset.repeat()
             # Batch it
             dataset = dataset.batch(batch_size)
             return dataset
