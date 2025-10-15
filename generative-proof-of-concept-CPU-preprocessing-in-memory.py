@@ -1418,10 +1418,24 @@ def objective(trial: optuna.Trial) -> float:
                pd.DataFrame(phase_i_b_history.history)
         # To Do: Find best metric: Reference: cerebros/simplecerebrosrandomsearch/simple_cerebros_random_search.py: Line ~ 590
         #  = phase_i_b_history.
-        result = int(phase_i_b_history['perplexity'].min())
+        result_phase_i_b = int(phase_i_b_history['perplexity'].min())
+        mlflow.log_metric("phase_i_b-perplexity", result_phase_i_b)
 
+        # Text samples after Phase I-b training
+        counter = 0
+        for sample in prompt_samples:
+            test_text(
+                   test_prompt=sample,
+                   max_new_tokens=MAX_NEW_TOKENS,
+                   sample_number=counter,
+                   result_cutoff=RESULT_CUTOFF,
+                   trial_id=trial_number,
+                   test_sample_number=counter,
+                   result_0=result_phase_i_b)
+            counter += 1
        
-        return result            
+        return result_phase_i_b
+
 
 def main():
     # Optional fast path for CI / smoke tests
