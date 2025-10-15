@@ -118,7 +118,7 @@ def objective(trial: optuna.Trial) -> float:
     # phase_i_b_learning_rate = trial.suggest_float('learning_rate', 0.0001, 0.006)
 
     
-    epochs = trial.suggest_int('epochs', 50, 75)
+    epochs = trial.suggest_int('epochs', 30, 50)
     phase_i_b_epochs =  trial.suggest_int('phase_i_b_epochs', 50, 150)
     
     batch_size = 10 # trial.suggest_int('batch_size', 5, 10)
@@ -128,15 +128,15 @@ def objective(trial: optuna.Trial) -> float:
     
     # Level constraints - ensure max >= min by setting min of max to value of min
     minimum_levels = 2 # trial.suggest_int('minimum_levels', 1, 3)
-    maximum_levels = 2 # trial.suggest_int('maximum_levels', minimum_levels, 3)
+    maximum_levels = trial.suggest_int('maximum_levels', minimum_levels, 3) # 2 # 
     
     # Units per level - ensure max >= min by setting min of max to value of min
     minimum_units_per_level = trial.suggest_int('minimum_units_per_level', 2, 3)
-    maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 3)
+    maximum_units_per_level = trial.suggest_int('maximum_units_per_level', minimum_units_per_level, 5)
     
     # Neurons per unit - ensure max >= min by setting min of max to value of min
     minimum_neurons_per_unit = trial.suggest_int('minimum_neurons_per_unit', 1, 2)
-    maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 2)
+    maximum_neurons_per_unit = trial.suggest_int('maximum_neurons_per_unit', minimum_neurons_per_unit, 3)
 
     
     tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B" # "HuggingFaceTB/SmolLM2-1.7B-Instruct" 
