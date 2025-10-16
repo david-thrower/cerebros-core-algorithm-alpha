@@ -168,6 +168,7 @@ def objective(trial: optuna.Trial) -> float:
     # Prepare a record of params:
     # Log sampled hyperparameters to MLflow
     params = {"PHASE_I_A_SAMPLES_TO_CREATE":PHASE_I_A_SAMPLES_TO_CREATE,
+              'PHASE_I_B_SAMPLES_TO_CREATE': PHASE_I_B_SAMPLES_TO_CREATE,
               "PROMPT_LENGTH":PROMPT_LENGTH,
               "MAX_SEQ_LENGTH":MAX_SEQ_LENGTH,
               "POSITIONAL_EMBEDDING_DROPOUT":POSITIONAL_EMBEDDING_DROPOUT,
