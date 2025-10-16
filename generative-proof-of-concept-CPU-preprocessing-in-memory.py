@@ -68,9 +68,10 @@ def objective(trial: optuna.Trial) -> float:
     
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion    
-
-    PHASE_I_A_SAMPLES_TO_CREATE = 20 # 681
-    PHASE_I_B_SAMPLES_TO_CREATE = 50
+   
+    PHASE_I_A_SAMPLES_TO_CREATE = 10 # 681
+    PHASE_I_B_SAMPLES_TO_CREATE = 20
+    PHASE_I_B_VAL_SPLIT = 0.15  # Validation split for phase I-b (0.0 to 1.0)
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -357,6 +358,12 @@ def objective(trial: optuna.Trial) -> float:
         phase_i_b_samples = bible[PHASE_I_A_SAMPLES_TO_CREATE:PHASE_I_B_SAMPLES_TO_CREATE + PHASE_I_A_SAMPLES_TO_CREATE] 
         print(f"Samples from KJV bible consisting of {len(non_instruct_samples)} look like this (sub-sample of 3): {non_instruct_samples[:3]}")
         
+        # Split phase_i_b_samples into train and validation sets
+        phase_i_b_train_samples, phase_i_b_val_samples = train_test_split(
+            phase_i_b_samples, 
+            test_size=PHASE_I_B_VAL_SPLIT, 
+            shuffle=False
+        )
         
         # Replace with imported text
         
@@ -1409,15 +1416,15 @@ def objective(trial: optuna.Trial) -> float:
             dataset = dataset.batch(batch_size)
             return dataset
 
-        phase_i_b_dataset = create_dataset(raw_text_samples=phase_i_b_samples, tokenizer=tokenizer, sample_expansion_batch_size=10)
+        phase_i_b_train_dataset = create_dataset(raw_text_samples=phase_i_b_train_samples, tokenizer=tokenizer, sample_expansion_batch_size=10)
+        phase_i_b_val_dataset = create_dataset(raw_text_samples=phase_i_b_val_samples, tokenizer=tokenizer, sample_expansion_batch_size=10)
 
 
         phase_i_b_history =\
                 generator.model.fit(
-                   # best_model_found.fit(
-                   x=phase_i_b_dataset,
+                   x=phase_i_b_train_dataset,
+                   validation_data=phase_i_b_val_dataset,
                    epochs=phase_i_b_epochs)
-                   # batch_size=batch_size)
 
 
         phase_i_b_history =\
