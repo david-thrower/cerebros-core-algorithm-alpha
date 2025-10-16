@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "260-integrate-suggested-solution-to-streaming-llm-phase-i-b-training-data" ]
+    branches: [ "main", "263-add-val-ds-to-branch-260" ]
 
 permissions:
   contents: read
