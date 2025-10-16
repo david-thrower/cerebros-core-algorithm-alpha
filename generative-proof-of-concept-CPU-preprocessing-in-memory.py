@@ -1426,6 +1426,8 @@ def objective(trial: optuna.Trial) -> float:
         result_phase_i_b = float(phase_i_b_history['perplexity'].min())
         mlflow.log_metric("phase_i_b-perplexity", result_phase_i_b, step=trial_number)
 
+        print("########### Phase I-b Model Checkpoint Generation Samples: ")
+       
         # Text samples after Phase I-b training
         counter = 0
         for sample in prompt_samples:
