@@ -1420,7 +1420,7 @@ def objective(trial: optuna.Trial) -> float:
         phase_i_b_val_dataset = create_dataset(raw_text_samples=phase_i_b_val_samples, tokenizer=tokenizer, sample_expansion_batch_size=10)
 
 
-        phase_i_b_history =\ 
+        phase_i_b_history =\
                 generator.model.fit(
                    x=phase_i_b_train_dataset,
                    validation_data=phase_i_b_val_dataset,
