@@ -70,8 +70,10 @@ def objective(trial: optuna.Trial) -> float:
     # Raises RAM in a linear fashion    
    
     PHASE_I_A_SAMPLES_TO_CREATE = 10 # 681
-    PHASE_I_B_SAMPLES_TO_CREATE = 20
+    PHASE_I_B_SAMPLES_TO_CREATE = 50
     PHASE_I_B_VAL_SPLIT = 0.15  # Validation split for phase I-b (0.0 to 1.0)
+
+    PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE = 20
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -1416,8 +1418,18 @@ def objective(trial: optuna.Trial) -> float:
             dataset = dataset.batch(batch_size)
             return dataset
 
-        phase_i_b_train_dataset = create_dataset(raw_text_samples=phase_i_b_train_samples, tokenizer=tokenizer, sample_expansion_batch_size=10)
-        phase_i_b_val_dataset = create_dataset(raw_text_samples=phase_i_b_val_samples, tokenizer=tokenizer, sample_expansion_batch_size=10)
+        phase_i_b_train_dataset =\
+           create_dataset(
+              raw_text_samples=phase_i_b_train_samples,
+              tokenizer=tokenizer,
+              sample_expansion_batch_size=PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE)
+
+        
+        phase_i_b_val_dataset =\
+            create_dataset(
+               raw_text_samples=phase_i_b_val_samples,
+               tokenizer=tokenizer,
+               sample_expansion_batch_size=PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE)
 
 
         phase_i_b_history =\
