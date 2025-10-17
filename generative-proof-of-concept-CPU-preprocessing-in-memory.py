@@ -441,7 +441,7 @@ def objective(trial: optuna.Trial) -> float:
         # data += non_instruct_samples
         
         ##<<##<<
-        x, y, vocab_size =  prepare_data(data_0=non_instruct_samples, tokenizer_0=toeknizer, max_seq_length=MAX_SEQ_LENGTH, prompt_length = PROMPT_LENGTH)
+        x, y, vocab_size =  prepare_data(data_0=non_instruct_samples, tokenizer_0=tokenizer, max_seq_length=MAX_SEQ_LENGTH, prompt_length = PROMPT_LENGTH)
         # x, y, vocab_size =  prepare_data() # data)
         
         print("Input IDs shape:", len(x), "x", len(x[0]) if x else 0)
