@@ -6,8 +6,15 @@ Utility package with LLM components.
 """
 
 
+from typing import List, Tuple, Any
 
-def prepare_data(data_0: list[str], tokenizer_0, max_seq_length: int = 1024, prompt_length: int=1):
+
+
+def prepare_data(
+        data_0: List[str],
+        tokenizer_0: Any,
+        max_seq_length: int = 1024,
+        prompt_length: int = 1) -> Tuple[List[List[int]], List[List[int]], int]:
     """
     Prepares tokenized input sequences and corresponding labels for training the Cerebros 
     [not so] large language model.
@@ -38,9 +45,9 @@ def prepare_data(data_0: list[str], tokenizer_0, max_seq_length: int = 1024, pro
     Returns:
     --------
     tuple:
-        - all_input_ids (list of list of int): list[list[int]] Token IDs for each input sequence, shaped 
+        - all_input_ids (2d list of int): Tuple[List[List[int]] Token IDs for each input sequence, shaped 
           [num_samples, max_seq_length].
-        - all_labels (list of list of int): list[list[int]] One-hot encoded labels for next-token prediction,
+        - all_labels (2d list of int): Tuple[List[List[int]] One-hot encoded labels for next-token prediction,
           shaped [num_samples, vocab_size].
         - vocab_size (int): Size of the tokenizer's vocabulary, used for label dimensions.
 
