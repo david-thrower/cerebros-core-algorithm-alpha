@@ -1331,7 +1331,7 @@ def objective(trial: optuna.Trial) -> float:
 
         # Create the Dataset Generaror:
         class SampleExpansionGenerator:
-            def __init__(self, raw_text_samples, tokenizer, sample_expansion_batch_size=5):
+            def __init__(self, raw_text_samples, tokenizer, sample_expansion_batch_size=50):
                 self.raw_text_samples = raw_text_samples
                 self.tokenizer = tokenizer
                 self.sample_expansion_batch_size = sample_expansion_batch_size
@@ -1400,7 +1400,7 @@ def objective(trial: optuna.Trial) -> float:
 
 
         # Create the tf.data.Dataset
-        def create_dataset(raw_text_samples, tokenizer, sample_expansion_batch_size=10) -> tf.data.Dataset:
+        def create_dataset(raw_text_samples, tokenizer, sample_expansion_batch_size=50, model_batch_size=10) -> tf.data.Dataset:
             generator = SampleExpansionGenerator(raw_text_samples, tokenizer, sample_expansion_batch_size)
 
             dataset = tf.data.Dataset.from_generator(
@@ -1415,21 +1415,23 @@ def objective(trial: optuna.Trial) -> float:
             # Set dataset to allow multiple epochs:
             # dataset = dataset.repeat()
             # Batch it
-            dataset = dataset.batch(batch_size)
+            dataset = dataset.batch(model_batch_size)
             return dataset
 
         phase_i_b_train_dataset =\
            create_dataset(
               raw_text_samples=phase_i_b_train_samples,
               tokenizer=tokenizer,
-              sample_expansion_batch_size=PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE)
+              sample_expansion_batch_size=PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE,
+              model_batch_size=batch_size)
 
         
         phase_i_b_val_dataset =\
             create_dataset(
                raw_text_samples=phase_i_b_val_samples,
                tokenizer=tokenizer,
-               sample_expansion_batch_size=PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE)
+               sample_expansion_batch_size=PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE,
+               model_batch_size=batch_size)
 
 
         phase_i_b_history =\
