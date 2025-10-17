@@ -970,7 +970,7 @@ def objective(trial: optuna.Trial) -> float:
             
             # print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
 
-        raise ValueError("Debug New Model Config")
+
         # del(best_model_found)
         # del(generator)
         collect()
