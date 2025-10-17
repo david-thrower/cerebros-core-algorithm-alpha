@@ -278,3 +278,35 @@ class InterleavedRoPE(tf.keras.layers.Layer):
     def from_config(cls, config):
         # Keras handles nested layer restoration automatically
         return cls(**config)
+
+
+@tf.keras.utils.register_keras_serializable()
+class Perplexity(tf.keras.metrics.Metric):
+    """
+    Computes perplexity, defined as e^(categorical crossentropy).
+    """
+
+    def __init__(self, name='perplexity', **kwargs):
+        super().__init__(name=name, **kwargs)
+        self.total_crossentropy = self.add_weight(name='total_crossentropy', initializer='zeros')
+        self.count = self.add_weight(name='count', initializer='zeros')
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        # Calculate categorical crossentropy
+        crossentropy = tf.keras.losses.categorical_crossentropy(y_true, y_pred)
+
+        # Update the running sum of crossentropy and the count of samples
+        self.total_crossentropy.assign_add(tf.reduce_sum(crossentropy))
+        self.count.assign_add(tf.cast(tf.shape(y_true)[0], dtype=tf.float32))
+
+    def result(self):
+        # Compute the average crossentropy
+        average_crossentropy = self.total_crossentropy / self.count
+        # Compute perplexity as e^(average crossentropy)
+        return tf.exp(average_crossentropy)
+
+    def reset_state(self):
+        # Reset the state variables
+        self.total_crossentropy.assign(0.0)
+        self.count.assign(0.0)
+
