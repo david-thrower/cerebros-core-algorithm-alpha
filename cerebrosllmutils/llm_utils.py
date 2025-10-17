@@ -45,9 +45,9 @@ def prepare_data(
     Returns:
     --------
     tuple:
-        - all_input_ids (2d list of int): Tuple[List[List[int]] Token IDs for each input sequence, shaped 
+        - all_input_ids (2d list of int): Tuple[List[List[int]]] Token IDs for each input sequence, shaped 
           [num_samples, max_seq_length].
-        - all_labels (2d list of int): Tuple[List[List[int]] One-hot encoded labels for next-token prediction,
+        - all_labels (2d list of int): Tuple[List[List[int]]] One-hot encoded labels for next-token prediction,
           shaped [num_samples, vocab_size].
         - vocab_size (int): Size of the tokenizer's vocabulary, used for label dimensions.
 
@@ -62,7 +62,7 @@ def prepare_data(
     all_input_ids = []
     all_labels = []
 
-    pad_token_id = tokenizer.pad_token_id
+    pad_token_id = tokenizer_0.pad_token_id
 
     # Tokenize all data at once for efficiency
     tokenized_data = tokenizer_0(
@@ -75,7 +75,7 @@ def prepare_data(
     vocab_size = len(tokenizer_0)
 
     # Get the token ID for </prompt>
-    end_prompt_token_id = tokenizer.encode("</prompt>", add_special_tokens=False)[0]
+    end_prompt_token_id = tokenizer_0.encode("</prompt>", add_special_tokens=False)[0]
 
     # Process each sample
     for sample_tokens in tokenized_data['input_ids']:
@@ -85,7 +85,7 @@ def prepare_data(
         except ValueError:
             # If </prompt> not found, treat sample as a non-instruct sample
             end_prompt_index = (
-                        PROMPT_LENGTH - 1)  # int(np.ceil(len(sample_tokens) * (1/3)))  # 0 ## 1. Give it a fair starting place to predict the next word 2. reduce the number of expanded samples 
+                        prompt_length - 1)  # int(np.ceil(len(sample_tokens) * (1/3)))  # 0 ## 1. Give it a fair starting place to predict the next word 2. reduce the number of expanded samples 
 
         # Find first pad token after </prompt>
         first_pad_index = None
