@@ -7,7 +7,7 @@ Utility package with LLM components.
 
 
 
-def prepare_data(data: list[str], tokenizer, max_seq_length: int = 1024, prompt_length: int=1):
+def prepare_data(data_0: list[str], tokenizer_0, max_seq_length: int = 1024, prompt_length: int=1):
     """
     Prepares tokenized input sequences and corresponding labels for training the Cerebros 
     [not so] large language model.
@@ -25,7 +25,7 @@ def prepare_data(data: list[str], tokenizer, max_seq_length: int = 1024, prompt_
 
     Parameters:
     -----------
-    data : list of str
+    data_0 : list of str
         List of input text samples to be processed.
     max_seq_length : int, optional: default = 1024
         Maximum sequence length for input tensors. Sequences longer than this will be truncated,
@@ -58,14 +58,14 @@ def prepare_data(data: list[str], tokenizer, max_seq_length: int = 1024, prompt_
     pad_token_id = tokenizer.pad_token_id
 
     # Tokenize all data at once for efficiency
-    tokenized_data = tokenizer(
-        data,
+    tokenized_data = tokenizer_0(
+        data_0,
         max_length=max_seq_length,
         padding='max_length',
         truncation=True,
         add_special_tokens=False  # We'll handle special tokens manually
     )
-    vocab_size = len(tokenizer)
+    vocab_size = len(tokenizer_0)
 
     # Get the token ID for </prompt>
     end_prompt_token_id = tokenizer.encode("</prompt>", add_special_tokens=False)[0]
