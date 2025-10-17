@@ -54,7 +54,7 @@ def objective(trial: optuna.Trial) -> float:
     import numpy as np
     from cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search\
         import SimpleCerebrosRandomSearch
-    from cerebrosllmutils.llm_utils import prepare_data
+    from cerebrosllmutils.llm_utils import prepare_data, InterleavedRoPE
     import pendulum
     from cerebros.units.units import DenseUnit
     from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
