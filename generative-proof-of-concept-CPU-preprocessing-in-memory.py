@@ -209,148 +209,67 @@ def objective(trial: optuna.Trial) -> float:
 
         
         # Data Preprocessing:
-
-        # def prepare_data(data, max_seq_length: int = MAX_SEQ_LENGTH):
-        #     all_input_ids = []
-        #     all_labels = []
-        
-        #     pad_token_id = tokenizer.pad_token_id
-            
-        #     # Tokenize all data at once for efficiency
-        #     tokenized_data = tokenizer(
-        #         data,
-        #         max_length=max_seq_length,
-        #         padding='max_length',
-        #         truncation=True,
-        #         add_special_tokens=False  # We'll handle special tokens manually
-        #     )
-            
-        #     # Get the token ID for </prompt>
-        #     end_prompt_token_id = tokenizer.encode("</prompt>", add_special_tokens=False)[0]
-            
-        #     # Process each sample
-        #     for sample_tokens in tokenized_data['input_ids']:
-        #         # Find the index of </prompt> token
-        #         try:
-        #             end_prompt_index = sample_tokens.index(end_prompt_token_id)
-        #         except ValueError:
-        #             # If </prompt> not found, treat sample as a non-instruct sample
-        #             end_prompt_index = (PROMPT_LENGTH - 1) # int(np.ceil(len(sample_tokens) * (1/3)))  # 0 ## 1. Give it a fair starting place to predict the next word 2. reduce the number of expanded samples 
-                    
-        #         # Find first pad token after </prompt>
-        #         first_pad_index = None
-        #         for i in range(end_prompt_index + 1, len(sample_tokens)):
-        #             if sample_tokens[i] == pad_token_id:
-        #                 first_pad_index = i
-        #                 break
-                
-        #         # If no pad token found, use the end of sequence
-        #         if first_pad_index is None:
-        #             first_pad_index = len(sample_tokens)
-                
-        #         # Apply sliding window from after </prompt> to first pad token
-        #         # Start from end_prompt_index + 1 (first token to predict)
-        #         # End at first_pad_index - 1 (last token to predict)
-        #         for i in range(end_prompt_index + 1, first_pad_index):
-        #             # Input: from start up to (but not including) token i
-        #             input_ids = sample_tokens[:i]
-                    
-        #             # Pad or truncate to max_seq_length
-        #             if len(input_ids) > max_seq_length:
-        #                 input_ids = input_ids[:max_seq_length]
-        #             else:
-        #                 input_ids = input_ids + [pad_token_id] * (max_seq_length - len(input_ids))
-                    
-        #             # Label: one-hot encoding of token at position i
-        #             next_token = sample_tokens[i]
-        #             label = [0] * VOCABULARY_SIZE
-        #             label[next_token] = 1
-                    
-        #             all_input_ids.append(input_ids)
-        #             all_labels.append(label)
-                
-        #         # Add final sample with pad token as label to indicate termination
-        #         if first_pad_index < len(sample_tokens):  # Only if there's actually a pad token
-        #             input_ids = sample_tokens[:first_pad_index]
-                    
-        #             # Pad or truncate to max_seq_length
-        #             if len(input_ids) > max_seq_length:
-        #                 input_ids = input_ids[:max_seq_length]
-        #             else:
-        #                 input_ids = input_ids + [pad_token_id] * (max_seq_length - len(input_ids))
-                    
-        #             # Label: one-hot encoding of pad token
-        #             label = [0] * VOCABULARY_SIZE
-        #             label[pad_token_id] = 1
-                    
-        #             all_input_ids.append(input_ids)
-        #             all_labels.append(label)
-            
-        #     return all_input_ids, all_labels, VOCABULARY_SIZE
         
         
-        ## Only add re, tokenizer already in script
+        ## Import data
         
         from vanilladatasets.web_english_bible import samples as bible
-        # with open('king-james-bible.txt', 'r') as kjv:
-        #     # bible = kjv.read()
-        #     #
-        #     bible = samples
+
+        # Probably will be removed 
         
-        
-        def package_non_instruct_text(text: str, desired_samples: int, max_length_tokens: int) -> list[str]:
-            """
-            Package a block of text into samples of approximately max_length_tokens.
+        # def package_non_instruct_text(text: str, desired_samples: int, max_length_tokens: int) -> list[str]:
+        #     """
+        #     Package a block of text into samples of approximately max_length_tokens.
             
-            Args:
-                text: Block of text to process (e.g., entire book)
-                desired_samples: Number of samples to generate
-                max_length_tokens: Maximum number of tokens per sample
+        #     Args:
+        #         text: Block of text to process (e.g., entire book)
+        #         desired_samples: Number of samples to generate
+        #         max_length_tokens: Maximum number of tokens per sample
                 
-            Returns:
-                List of text samples, each approximately max_length_tokens long
-            """
-            # Split text into sentences using regex to handle various sentence endings
-            sentences = re.split(r'[.!?]+', text)
-            sentences = [sentence.strip() for sentence in sentences if sentence.strip()]
+        #     Returns:
+        #         List of text samples, each approximately max_length_tokens long
+        #     """
+        #     # Split text into sentences using regex to handle various sentence endings
+        #     sentences = re.split(r'[.!?]+', text)
+        #     sentences = [sentence.strip() for sentence in sentences if sentence.strip()]
             
-            samples = []
-            current_sample_sentences = []
-            current_token_count = 0
+        #     samples = []
+        #     current_sample_sentences = []
+        #     current_token_count = 0
             
-            sentence_index = 0
+        #     sentence_index = 0
             
-            while len(samples) < desired_samples and sentence_index < len(sentences):
-                sentence = sentences[sentence_index]
+        #     while len(samples) < desired_samples and sentence_index < len(sentences):
+        #         sentence = sentences[sentence_index]
                 
-                # Estimate token count for this sentence
-                sentence_tokens = len(tokenizer.encode(sentence))
+        #         # Estimate token count for this sentence
+        #         sentence_tokens = len(tokenizer.encode(sentence))
                 
-                # Check if adding this sentence would exceed the token limit
-                if current_token_count + sentence_tokens <= max_length_tokens:
-                    current_sample_sentences.append(sentence)
-                    current_token_count += sentence_tokens
-                    sentence_index += 1
-                else:
-                    # If we have accumulated sentences, create a sample
-                    if current_sample_sentences:
-                        sample = " ".join(current_sample_sentences)
-                        samples.append(sample)
+        #         # Check if adding this sentence would exceed the token limit
+        #         if current_token_count + sentence_tokens <= max_length_tokens:
+        #             current_sample_sentences.append(sentence)
+        #             current_token_count += sentence_tokens
+        #             sentence_index += 1
+        #         else:
+        #             # If we have accumulated sentences, create a sample
+        #             if current_sample_sentences:
+        #                 sample = " ".join(current_sample_sentences)
+        #                 samples.append(sample)
                     
-                    # Reset for next sample
-                    current_sample_sentences = []
-                    current_token_count = 0
+        #             # Reset for next sample
+        #             current_sample_sentences = []
+        #             current_token_count = 0
                     
-                    # If this single sentence is too long, skip it
-                    if sentence_tokens > max_length_tokens:
-                        sentence_index += 1
+        #             # If this single sentence is too long, skip it
+        #             if sentence_tokens > max_length_tokens:
+        #                 sentence_index += 1
             
-            # Add the final sample if we have any remaining sentences
-            if current_sample_sentences and len(samples) < desired_samples:
-                sample = " ".join(current_sample_sentences).replace("\n",' ')
-                samples.append(sample)
+        #     # Add the final sample if we have any remaining sentences
+        #     if current_sample_sentences and len(samples) < desired_samples:
+        #         sample = " ".join(current_sample_sentences).replace("\n",' ')
+        #         samples.append(sample)
             
-            return samples
+        #     return samples
         
         # Separate into samples
         # non_instruct_samples = package_non_instruct_text(text=bible, desired_samples=SAMPLES_TO_CREATE, max_length_tokens=int(np.ceil(MAX_SEQ_LENGTH * .8))) ##
@@ -439,17 +358,17 @@ def objective(trial: optuna.Trial) -> float:
         
         # Add non-instruct samples
         # data += non_instruct_samples
-        
-        ##<<##<<
+
+        # Preprocess data for Stage I-a training
         x, y, vocab_size =  prepare_data(data_0=non_instruct_samples, tokenizer_0=tokenizer, max_seq_length=MAX_SEQ_LENGTH, prompt_length = PROMPT_LENGTH)
-        # x, y, vocab_size =  prepare_data() # data)
-        
+
+        # QC check 
         print("Input IDs shape:", len(x), "x", len(x[0]) if x else 0)
         print("Labels shape:", len(y), "x", len(y[0]) if y else 0)
         print("Vocabulary size:", vocab_size)
         print("First few samples generated:", len(x))
         
-        raise ValueError("Debug")
+
         # i = 1
         # for d,l in zip(x, y):
         #     print(f"Sample {i}:")
@@ -481,144 +400,144 @@ def objective(trial: optuna.Trial) -> float:
         
         ### Change loss to crossentropy and keep the metric as accuracy, tweak params, and the rest should be the same ... 
         
-        # --- Base Rotary Positional Embedding
-        @tf.keras.utils.register_keras_serializable()
-        class RotaryEmbedding(tf.keras.layers.Layer):
-            def __init__(self, dim, max_seq_len=1024, temperature=10000.0, **kwargs):
-                super().__init__(**kwargs)
-                self.dim = dim
-                # Ensure dim is even right at initialization
-                if self.dim % 2 != 0:
-                    raise ValueError(f"Embedding dimension `dim` ({self.dim}) must be even for RotaryEmbedding.")
-                self.max_seq_len = max_seq_len
-                self.temperature = temperature
-                # *** No calculation or storage of inv_freq here or in build ***
+        # # --- Base Rotary Positional Embedding
+        # @tf.keras.utils.register_keras_serializable()
+        # class RotaryEmbedding(tf.keras.layers.Layer):
+        #     def __init__(self, dim, max_seq_len=1024, temperature=10000.0, **kwargs):
+        #         super().__init__(**kwargs)
+        #         self.dim = dim
+        #         # Ensure dim is even right at initialization
+        #         if self.dim % 2 != 0:
+        #             raise ValueError(f"Embedding dimension `dim` ({self.dim}) must be even for RotaryEmbedding.")
+        #         self.max_seq_len = max_seq_len
+        #         self.temperature = temperature
+        #         # *** No calculation or storage of inv_freq here or in build ***
         
-            def build(self, input_shape):
-                # Build should primarily be for creating trainable weights, which we don't have.
-                # Call super().build() for Keras compatibility.
-                super().build(input_shape)
+        #     def build(self, input_shape):
+        #         # Build should primarily be for creating trainable weights, which we don't have.
+        #         # Call super().build() for Keras compatibility.
+        #         super().build(input_shape)
         
-            def call(self, x): # Removed seq_len argument, calculate from x
-                shape = tf.shape(x)
-                batch_size = shape[0]
-                actual_seq_len = shape[1]
+        #     def call(self, x): # Removed seq_len argument, calculate from x
+        #         shape = tf.shape(x)
+        #         batch_size = shape[0]
+        #         actual_seq_len = shape[1]
         
-                # *** Calculate inv_freq inside call ***
-                inv_freq_base = tf.range(0, self.dim, 2, dtype=tf.float32)
-                inv_freq = 1.0 / (self.temperature ** (inv_freq_base / self.dim))
-                # Ensure inv_freq has the correct shape [dim/2]
-                inv_freq = tf.cast(inv_freq, dtype=x.dtype) # Match dtype early
+        #         # *** Calculate inv_freq inside call ***
+        #         inv_freq_base = tf.range(0, self.dim, 2, dtype=tf.float32)
+        #         inv_freq = 1.0 / (self.temperature ** (inv_freq_base / self.dim))
+        #         # Ensure inv_freq has the correct shape [dim/2]
+        #         inv_freq = tf.cast(inv_freq, dtype=x.dtype) # Match dtype early
         
-                # Use actual_seq_len for calculations
-                position = tf.range(actual_seq_len, dtype=x.dtype) # Match dtype
+        #         # Use actual_seq_len for calculations
+        #         position = tf.range(actual_seq_len, dtype=x.dtype) # Match dtype
         
-                # Calculate sinusoid input using einsum or broadcasting
-                # Einsum approach: Ensure correct dimensions [seq_len, dim/2]
-                sinusoid_inp = tf.einsum("i,j->ij", position, inv_freq)
+        #         # Calculate sinusoid input using einsum or broadcasting
+        #         # Einsum approach: Ensure correct dimensions [seq_len, dim/2]
+        #         sinusoid_inp = tf.einsum("i,j->ij", position, inv_freq)
         
-                # Calculate sin and cos based on the actual sequence length
-                sin = tf.sin(sinusoid_inp)
-                cos = tf.cos(sinusoid_inp)
+        #         # Calculate sin and cos based on the actual sequence length
+        #         sin = tf.sin(sinusoid_inp)
+        #         cos = tf.cos(sinusoid_inp)
         
-                # Repeat sin/cos for interleaving: [a, b] -> [a, a, b, b]
-                # Result needs shape [actual_seq_len, dim]
-                sin = tf.repeat(sin, 2, axis=-1)
-                cos = tf.repeat(cos, 2, axis=-1)
+        #         # Repeat sin/cos for interleaving: [a, b] -> [a, a, b, b]
+        #         # Result needs shape [actual_seq_len, dim]
+        #         sin = tf.repeat(sin, 2, axis=-1)
+        #         cos = tf.repeat(cos, 2, axis=-1)
         
-                # Expand dims for batch and tile
-                # Output shape needs to be [batch_size, actual_seq_len, dim]
-                # Add batch dimension: [1, actual_seq_len, dim]
-                sin = tf.expand_dims(sin, axis=0)
-                cos = tf.expand_dims(cos, axis=0)
+        #         # Expand dims for batch and tile
+        #         # Output shape needs to be [batch_size, actual_seq_len, dim]
+        #         # Add batch dimension: [1, actual_seq_len, dim]
+        #         sin = tf.expand_dims(sin, axis=0)
+        #         cos = tf.expand_dims(cos, axis=0)
         
-                # Tile to match the batch size: [batch_size, actual_seq_len, dim]
-                sin = tf.tile(sin, [batch_size, 1, 1])
-                cos = tf.tile(cos, [batch_size, 1, 1])
+        #         # Tile to match the batch size: [batch_size, actual_seq_len, dim]
+        #         sin = tf.tile(sin, [batch_size, 1, 1])
+        #         cos = tf.tile(cos, [batch_size, 1, 1])
         
-                # Casting to x.dtype was already done for inv_freq, sin/cos will inherit
-                # sin = tf.cast(sin, x.dtype) # Already done via calculation chain
-                # cos = tf.cast(cos, x.dtype) # Already done via calculation chain
+        #         # Casting to x.dtype was already done for inv_freq, sin/cos will inherit
+        #         # sin = tf.cast(sin, x.dtype) # Already done via calculation chain
+        #         # cos = tf.cast(cos, x.dtype) # Already done via calculation chain
         
-                # Return sin and cos needed by InterleavedRoPE
-                return sin, cos
+        #         # Return sin and cos needed by InterleavedRoPE
+        #         return sin, cos
         
-            def get_config(self):
-                config = super().get_config()
-                config.update({
-                    "dim": self.dim,
-                    "max_seq_len": self.max_seq_len,
-                    "temperature": self.temperature,
-                })
-                return config
+        #     def get_config(self):
+        #         config = super().get_config()
+        #         config.update({
+        #             "dim": self.dim,
+        #             "max_seq_len": self.max_seq_len,
+        #             "temperature": self.temperature,
+        #         })
+        #         return config
         
-            @classmethod
-            def from_config(cls, config):
-                return cls(**config)
-        
-        
-        
-        # iRoPE helper functions
-        
-        @tf.keras.utils.register_keras_serializable()
-        def split_alternate(x):
-            shape = tf.shape(x)
-            x = tf.reshape(x, [shape[0], shape[1], shape[2] // 2, 2])
-            x = tf.transpose(x, [0, 1, 3, 2])
-            x = tf.reshape(x, [shape[0], shape[1], -1])
-            return x
+        #     @classmethod
+        #     def from_config(cls, config):
+        #         return cls(**config)
         
         
-        @tf.keras.utils.register_keras_serializable()
-        def rotate_half(x):
-            x = split_alternate(x)
-            d = tf.shape(x)[-1]
-            rotated_x = tf.concat([-x[..., d//2:], x[..., :d//2]], axis=-1)
-            return tf.reshape(rotated_x, tf.shape(x))
+        
+        # # iRoPE helper functions
+        
+        # @tf.keras.utils.register_keras_serializable()
+        # def split_alternate(x):
+        #     shape = tf.shape(x)
+        #     x = tf.reshape(x, [shape[0], shape[1], shape[2] // 2, 2])
+        #     x = tf.transpose(x, [0, 1, 3, 2])
+        #     x = tf.reshape(x, [shape[0], shape[1], -1])
+        #     return x
         
         
-        @tf.keras.utils.register_keras_serializable()
-        def apply_rotary_pos_emb(x, sin, cos):
-            cos = tf.reshape(cos, [tf.shape(cos)[0], tf.shape(cos)[1], -1])
-            sin = tf.reshape(sin, [tf.shape(sin)[0], tf.shape(sin)[1], -1])
-            x_rotated = x * cos + rotate_half(x) * sin
-            return x_rotated
+        # @tf.keras.utils.register_keras_serializable()
+        # def rotate_half(x):
+        #     x = split_alternate(x)
+        #     d = tf.shape(x)[-1]
+        #     rotated_x = tf.concat([-x[..., d//2:], x[..., :d//2]], axis=-1)
+        #     return tf.reshape(rotated_x, tf.shape(x))
         
-        # interleaved Rotary Postional Embedding (iRoPE)
-        @tf.keras.utils.register_keras_serializable()
-        class InterleavedRoPE(tf.keras.layers.Layer):
-            def __init__(self, dim, max_seq_len=1024, **kwargs):
-                super().__init__(**kwargs)
-                if dim % 2 != 0:
-                     raise ValueError(f"Embedding dimension `dim` ({dim}) must be even for InterleavedRoPE.")
-                self.dim = dim
-                self.max_seq_len = max_seq_len
-                # Instantiate the RotaryEmbedding layer
-                # Ensure the name is consistent if needed for saving/loading
-                self.rotary_emb = RotaryEmbedding(dim, max_seq_len, name="rotary_embedding")
         
-            def call(self, x):
-                # Get sin and cos from the RotaryEmbedding layer's call method
-                # *** Pass only 'x'. RotaryEmbedding calculates seq_len internally. ***
-                sin, cos = self.rotary_emb(x)
+        # @tf.keras.utils.register_keras_serializable()
+        # def apply_rotary_pos_emb(x, sin, cos):
+        #     cos = tf.reshape(cos, [tf.shape(cos)[0], tf.shape(cos)[1], -1])
+        #     sin = tf.reshape(sin, [tf.shape(sin)[0], tf.shape(sin)[1], -1])
+        #     x_rotated = x * cos + rotate_half(x) * sin
+        #     return x_rotated
         
-                # Apply the positional embeddings
-                x_embedded = apply_rotary_pos_emb(x, sin, cos)
-                return x_embedded
+        # # interleaved Rotary Postional Embedding (iRoPE)
+        # @tf.keras.utils.register_keras_serializable()
+        # class InterleavedRoPE(tf.keras.layers.Layer):
+        #     def __init__(self, dim, max_seq_len=1024, **kwargs):
+        #         super().__init__(**kwargs)
+        #         if dim % 2 != 0:
+        #              raise ValueError(f"Embedding dimension `dim` ({dim}) must be even for InterleavedRoPE.")
+        #         self.dim = dim
+        #         self.max_seq_len = max_seq_len
+        #         # Instantiate the RotaryEmbedding layer
+        #         # Ensure the name is consistent if needed for saving/loading
+        #         self.rotary_emb = RotaryEmbedding(dim, max_seq_len, name="rotary_embedding")
         
-            def get_config(self):
-                config = super().get_config()
-                config.update({
-                    "dim": self.dim,
-                    "max_seq_len": self.max_seq_len,
-                })
-                # Keras handles nested layer serialization automatically
-                return config
+        #     def call(self, x):
+        #         # Get sin and cos from the RotaryEmbedding layer's call method
+        #         # *** Pass only 'x'. RotaryEmbedding calculates seq_len internally. ***
+        #         sin, cos = self.rotary_emb(x)
         
-            @classmethod
-            def from_config(cls, config):
-                # Keras handles nested layer restoration automatically
-                return cls(**config)
+        #         # Apply the positional embeddings
+        #         x_embedded = apply_rotary_pos_emb(x, sin, cos)
+        #         return x_embedded
+        
+        #     def get_config(self):
+        #         config = super().get_config()
+        #         config.update({
+        #             "dim": self.dim,
+        #             "max_seq_len": self.max_seq_len,
+        #         })
+        #         # Keras handles nested layer serialization automatically
+        #         return config
+        
+        #     @classmethod
+        #     def from_config(cls, config):
+        #         # Keras handles nested layer restoration automatically
+        #         return cls(**config)
         
         # Text embedding base model
         
