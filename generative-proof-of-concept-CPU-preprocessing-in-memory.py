@@ -410,7 +410,7 @@ def objective(trial: optuna.Trial) -> float:
                 text,
                 add_special_tokens=False
             )['input_ids']
-        current_tokens = token_ids.copy()
+        current_tokens = input_ids.copy()
 
         # Pad (Had been advised by AI when writing .generate() that this
         # should be done manually, not using the tokenizer ...)
