@@ -766,6 +766,21 @@ def objective(trial: optuna.Trial) -> float:
         generator.save(MODEL_SAVE_PATH)
         print(f"Final model saved to {MODEL_SAVE_PATH}")
 
+        # Test inter - module serialization
+
+        print(f"🧪 Running serialization test for trial {trial_number}...")
+        result = run(
+            f"python3 test_llm_serialization.py {TOKENIZER_SAVE_PATH} {MODEL_SAVE_PATH}",
+            capture_output=True,
+            shell=True
+        )
+      
+        if result.returncode == 0:
+            print("✅ Serialization test passed.")
+            result(result.stdout)
+        else:
+            print("❌ Serialization test failed.")
+            print("STDERR:", result.stderr)
 
         # Return the final result to Optuna
         return result_phase_i_b
