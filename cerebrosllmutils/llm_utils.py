@@ -310,7 +310,8 @@ class Perplexity(tf.keras.metrics.Metric):
         self.total_crossentropy.assign(0.0)
         self.count.assign(0.0)
 
-@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPTConfig')
+
+@keras.saving.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPTConfig')
 class CerebrosNotGPTConfig:
     def __init__(self, max_sequence_length=1536, padding_token=None):
         self.max_sequence_length = max_sequence_length
@@ -320,46 +321,50 @@ class CerebrosNotGPTConfig:
         return {
             'max_sequence_length': self.max_sequence_length,
             'padding_token': self.padding_token
-            # NO model_0 here!
         }
 
     @classmethod
     def from_config(cls, config):
-        return cls(**config)  # No model_0 to handle
+        return cls(**config)
 
-
-@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPT')
-class CerebrosNotGPT(tf.keras.Model):
-    def __init__(self, config, model_0=None, **kwargs):
+@keras.saving.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPT')
+class CerebrosNotGPT(keras.Model):
+    def __init__(self, config, **kwargs):
         super().__init__(**kwargs)
         self.config = config
         self.max_sequence_length = config.max_sequence_length
         self.padding_token = config.padding_token
 
-        # Handle model assignment
-        if model_0 is not None:
-            self.model = model_0
-        else:
-            # This branch is for deserialization - Keras will restore self.model automatically
-            # if it was a proper Keras layer/model that was added via self.model = some_keras_model
-            pass
+        # This `self.model` attribute is the key. Keras automatically tracks
+        # and serializes any `keras.Layer` or `keras.Model` assigned as an attribute.
+        # It is set during the initial object creation from your functional model.
+        # During deserialization, Keras will handle the restoration of this nested model.
+        # Do not manually create or deserialize it in get_config/from_config.
+        self.model = kwargs.get('model', None)
 
     def get_config(self):
         base_config = super().get_config()
         base_config.update({
             'config': self.config.get_config(),
-            'model': tf.keras.utils.serialize_keras_object(self.model)
         })
+        # Note: Do not serialize `self.model` here. Keras handles it automatically.
         return base_config
 
     @classmethod
     def from_config(cls, config):
-        config_obj = CerebrosNotGPTConfig.from_config(config['config'])
-        model_0 = tf.keras.utils.deserialize_keras_object(config['model'])
-        return cls(config=config_obj, model_0=model_0)
+        # Extract the custom config first.
+        config_obj_dict = config.pop('config')
+        config_obj = CerebrosNotGPTConfig.from_config(config_obj_dict)
+        
+        # Now pass the rest of the config dictionary (**kwargs) to the constructor.
+        # The remaining items in `config` are the automatically serialized Keras objects,
+        # like `self.model`. Passing them ensures Keras can correctly rebuild the nested model.
+        return cls(config=config_obj, **config)
 
-    def call(self, inputs):
-        return self.model(inputs)
+    def call(self, inputs, training=False):
+        if self.model is None:
+            raise ValueError("Inner model not initialized properly")
+        return self.model(inputs, training=training)
 
     @staticmethod
     def apply_top_k_probs(probs, k):
