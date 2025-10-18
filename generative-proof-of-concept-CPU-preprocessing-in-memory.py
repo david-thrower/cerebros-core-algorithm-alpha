@@ -980,7 +980,7 @@ def objective(trial: optuna.Trial) -> float:
 
         # Create the Dataset Generaror:
         class SampleExpansionGenerator:
-            def __init__(self, raw_text_samples, tokenizer, sample_expansion_batch_size=50):
+            def __init__(self, raw_text_samples, tokenizer, sample_expansion_batch_size=50, prompt_length_0=PROMPT_LENGTH, max_seq_length=MAX_SEQ_LENGTH):
                 self.raw_text_samples = raw_text_samples
                 self.tokenizer = tokenizer
                 self.sample_expansion_batch_size = sample_expansion_batch_size
@@ -1006,7 +1006,13 @@ def objective(trial: optuna.Trial) -> float:
                 self.current_index = end_idx
 
                 # Run prepare_data on this batch
-                input_ids_list, labels_list, _ = prepare_data(batch_samples, max_seq_length=MAX_SEQ_LENGTH)
+                input_ids_list, labels_list, _ =\
+                        prepare_data(
+                           data_0=batch_samples,
+                           tokenizer_0=tokenizer,
+                           max_seq_length=max_seq_length,
+                           prompt_length=prompt_length_0)
+                # input_ids_list, labels_list, _ = prepare_data(batch_samples, max_seq_length=MAX_SEQ_LENGTH) # <<--<<     
 
                 # Assign to internal queues
                 self.data = input_ids_list
