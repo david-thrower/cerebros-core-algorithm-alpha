@@ -141,7 +141,7 @@ def prepare_data(
 
 
 # --- Base Rotary Positional Embedding
-@tf.keras.utils.register_keras_serializable()
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='RotaryEmbedding')
 class RotaryEmbedding(tf.keras.layers.Layer):
     def __init__(self, dim, max_seq_len=1024, temperature=10000.0, **kwargs):
         super().__init__(**kwargs)
@@ -218,7 +218,7 @@ class RotaryEmbedding(tf.keras.layers.Layer):
 
 # iRoPE helper functions
 
-@tf.keras.utils.register_keras_serializable()
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='split_alternate')
 def split_alternate(x):
     shape = tf.shape(x)
     x = tf.reshape(x, [shape[0], shape[1], shape[2] // 2, 2])
@@ -227,7 +227,7 @@ def split_alternate(x):
     return x
 
 
-@tf.keras.utils.register_keras_serializable()
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='rotate_half')
 def rotate_half(x):
     x = split_alternate(x)
     d = tf.shape(x)[-1]
@@ -235,7 +235,7 @@ def rotate_half(x):
     return tf.reshape(rotated_x, tf.shape(x))
 
 
-@tf.keras.utils.register_keras_serializable()
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='apply_rotary_pos_emb')
 def apply_rotary_pos_emb(x, sin, cos):
     cos = tf.reshape(cos, [tf.shape(cos)[0], tf.shape(cos)[1], -1])
     sin = tf.reshape(sin, [tf.shape(sin)[0], tf.shape(sin)[1], -1])
@@ -244,7 +244,7 @@ def apply_rotary_pos_emb(x, sin, cos):
 
 
 # interleaved Rotary Postional Embedding (iRoPE)
-@tf.keras.utils.register_keras_serializable()
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='InterleavedRoPE')
 class InterleavedRoPE(tf.keras.layers.Layer):
     def __init__(self, dim, max_seq_len=1024, **kwargs):
         super().__init__(**kwargs)
@@ -280,7 +280,7 @@ class InterleavedRoPE(tf.keras.layers.Layer):
         return cls(**config)
 
 
-@tf.keras.utils.register_keras_serializable()
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='Perplexity')
 class Perplexity(tf.keras.metrics.Metric):
     """
     Computes perplexity, defined as e^(categorical crossentropy).
@@ -310,7 +310,7 @@ class Perplexity(tf.keras.metrics.Metric):
         self.total_crossentropy.assign(0.0)
         self.count.assign(0.0)
 
-@tf.keras.utils.register_keras_serializable()
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPTConfig')
 class CerebrosNotGPTConfig:
     def __init__(self, max_sequence_length=1536, padding_token=None):
         self.max_sequence_length = max_sequence_length
@@ -328,7 +328,7 @@ class CerebrosNotGPTConfig:
         return cls(**config)  # No model_0 to handle
 
 
-@tf.keras.utils.register_keras_serializable()
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPT')
 class CerebrosNotGPT(tf.keras.Model):
     def __init__(self, config, model_0=None, **kwargs):
         super().__init__(**kwargs)
