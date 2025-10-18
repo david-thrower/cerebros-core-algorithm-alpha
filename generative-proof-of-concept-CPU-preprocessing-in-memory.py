@@ -2,12 +2,12 @@ import optuna
 import os
 import mlflow
 from datetime import datetime
-from subprocess import run
+import subprocess
 from warnings import warn
 
 MLFLOW_PORT = 7777
 
-answer = run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
+answer = subprocess.run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &",
    shell=True,
 )
 print(answer.stdout)
@@ -769,7 +769,7 @@ def objective(trial: optuna.Trial) -> float:
         # Test inter - module serialization
 
         print(f"🧪 Running serialization test for trial {trial_number}...")
-        result = run(
+        result = subprocess.run(
             f"python3 test_llm_serialization.py {TOKENIZER_SAVE_PATH} {MODEL_SAVE_PATH}",
             capture_output=True,
             shell=True
