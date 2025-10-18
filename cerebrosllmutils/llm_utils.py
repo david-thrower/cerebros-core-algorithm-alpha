@@ -329,32 +329,53 @@ class CerebrosNotGPTConfig:
 
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPT')
 class CerebrosNotGPT(tf.keras.Model):
-    def __init__(self, config, **kwargs):
-        # 1. Pop the custom argument for the nested model.
-        model = kwargs.pop('model', None)
-
-        # 2. Call the parent constructor with the cleaned kwargs.
+    def __init__(self, config: Any, model: Any = None, **kwargs):
+        # 1. Store the nested model argument.
+        self.config = config
+        self.model = model
+        
+        # 2. Extract and remove custom kwargs (like 'model') before calling super.
+        #    This is important to prevent 'unrecognized keyword argument' errors.
+        #    The nested model is already extracted and stored, so it can be safely removed.
+        kwargs.pop('model', None)
+        
+        # 3. Call the parent constructor with the cleaned kwargs.
         super().__init__(**kwargs)
 
-        # 3. Assign the nested model attribute after the super() call.
-        self.model = model
-
-        self.config = config
         self.max_sequence_length = config.max_sequence_length
         self.padding_token = config.padding_token
 
     def get_config(self):
         base_config = super().get_config()
-        base_config.update({
+        config_dict = {
             'config': self.config.get_config(),
-        })
+        }
+        
+        # Explicitly handle nested model serialization.
+        # This is required if Keras's automatic tracking fails.
+        if self.model is not None:
+            # Note: This approach might still suffer from weight loss.
+            # The recommended way is to let Keras handle it automatically.
+            config_dict['model'] = keras.saving.serialize_keras_object(self.model)
+
+        base_config.update(config_dict)
         return base_config
 
     @classmethod
     def from_config(cls, config):
+        # Separate the custom config.
         config_obj_dict = config.pop('config')
         config_obj = CerebrosNotGPTConfig.from_config(config_obj_dict)
-        return cls(config=config_obj, **config)
+        
+        # Manually extract and load the nested model.
+        nested_model_config = config.pop('model', None)
+        if nested_model_config:
+            nested_model = keras.saving.deserialize_keras_object(nested_model_config)
+        else:
+            nested_model = None
+            
+        # Reconstruct the outer model by passing the restored parts.
+        return cls(config=config_obj, model=nested_model, **config)
 
     def call(self, inputs, training=False):
         if self.model is None:
