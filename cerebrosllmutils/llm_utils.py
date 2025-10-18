@@ -311,7 +311,7 @@ class Perplexity(tf.keras.metrics.Metric):
         self.count.assign(0.0)
 
 
-@tf.keras.saving.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPTConfig')
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPTConfig')
 class CerebrosNotGPTConfig:
     def __init__(self, max_sequence_length=1536, padding_token=None):
         self.max_sequence_length = max_sequence_length
@@ -327,7 +327,7 @@ class CerebrosNotGPTConfig:
     def from_config(cls, config):
         return cls(**config)
 
-@tf.keras.saving.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPT')
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPT')
 class CerebrosNotGPT(tf.keras.Model):
     def __init__(self, config, **kwargs):
         super().__init__(**kwargs)
