@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "266-move-llm-components-to-a-package" ]
+    branches: [ "main", "267-refactor-generator-dataset-for-llm" ]
 
 permissions:
   contents: read
