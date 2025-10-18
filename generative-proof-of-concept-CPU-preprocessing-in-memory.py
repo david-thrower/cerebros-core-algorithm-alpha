@@ -425,9 +425,9 @@ def objective(trial: optuna.Trial) -> float:
 
         try:
             _ = generator(input_tensor)
-           print("✅ Building LLM Model Successful!")
+            print("✅ Building LLM Model Successful!")
         except Exception as exc:
-           error_message = f"❌ Building model returned the error: {exc}"
+            error_message = f"❌ Building model returned the error: {exc}"
 
         
         # mlflow.keras.log_model(generator, artifact_path="generator")
