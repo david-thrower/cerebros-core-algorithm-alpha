@@ -32,7 +32,7 @@ def test_serialization(tokenizer_path: str, model_path: str):
         )
 
         output_text = tokenizer.decode(output_tokens)
-        print(f🧠 Prompt: {prompt} Generated Text from Serialized Model: '{output_text}'")
+        print(f"🧠 (serialized) Prompt: {prompt} Generated Text from Serialized Model: '{output_text}'")
 
         return True
 
