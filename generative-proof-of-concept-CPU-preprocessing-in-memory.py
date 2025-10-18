@@ -392,7 +392,7 @@ def objective(trial: optuna.Trial) -> float:
             max_sequence_length=MAX_SEQ_LENGTH,
             padding_token=tokenizer.pad_token_id
         )
-        generator = CerebrosNotGPT(config, model_0=best_model_found)
+        generator = CerebrosNotGPT(config, model=best_model_found)
        
         
         # mlflow.keras.log_model(generator, artifact_path="generator")
