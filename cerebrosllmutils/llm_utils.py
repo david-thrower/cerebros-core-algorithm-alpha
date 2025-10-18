@@ -345,15 +345,18 @@ class CerebrosNotGPT(tf.keras.Model):
             pass
 
     def get_config(self):
-        return {
-            'config': self.config.get_config()
-            # NO model reference here!
-        }
+        base_config = super().get_config()
+        base_config.update({
+            'config': self.config.get_config(),
+            'model': tf.keras.utils.serialize_keras_object(self.model)
+        })
+        return base_config
 
     @classmethod
     def from_config(cls, config):
         config_obj = CerebrosNotGPTConfig.from_config(config['config'])
-        return cls(config=config_obj)  # Keras will handle model restoration
+        model_0 = tf.keras.utils.deserialize_keras_object(config['model'])
+        return cls(config=config_obj, model_0=model_0)
 
     def call(self, inputs):
         return self.model(inputs)
