@@ -654,7 +654,7 @@ def objective(trial: optuna.Trial) -> float:
         # Log the metric to MlFLow
         mlflow.log_metric("phase-i-a-perplexity", phase_i_a_result, step=trial.number)
 
-       """### Testing the best model found"""
+        """### Testing the best model found"""
         
         MODEL_FILE_NAME = "cerebros-foundation-model.keras"
         
