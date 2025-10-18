@@ -1049,8 +1049,8 @@ def objective(trial: optuna.Trial) -> float:
             dataset = tf.data.Dataset.from_generator(
                 lambda: generator_0,
                 output_signature=(
-                    tf.TensorSpec(shape=(generator.max_seq_length,), dtype=tf.int32),  # Use generator's parameter
-                    tf.TensorSpec(shape=(generator.vocabulary_size,), dtype=tf.float32)  # Use generator's parameter
+                    tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),  # Use generator's parameter
+                    tf.TensorSpec(shape=(generator_0.vocabulary_size,), dtype=tf.float32)  # Use generator's parameter
                 )
             )
           
