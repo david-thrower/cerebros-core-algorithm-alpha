@@ -356,7 +356,7 @@ class CerebrosNotGPT(tf.keras.Model):
         if self.model is not None:
             # Note: This approach might still suffer from weight loss.
             # The recommended way is to let Keras handle it automatically.
-            config_dict['model'] = tf.keras.saving.serialize_keras_object(self.model)
+            config_dict['model'] = tf.keras.utils.serialize_keras_object(self.model)
 
         base_config.update(config_dict)
         return base_config
@@ -370,7 +370,7 @@ class CerebrosNotGPT(tf.keras.Model):
         # Manually extract and load the nested model.
         nested_model_config = config.pop('model', None)
         if nested_model_config:
-            nested_model = tf.keras.saving.deserialize_keras_object(nested_model_config)
+            nested_model = tf.keras.utils.deserialize_keras_object(nested_model_config)
         else:
             nested_model = None
             
