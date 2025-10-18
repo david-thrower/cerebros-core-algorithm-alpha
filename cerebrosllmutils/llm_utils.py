@@ -311,7 +311,7 @@ class Perplexity(tf.keras.metrics.Metric):
         self.count.assign(0.0)
 
 
-@keras.saving.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPTConfig')
+@tf.keras.saving.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPTConfig')
 class CerebrosNotGPTConfig:
     def __init__(self, max_sequence_length=1536, padding_token=None):
         self.max_sequence_length = max_sequence_length
@@ -327,8 +327,8 @@ class CerebrosNotGPTConfig:
     def from_config(cls, config):
         return cls(**config)
 
-@keras.saving.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPT')
-class CerebrosNotGPT(keras.Model):
+@tf.keras.saving.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPT')
+class CerebrosNotGPT(tf.keras.Model):
     def __init__(self, config, **kwargs):
         super().__init__(**kwargs)
         self.config = config
@@ -336,7 +336,7 @@ class CerebrosNotGPT(keras.Model):
         self.padding_token = config.padding_token
 
         # This `self.model` attribute is the key. Keras automatically tracks
-        # and serializes any `keras.Layer` or `keras.Model` assigned as an attribute.
+        # and serializes any `tf.keras.Layer` or `tf.keras.Model` assigned as an attribute.
         # It is set during the initial object creation from your functional model.
         # During deserialization, Keras will handle the restoration of this nested model.
         # Do not manually create or deserialize it in get_config/from_config.
