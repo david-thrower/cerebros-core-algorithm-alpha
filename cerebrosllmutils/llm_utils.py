@@ -5,10 +5,9 @@ Utility package with LLM components.
 
 """
 
-
 from typing import List, Tuple, Any
 import tensorflow as tf
-from warnings import  warn
+from warnings import warn
 
 
 def prepare_data(
@@ -86,7 +85,7 @@ def prepare_data(
         except ValueError:
             # If </prompt> not found, treat sample as a non-instruct sample
             end_prompt_index = (
-                        prompt_length - 1)  # int(np.ceil(len(sample_tokens) * (1/3)))  # 0 ## 1. Give it a fair starting place to predict the next word 2. reduce the number of expanded samples
+                    prompt_length - 1)  # int(np.ceil(len(sample_tokens) * (1/3)))  # 0 ## 1. Give it a fair starting place to predict the next word 2. reduce the number of expanded samples
 
         # Find first pad token after </prompt>
         first_pad_index = None
@@ -327,38 +326,34 @@ class CerebrosNotGPTConfig:
     def from_config(cls, config):
         return cls(**config)
 
+
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPT')
 class CerebrosNotGPT(tf.keras.Model):
     def __init__(self, config, **kwargs):
+        # 1. Pop the custom argument for the nested model.
+        model = kwargs.pop('model', None)
+
+        # 2. Call the parent constructor with the cleaned kwargs.
         super().__init__(**kwargs)
+
+        # 3. Assign the nested model attribute after the super() call.
+        self.model = model
+
         self.config = config
         self.max_sequence_length = config.max_sequence_length
         self.padding_token = config.padding_token
-
-        # This `self.model` attribute is the key. Keras automatically tracks
-        # and serializes any `tf.keras.Layer` or `tf.keras.Model` assigned as an attribute.
-        # It is set during the initial object creation from your functional model.
-        # During deserialization, Keras will handle the restoration of this nested model.
-        # Do not manually create or deserialize it in get_config/from_config.
-        self.model = kwargs.get('model', None)
 
     def get_config(self):
         base_config = super().get_config()
         base_config.update({
             'config': self.config.get_config(),
         })
-        # Note: Do not serialize `self.model` here. Keras handles it automatically.
         return base_config
 
     @classmethod
     def from_config(cls, config):
-        # Extract the custom config first.
         config_obj_dict = config.pop('config')
         config_obj = CerebrosNotGPTConfig.from_config(config_obj_dict)
-        
-        # Now pass the rest of the config dictionary (**kwargs) to the constructor.
-        # The remaining items in `config` are the automatically serialized Keras objects,
-        # like `self.model`. Passing them ensures Keras can correctly rebuild the nested model.
         return cls(config=config_obj, **config)
 
     def call(self, inputs, training=False):
@@ -580,4 +575,3 @@ class CerebrosNotGPT(tf.keras.Model):
                 break
 
         return token_ids + generated_tokens
-
