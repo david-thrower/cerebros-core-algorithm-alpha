@@ -393,7 +393,42 @@ def objective(trial: optuna.Trial) -> float:
             padding_token=tokenizer.pad_token_id
         )
         generator = CerebrosNotGPT(config, model=best_model_found)
-       
+
+
+        # Need to explicitly call the LLM directly to build it,
+        # otherwise tf.keras.Model.save() will be unsuccessful.
+        # (the weights will not be preserved). Strangely, the
+        # model being called internally by .generate() before
+        # calling tf.keras.Model.save() does not accomplish
+        # this 🤷‍♀️.
+
+        text = "This is a test ..."
+
+        PADDING_TOKEN = tokenizer.pad_token_id
+
+        input_ids = tokenizer(
+                text,
+                add_special_tokens=False
+            )['input_ids']
+        current_tokens = token_ids.copy()
+
+        # Pad (Had been advised by AI when writing .generate() that this
+        # should be done manually, not using the tokenizer ...)
+        if len(current_tokens) >  MAX_SEQ_LENGTH:
+            input_tokens = current_tokens[-MAX_SEQ_LENGTH:]
+        else:
+            padding_needed = MAX_SEQ_LENGTH - len(current_tokens)
+            input_tokens = current_tokens + [PADDING_TOKEN] * padding_needed
+ 
+        # Convert to tensor and get model prediction
+        input_tensor = tf.constant([input_tokens], dtype=tf.int32)
+
+        try:
+            _ = generator(input_tensor)
+           print("✅ Building LLM Model Successful!")
+        except Exception as exc:
+           error_message = f"❌ Building model returned the error: {exc}"
+
         
         # mlflow.keras.log_model(generator, artifact_path="generator")
 
