@@ -779,8 +779,10 @@ def objective(trial: optuna.Trial) -> float:
             print("✅ Serialization test passed.")
             print(str(result.stdout))
         else:
-            print("❌ Serialization test failed.")
+            print("? Serialization test returned some strerr.")
             print("STDERR:", str(result.stderr))
+            if result.stdout is not None:
+                print(str(result.stdout))
 
         # Return the final result to Optuna
         return result_phase_i_b
