@@ -641,7 +641,6 @@ def objective(trial: optuna.Trial) -> float:
         
         cerebros_t0 = time.time()
         phase_i_a_result_0 = cerebros_automl.run_random_search()
-        # Replace "inf" / "nan" with "worst result that can be bumerically registered"
         phase_i_a_result = float(phase_i_a_result_0) # Deep copy that survives del() of parent object ...
         cerebros_t1 = time.time()
         cerebros_time_all_models_min = (cerebros_t1 - cerebros_t0) / 60
@@ -650,19 +649,12 @@ def objective(trial: optuna.Trial) -> float:
         
         
         
-        print(f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
-        """ ADD BACK
-        
-        
-        print(f"GPT2 took {gpt_time_on_one_model_min} just to FINE TUNE one PRE - TRAINED model for 3 epochs. Although this is a small scale test, this shows the advantage of scaling in ON timing VS ON**2 timing.")
-        
-        """
-        
-        print(f'Cerebros best accuracy achieved in Phase I-a is {phase_i_a_result}')
-        print(f'val set perplexity')
+        print(f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")        
+        print(f'Cerebros best perplexity achieved in Phase I-a is {phase_i_a_result}')
         # Log the metric to MlFLow
         mlflow.log_metric("phase-i-a-perplexity", phase_i_a_result, step=trial.number)
-        """### Testing the best model found"""
+
+       """### Testing the best model found"""
         
         MODEL_FILE_NAME = "cerebros-foundation-model.keras"
         
@@ -683,12 +675,6 @@ def objective(trial: optuna.Trial) -> float:
         print("GENERATED TEXT SAMPLES")
         print("="*50)
 
-
-
-        
-
-        
-        # Replace the generation code block with this:
         
         # Create config and generator
         config = CerebrosNotGPTConfig(
@@ -746,12 +732,7 @@ def objective(trial: optuna.Trial) -> float:
             generated_text =\
                     tokenizer.decode(generated_tokens).replace(text, "")
             return generated_text
-       
-        # test_text_block = "I saw the sun and it was as shining on the"
-        # response = complete_text_greedy(test_text_block)
-        # print(f"I ask the generator (greedy): {test_text_block}... It responds: '{response}'.")
-        # response = complete_text_beam(test_text_block)
-        # print(f"I ask the generator (Beam defaults - max_new_tokens: 10,  temperature: 0.75, top_k: 75, top_p: 0.98, repetition_penalty: None, presence_penalty: 1.3, frequency_penalty: 1.4): {test_text_block}... It responds: '{response}'.")
+
 
         trial_number = int(trial.number)
         def test_text(test_prompt: str, max_new_tokens: int, sample_number: int, result_cutoff: float, trial_id: int, test_sample_number: int, result_0: float) -> None:
@@ -889,16 +870,10 @@ def objective(trial: optuna.Trial) -> float:
                                                 presence_penalty=perm_0['presence_penalty'],
                                                 frequency_penalty=perm_0['frequency_penalty'])
                     print(f"Trial #: {trial_id} Text Sample #: {test_sample_number} Perplexity: {result_0} GENERATE PARAMS: max_new_tokens={perm_0['max_new_tokens']} temperature={perm_0['temperature']}, top_k={perm_0['top_k']}, top_p={perm_0['top_p']}, repetition_penalty={perm_0['repetition_penalty']} presence_penalty={perm_0['presence_penalty']} frequency_penalty{perm_0['frequency_penalty']} PROMPT: '{test_prompt}' RESPONSE: '{response_0}'")
-                #
-                # print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.6, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4): {test_prompt}... It responds: '{response_3}'.")
-                # response_4 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.7, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4)
-                # print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.7, top_k=75, top_p=0.98, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4): {test_prompt}... It responds: '{response_4}'.")
-                # response_5 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens, temperature=0.7, top_k=75, top_p=0.97, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4)
-                # print(f"Sample {sample_number}: I ask the generator (Beam: - max_new_tokens: 10, temperature=0.7, top_k=75, top_p=0.97, repetition_penalty=None, presence_penalty = 1.3, frequency_penalty = 1.4): {test_prompt}... It responds: '{response_5}'.")
 
        # Sample prompts to test:
 
-        print("########### Phase I-a Model Checkpoint Generation Samples: ")
+        print("########### Phase I-a Model Checkpoint Generation Samples: ###########")
        
         prompt_samples = [
                 "I saw the sun and it was as shining on the",
@@ -929,47 +904,6 @@ def objective(trial: optuna.Trial) -> float:
                    result_0=phase_i_a_result)
             counter += 1
             
-            # # Tokenize the text without padding first to get actual tokens
-            # sample_tokenized = tokenizer(
-            #     sample,
-            #     add_special_tokens=False
-            # )['input_ids']
-            # start_generate_index = int(np.ceil(len(sample_tokenized) * 0.5))
-            # half_sample_tokenized = sample_tokenized[:start_generate_index]
-            
-            # # Convert to Python list of integers
-            # if hasattr(half_sample_tokenized, 'numpy'):
-            #     token_ids = half_sample_tokenized.numpy().tolist()
-            # else:
-            #     token_ids = [int(token_id) for token_id in half_sample_tokenized]
-            
-            # print(f"Actual token count: {len(token_ids)}")
-            # print(f"First 10 tokens: {token_ids[:10]}")
-            
-            # # Now pass the list of integers to your generate method
-            # generated_tokens = generator.generate(
-            #     token_ids=token_ids,  # Just the actual tokens, no padding
-            #     do_sample=True,
-            #     max_new_tokens=20,
-            #     temperature=0.73,
-            #     # One set of recommendations
-            #     top_k=75,
-            #     top_p=0.97,
-            #     # Previous semi-working values
-            #     # top_k=40,
-            #     # top_p=0.985,
-            #     # repetition_penalty=1.2,
-            #     presence_penalty=1.2,
-            #     frequency_penalty=1.4
-            # )
-            
-            # # Decode the result
-            # half_sample = tokenizer.decode(half_sample_tokenized)
-            # full_generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=False)\
-            #         .replace(half_sample, "")
-            
-            # print(f"PROMPT number {counter}: {half_sample}; RESPONSE: {full_generated_text}")
-
 
         # del(best_model_found)
         # del(generator)
@@ -980,11 +914,19 @@ def objective(trial: optuna.Trial) -> float:
 
         # Create the Dataset Generaror:
         class SampleExpansionGenerator:
-            def __init__(self, raw_text_samples, tokenizer, sample_expansion_batch_size=50, model_batch_size=10, prompt_length_0=PROMPT_LENGTH, max_seq_length=MAX_SEQ_LENGTH, vocabulary_size=VOCABULARY_SIZE):
+            def __init__(self,
+                         raw_text_samples,
+                         tokenizer,
+                         sample_expansion_batch_size=50,
+                         model_batch_size=10,
+                         prompt_length_0=PROMPT_LENGTH,
+                         max_seq_length=MAX_SEQ_LENGTH,
+                         vocabulary_size=VOCABULARY_SIZE):
+
                 self.raw_text_samples = raw_text_samples
                 self.tokenizer = tokenizer
                 self.sample_expansion_batch_size = sample_expansion_batch_size
-                self.model_batch_size = model_batch_size  # Add this parameter
+                self.model_batch_size = model_batch_size
                 self.prompt_length_0 = prompt_length_0
                 self.max_seq_length = max_seq_length
                 self.vocabulary_size = vocabulary_size
@@ -1088,7 +1030,7 @@ def objective(trial: optuna.Trial) -> float:
         result_phase_i_b = float(phase_i_b_history['perplexity'].min())
         mlflow.log_metric("phase_i_b-perplexity", result_phase_i_b, step=trial_number)
 
-        print("########### Phase I-b Model Checkpoint Generation Samples: ")
+        print("########### Phase I-b Model Checkpoint Generation Samples: ###########")
        
         # Text samples after Phase I-b training
         counter = 0
@@ -1102,25 +1044,16 @@ def objective(trial: optuna.Trial) -> float:
                    test_sample_number=counter,
                    result_0=result_phase_i_b)
             counter += 1
-       
+
+        # Return the final result to Optuna
         return result_phase_i_b
 
 
 def main():
-    # Optional fast path for CI / smoke tests
-    # fast = os.getenv("CEREBROS_FAST", "0") == "1"
-    # n_trials = int(os.getenv("CEREBROS_N_TRIALS", "3" if fast else "20"))
     n_trials = N_TRIALS
-    # mlflow_parent = mlflow.start_run(run_name=os.getenv("MLFLOW_PARENT_RUN_NAME", "cerebros_poc_parent"), tags={"phase": "poc", "mode": "fast" if fast else "full"})
     sampler = optuna.samplers.TPESampler(multivariate=True, n_startup_trials=5)
     study = optuna.create_study(direction="minimize", sampler=sampler, storage=optuna_storage)
-    study.optimize(objective, n_trials=n_trials)
-    # mlflow.log_param("n_trials", n_trials)
-    # Log fixed (non-tunable) generation control param once at parent level
-    # mlflow.log_param("PROMPT_LEN", PROMPT_LEN)
-    # mlflow.log_metric("best_value", study.best_trial.value)
-    # Log best params as params (flat)
-
+    study.optimize(objective, n_trials=N_TRIALS)
     print('Best trial:')
     best_trial = study.best_trial
     print('  Value: ', best_trial.value)
