@@ -759,11 +759,13 @@ def objective(trial: optuna.Trial) -> float:
 
         TOKENIZER_SAVE_PATH = f"tokenizer-tr-{trial}"
         tokenizer.save_pretrained(TOKENIZER_SAVE_PATH)
-        print(f"Final model saved to {MODEL_SAVE_PATH}")
+        print(f"Tokenizer saved to {TOKENIZER_SAVE_PATH}")
         
+       
         MODEL_SAVE_PATH = f"final_phase_ib_model_tr_{trial}.keras"
         generator.save(MODEL_SAVE_PATH)
-        print(f"Tokenizer saved to {TOKENIZER_SAVE_PATH}")
+        print(f"Final model saved to {MODEL_SAVE_PATH}")
+
 
         # Return the final result to Optuna
         return result_phase_i_b
