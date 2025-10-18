@@ -18,7 +18,7 @@ EXPERIMENT_NAME = "more-optimizations-br-254-single-machine"
 DATA_SET_NAME = "WEB-Bible-Genesis-40-context-681-SPL"
 EXPERIMENT_NAME = f"{EXPERIMENT_NAME}-{DATA_SET_NAME}-{EXPERIMENT_ITERATION}-a"
 
-N_TRIALS = 50
+N_TRIALS = 10
 
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
@@ -75,10 +75,10 @@ def objective(trial: optuna.Trial) -> float:
     # Raises RAM in a linear fashion    
    
     PHASE_I_A_SAMPLES_TO_CREATE = 10 # 681
-    PHASE_I_B_SAMPLES_TO_CREATE = 50
+    PHASE_I_B_SAMPLES_TO_CREATE = 20
     PHASE_I_B_VAL_SPLIT = 0.15  # Validation split for phase I-b (0.0 to 1.0)
 
-    PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE = 20
+    PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE = 10
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -132,8 +132,8 @@ def objective(trial: optuna.Trial) -> float:
     # phase_i_b_learning_rate = trial.suggest_float('learning_rate', 0.0001, 0.006)
 
     
-    epochs = trial.suggest_int('epochs', 50, 75)
-    phase_i_b_epochs =  trial.suggest_int('phase_i_b_epochs', 50, 150)
+    epochs = trial.suggest_int('epochs', 30, 75)
+    phase_i_b_epochs =  trial.suggest_int('phase_i_b_epochs', 40, 60)
     
     batch_size = 5 # trial.suggest_int('batch_size', 5, 10)
 
@@ -755,6 +755,15 @@ def objective(trial: optuna.Trial) -> float:
                    test_sample_number=counter,
                    result_0=result_phase_i_b)
             counter += 1
+
+
+        TOKENIZER_SAVE_PATH = f"tokenizer-tr-{trial}"
+        tokenizer.save_pretrained(TOKENIZER_SAVE_PATH)
+        print(f"Final model saved to {MODEL_SAVE_PATH}")
+        
+        MODEL_SAVE_PATH = f"final_phase_ib_model_tr_{trial}.keras"
+        generator.save(MODEL_SAVE_PATH)
+        print(f"Tokenizer saved to {TOKENIZER_SAVE_PATH}")
 
         # Return the final result to Optuna
         return result_phase_i_b
