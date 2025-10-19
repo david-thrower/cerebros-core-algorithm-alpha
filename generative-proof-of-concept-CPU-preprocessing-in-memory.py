@@ -795,7 +795,7 @@ def objective(trial: optuna.Trial) -> float:
                pd.DataFrame(phase_i_b_history.history)
         # To Do: Find best metric: Reference: cerebros/simplecerebrosrandomsearch/simple_cerebros_random_search.py: Line ~ 590
         #  = phase_i_b_history.
-        result_phase_i_b = float(phase_i_b_history[''perplexity_phase_i_b''].min())
+        result_phase_i_b = float(phase_i_b_history['perplexity_phase_i_b'].min())
         mlflow.log_metric("phase_i_b-perplexity", result_phase_i_b, step=trial_number)
 
         print("########### Phase I-b Model Checkpoint Generation Samples: ###########")
