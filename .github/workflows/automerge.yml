@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "267-refactor-generator-dataset-for-llm" ]
+    branches: [ "main", "269-model-recompiled-after-phase-1-small-scale-hpo-267" ]
 
 permissions:
   contents: read
