@@ -129,8 +129,8 @@ def objective(trial: optuna.Trial) -> float:
     num_lateral_connection_tries_per_unit = trial.suggest_int('num_lateral_connection_tries_per_unit', 10, 35)
     
     learning_rate = trial.suggest_float('learning_rate', 0.003, 0.006) # log=True)
-    # phase_i_b_learning_rate = trial.suggest_float('learning_rate', 0.0001, 0.006)
-
+    phase_i_b_learning_rate = trial.suggest_float('phase_i_b_learning_rate', 0.0001, 0.006)
+    
     
     epochs = trial.suggest_int('epochs', 30, 75)
     phase_i_b_epochs =  trial.suggest_int('phase_i_b_epochs', 40, 60)
@@ -138,7 +138,10 @@ def objective(trial: optuna.Trial) -> float:
     batch_size = 5 # trial.suggest_int('batch_size', 5, 10)
 
     gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 7)
+
+    phase_i_b_gradient_accumulation_steps = trial.suggest_int("phase_i_b_gradient_accumulation_steps", 1, 20)
     
+    phase_i_b_weight_decay = trial.suggest_float("phase_i_b_weight_decay", 0.004, 0.1)
     
     # Level constraints - ensure max >= min by setting min of max to value of min
     minimum_levels = 2 # trial.suggest_int('minimum_levels', 1, 3)
@@ -761,19 +764,35 @@ def objective(trial: optuna.Trial) -> float:
                sample_expansion_batch_size=PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE,
                model_batch_size=batch_size)
 
+        # Recompile to be re - optimized for Stage I-b
 
+        phase_i_b_loss = tf.keras.losses.CategoricalCrossentropy()
+        phase_i_b_categorical_accuracy = tf.keras.metrics.CategoricalAccuracy()
+        phase_i_b_perplexity = Perplexity(name="perplexity_phase_i_b")
+
+        generator.model.compile(
+            loss=phase_i_b_loss,
+            metrics=[phase_i_b_categorical_accuracy,
+                     phase_i_b_perplexity],
+            optimizer=tf.keras.optimizers.AdamW(
+                    learning_rate=phase_i_b_learning_rate,
+                    weight_decay=phase_i_b_weight_decay,  # Add weight decay parameter
+                    gradient_accumulation_steps=phase_i_b_gradient_accumulation_steps
+            ),
+            jit_compile=True)
+       
         phase_i_b_history =\
                 generator.model.fit(
                    x=phase_i_b_train_dataset,
                    validation_data=phase_i_b_val_dataset,
                    epochs=phase_i_b_epochs)
 
-
+       
         phase_i_b_history =\
                pd.DataFrame(phase_i_b_history.history)
         # To Do: Find best metric: Reference: cerebros/simplecerebrosrandomsearch/simple_cerebros_random_search.py: Line ~ 590
         #  = phase_i_b_history.
-        result_phase_i_b = float(phase_i_b_history['perplexity'].min())
+        result_phase_i_b = float(phase_i_b_history[''perplexity_phase_i_b''].min())
         mlflow.log_metric("phase_i_b-perplexity", result_phase_i_b, step=trial_number)
 
         print("########### Phase I-b Model Checkpoint Generation Samples: ###########")
