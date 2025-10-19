@@ -14,11 +14,11 @@ print(answer.stdout)
 
 
 EXPERIMENT_ITERATION = "0001"
-EXPERIMENT_NAME = "more-optimizations-br-254-single-machine"
-DATA_SET_NAME = "WEB-Bible-Genesis-40-context-681-SPL"
+EXPERIMENT_NAME = "2025-10-19--vanilla-hpo-post-refactor"
+DATA_SET_NAME = "WEB-Bible-40-context-1000-SPL"
 EXPERIMENT_NAME = f"{EXPERIMENT_NAME}-{DATA_SET_NAME}-{EXPERIMENT_ITERATION}-a"
 
-N_TRIALS = 10
+N_TRIALS = 40
 
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
@@ -74,11 +74,11 @@ def objective(trial: optuna.Trial) -> float:
     # Number of text samples to create: # Number of text samples (of approximately max_seq_len) to create 
     # Raises RAM in a linear fashion    
    
-    PHASE_I_A_SAMPLES_TO_CREATE = 10 # 681
-    PHASE_I_B_SAMPLES_TO_CREATE = 20
-    PHASE_I_B_VAL_SPLIT = 0.15  # Validation split for phase I-b (0.0 to 1.0)
+    PHASE_I_A_SAMPLES_TO_CREATE = 250 # 681
+    PHASE_I_B_SAMPLES_TO_CREATE = 750
+    PHASE_I_B_VAL_SPLIT = 0.1
 
-    PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE = 10
+    PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE = 100
 
     # How many tokens to provide before expecting the next token to be predicted. 
     # Half this = double RAM  (inversely proportional to RAM requirement)
@@ -135,9 +135,9 @@ def objective(trial: optuna.Trial) -> float:
     epochs = trial.suggest_int('epochs', 30, 75)
     phase_i_b_epochs =  trial.suggest_int('phase_i_b_epochs', 40, 60)
     
-    batch_size = 5 # trial.suggest_int('batch_size', 5, 10)
+    batch_size = 7 # trial.suggest_int('batch_size', 5, 10)
 
-    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 7)
+    gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 20)
     
     
     # Level constraints - ensure max >= min by setting min of max to value of min
@@ -168,7 +168,7 @@ def objective(trial: optuna.Trial) -> float:
     # embedding output dim must be an even number
     # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-    EMBEDDING_N = 6 # trial.suggest_int('embedding_n',6, 9) # 12
+    EMBEDDING_N = trial.suggest_int('embedding_n',7, 8) # 12
     EMBEDDING_DIM = int(EMBEDDING_N * 2)
     
     PROJECTION_N = 1 # Punatuve increase of ram, leaving this as 1 until we are running on HPC
