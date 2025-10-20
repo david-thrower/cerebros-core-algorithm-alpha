@@ -139,7 +139,7 @@ def objective(trial: optuna.Trial) -> float:
 
     gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 7)
 
-    phase_i_b_gradient_accumulation_steps = trial.suggest_int("phase_i_b_gradient_accumulation_steps", 1, 20)
+    phase_i_b_gradient_accumulation_steps = trial.suggest_int("phase_i_b_gradient_accumulation_steps", 2, 20)
     
     phase_i_b_weight_decay = trial.suggest_float("phase_i_b_weight_decay", 0.004, 0.1)
     
