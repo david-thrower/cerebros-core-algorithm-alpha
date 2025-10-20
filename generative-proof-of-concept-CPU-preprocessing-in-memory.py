@@ -13,8 +13,8 @@ answer = subprocess.run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &"
 print(answer.stdout)
 
 
-EXPERIMENT_ITERATION = "0001"
-EXPERIMENT_NAME = "2025-10-20--recompiled-269-100-i-a-300-i-b-0001"
+EXPERIMENT_ITERATION = "0002"
+EXPERIMENT_NAME = "2025-10-20--recompiled-269-100-i-a-300-i-b"
 DATA_SET_NAME = "WEB-Bible-Genesis-40-context-400-SPL"
 EXPERIMENT_NAME = f"{EXPERIMENT_NAME}-{DATA_SET_NAME}-{EXPERIMENT_ITERATION}-a"
 
@@ -139,7 +139,7 @@ def objective(trial: optuna.Trial) -> float:
 
     gradient_accumulation_steps = trial.suggest_int('gradient_accumulation_steps', 1, 15)
 
-    phase_i_b_gradient_accumulation_steps = trial.suggest_int("phase_i_b_gradient_accumulation_steps", 1, 20)
+    phase_i_b_gradient_accumulation_steps = trial.suggest_int("phase_i_b_gradient_accumulation_steps", 2, 20)
     
     phase_i_b_weight_decay = trial.suggest_float("phase_i_b_weight_decay", 0.004, 0.1)
     
