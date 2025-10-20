@@ -14,7 +14,7 @@ print(answer.stdout)
 
 
 EXPERIMENT_ITERATION = "0001"
-EXPERIMENT_NAME = "refactored-269-100-i-a-300-i-b"
+EXPERIMENT_NAME = "recompiled-269-100-i-a-300-i-b"
 DATA_SET_NAME = "WEB-Bible-Genesis-40-context-400-SPL"
 EXPERIMENT_NAME = f"{EXPERIMENT_NAME}-{DATA_SET_NAME}-{EXPERIMENT_ITERATION}-a"
 
