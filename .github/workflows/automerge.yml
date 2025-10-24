@@ -5,7 +5,7 @@ name: Python application
 
 on:
   push:
-    branches: [ "main", "269-model-recompiled-after-phase-1-small-scale-hpo-267" ] # 273-2025-10-24--demo-text-generation-verdi-no-merge
+    branches: [ "main", "273-2025-10-24--demo-text-generation-verdi-no-merge" ]
 
 permissions:
   contents: read
