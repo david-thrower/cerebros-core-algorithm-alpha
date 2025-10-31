@@ -111,6 +111,9 @@ export function CreateAssistantWizard() {
     setError('');
 
     try {
+      console.log('Starting training for:', assistantId, assistantName);
+      console.log('Total files uploaded:', getTotalFiles());
+      
       const response = await fetch('http://localhost:8080/assistants/train', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -120,17 +123,26 @@ export function CreateAssistantWizard() {
         })
       });
 
-      if (!response.ok) throw new Error('Training failed to start');
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Training failed:', response.status, errorText);
+        throw new Error(`Training failed: ${response.status}`);
+      }
 
       const data = await response.json();
+      console.log('Training started successfully:', data);
       
-      // Navigate to dashboard
+      // Keep processing state true to show success message
+      // Navigate to dashboard after delay
       setTimeout(() => {
+        console.log('Navigating to dashboard');
         navigate('/');
-      }, 2000);
+      }, 3000);
     } catch (err) {
+      console.error('Error in startTraining:', err);
       setError(err instanceof Error ? err.message : 'Training failed');
-    } finally {
       setProcessing(false);
     }
   };
@@ -318,7 +330,10 @@ export function CreateAssistantWizard() {
                   <div>
                     <p className="font-semibold text-green-900">Training Started!</p>
                     <p className="text-sm text-green-700">
-                      Your assistant is being trained. Redirecting to dashboard...
+                      Assistant "{assistantName || assistantId}" is being trained with {getTotalFiles()} files.
+                    </p>
+                    <p className="text-xs text-green-600 mt-1">
+                      Redirecting to dashboard in 3 seconds...
                     </p>
                   </div>
                 </div>

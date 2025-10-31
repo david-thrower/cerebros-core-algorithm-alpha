@@ -420,6 +420,10 @@ async def process_stage(
 @app.post("/assistants/train")
 async def train_assistant(request: TrainingRequest, background_tasks: BackgroundTasks):
     """Start training a new assistant"""
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Received training request: assistant_id={request.assistant_id}, assistant_name={request.assistant_name}")
+    
     # Use provided assistant_id or generate from name
     if request.assistant_id:
         assistant_id = request.assistant_id
@@ -428,26 +432,42 @@ async def train_assistant(request: TrainingRequest, background_tasks: Background
     else:
         assistant_id = f"assistant_{int(time.time())}"
     
+    logger.info(f"Using assistant_id: {assistant_id}")
+    
     # In production, this would start the training pipeline
     # For demo, we'll simulate the process
     
     def training_task():
         """Background training task"""
         import subprocess
+        import logging
         
-        # Run data processing
-        subprocess.run([
-            "python3", "scripts/process_user_samples.py",
-            "--assistant_id", assistant_id
-        ])
+        logger = logging.getLogger(__name__)
+        logger.info(f"Starting training for assistant: {assistant_id}")
         
-        # Run training
-        subprocess.run([
-            "python3", "multi_stage_trainer.py",
-            assistant_id,
-            request.assistant_name,
-            str(NFS_PATH)
-        ])
+        # Check if CSV files exist from wizard uploads
+        datasets_dir = NFS_PATH / "agents" / assistant_id / "datasets"
+        csv_files = list(datasets_dir.glob("training_stage*.csv")) if datasets_dir.exists() else []
+        
+        if csv_files:
+            logger.info(f"Found {len(csv_files)} CSV files for training")
+            # Run training with existing CSV files
+            try:
+                result = subprocess.run([
+                    "python3", "multi_stage_trainer.py",
+                    assistant_id,
+                    request.assistant_name or assistant_id,
+                    str(NFS_PATH)
+                ], capture_output=True, text=True, timeout=3600)
+                logger.info(f"Training completed with exit code: {result.returncode}")
+                if result.stdout:
+                    logger.info(f"Training output: {result.stdout}")
+                if result.stderr:
+                    logger.error(f"Training errors: {result.stderr}")
+            except Exception as e:
+                logger.error(f"Training failed: {str(e)}")
+        else:
+            logger.warning(f"No CSV files found in {datasets_dir}, skipping training")
     
     # Add to background tasks
     background_tasks.add_task(training_task)
