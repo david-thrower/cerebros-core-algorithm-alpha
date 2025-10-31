@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cerebros Chat Assistant</title>
+  <link href="index.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-100 text-gray-900 font-sans">
+  <header class="p-4 bg-blue-600 text-white flex justify-between">
+    <h1 class="text-xl font-bold">Chat Assistant</h1>
+    <nav>
+      <a href="index.html" class="mx-2 hover:underline">Dashboard</a>
+      <a href="new.html" class="mx-2 hover:underline">Upload Wizard</a>
+      <a href="assistants.html" class="mx-2 hover:underline">Assistants</a>
+    </nav>
+  </header>
+
+  <main class="p-6 max-w-3xl mx-auto bg-white mt-6 rounded shadow">
+    <h2 class="text-lg font-semibold mb-4">Assistant Conversation</h2>
+    <div>
+      <label for="assistantId" class="block mb-2">Assistant ID:</label>
+      <input type="text" id="assistantId" placeholder="e.g., demo_assistant_001" class="border p-2 w-full mb-4"/>
+    </div>
+
+    <div id="chatBox" class="border p-4 h-64 overflow-y-auto bg-gray-50 mb-4 rounded">
+      <div class="text-gray-500 text-sm">Waiting for message...</div>
+    </div>
+
+    <div class="flex">
+      <input type="text" id="userInput" placeholder="Type your message..." class="border flex-grow p-2 mr-2"/>
+      <button id="sendBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Send</button>
+    </div>
+  </main>
+
+  <footer class="text-center py-4 text-sm text-gray-600">&copy; 2025 Cerebros Core Platform</footer>
+
+  <script>
+    const chatBox = document.getElementById('chatBox');
+    const sendBtn = document.getElementById('sendBtn');
+    const userInput = document.getElementById('userInput');
+    const assistantIdInput = document.getElementById('assistantId');
+
+    sendBtn.addEventListener('click', async () => {
+      const msg = userInput.value.trim();
+      const assistantId = assistantIdInput.value.trim();
+      if (!msg || !assistantId) return alert('Enter assistant ID and message.');
+      appendMessage('user', msg);
+      userInput.value = '';
+
+      const responseStream = await fetch(`http://localhost:8080/api/assistants/${assistantId}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      });
+
+      if (!responseStream.body) {
+        appendMessage('system', 'No response body.');
+        return;
+      }
+
+      const reader = responseStream.body.getReader();
+      let partial = '';
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        partial += decoder.decode(value, { stream: true });
+        appendMessage('assistant', partial);
+      }
+    });
+
+    function appendMessage(sender, text) {
+      const div = document.createElement('div');
+      div.className = sender === 'user' ? 'text-right mb-2' : 'text-left mb-2';
+      div.innerHTML = `<span class="${sender === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200'} rounded px-2 py-1 inline-block">${text}</span>`;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  </script>
+</body>
+</html>

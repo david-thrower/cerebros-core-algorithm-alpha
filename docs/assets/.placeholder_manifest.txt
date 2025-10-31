@@ -1,0 +1,10 @@
+This directory contains demo documentation assets for Cerebros NotGPT MVP delivery.
+
+Expected files:
+- dashboard.png (UI Dashboard)
+- upload_wizard.png (Upload Wizard screen)
+- chat_interface.png (Assistant chat UI)
+- mlflow_metrics.png (MLFlow metrics dashboard)
+- demo_walkthrough.mp4 (Placeholder 2-minute walkthrough video)
+
+Each file is a placeholder awaiting finalized captures for demo verification.

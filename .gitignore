@@ -1,2 +1,45 @@
 *.pyc
 .ropeproject
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Environment
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+mlruns/
+mlflow.log
+mlflow.pid
+api_server.log
+priv/nfs/
+*.keras
+*.ckpt
+
+# Build outputs
+dist/
+build/
+*.egg-info/

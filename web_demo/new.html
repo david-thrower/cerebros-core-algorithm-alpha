@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload Wizard - Cerebros</title>
+  <link href="index.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-100 text-gray-900 font-sans">
+  <header class="p-4 bg-blue-600 text-white flex justify-between">
+    <h1 class="text-xl font-bold">Upload Wizard</h1>
+    <nav>
+      <a href="index.html" class="mx-2 hover:underline">Dashboard</a>
+      <a href="new.html" class="mx-2 hover:underline">Upload Wizard</a>
+      <a href="assistants.html" class="mx-2 hover:underline">Assistants</a>
+    </nav>
+  </header>
+
+  <main class="p-6 max-w-lg mx-auto bg-white mt-6 rounded shadow">
+    <h2 class="text-lg font-semibold mb-4">Upload Data File</h2>
+    <form id="uploadForm" class="space-y-4">
+      <div>
+        <label for="fileInput" class="block mb-1">Select CSV or JSON file:</label>
+        <input type="file" id="fileInput" name="file" accept=".csv,.json" required class="border p-2 w-full"/>
+      </div>
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Upload</button>
+    </form>
+    <div id="result" class="mt-4 text-sm text-gray-800"></div>
+  </main>
+
+  <footer class="text-center py-4 text-sm text-gray-600">&copy; 2025 Cerebros Core Platform</footer>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fileInput = document.getElementById('fileInput');
+      if (!fileInput.files.length) return alert('Please select a file.');
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      const result = document.getElementById('result');
+      result.textContent = 'Uploading...';
+      try {
+        const res = await fetch('http://localhost:8080/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) throw new Error('Upload failed');
+        const data = await res.json();
+        result.innerHTML = `<span class='text-green-700'>Upload complete! Assistant ID: ${data.assistant_id}</span>`;
+      } catch (err) {
+        result.innerHTML = "<span class='text-red-700'>Upload failed. Ensure backend is running.</span>";
+      }
+    });
+  </script>
+</body>
+</html>
