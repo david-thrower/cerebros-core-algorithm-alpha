@@ -13,52 +13,42 @@ export default function TrainingTerminal({ assistantId, assistantName, onClose }
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const terminalRef = useRef<HTMLDivElement>(null);
-  const wsRef = useRef<WebSocket | null>(null);
+  const logOffsetRef = useRef(0);
 
+  // Poll for logs every 2 seconds
   useEffect(() => {
-    // Connect to WebSocket
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.hostname}:8080/ws/training/${assistantId}`;
-    
-    console.log('Connecting to WebSocket:', wsUrl);
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      console.log('WebSocket connected');
-      setStatus('training');
-    };
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      
-      if (data.type === 'init') {
-        // Receive initial logs
-        setLogs(data.logs || []);
-        setStatus(data.status === 'completed' ? 'completed' : 'training');
-      } else if (data.type === 'log') {
-        // Append new log line
-        setLogs(prev => [...prev, data.data]);
-      } else if (data.type === 'complete') {
-        setStatus(data.status === 'success' ? 'completed' : 'failed');
+    const fetchLogs = async () => {
+      try {
+        const response = await fetch(`http://localhost:8080/training/logs/${assistantId}?offset=${logOffsetRef.current}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.logs.length > 0) {
+            setLogs(prev => [...prev, ...data.logs]);
+            logOffsetRef.current = data.total_lines;
+          }
+          
+          // Update status
+          if (data.status === 'completed') {
+            setStatus('completed');
+          } else if (data.status === 'failed') {
+            setStatus('failed');
+          } else {
+            setStatus('training');
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching logs:', error);
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setStatus('failed');
-    };
+    // Initial fetch
+    setStatus('training');
+    fetchLogs();
 
-    ws.onclose = () => {
-      console.log('WebSocket closed');
-    };
+    // Poll every 2 seconds
+    const interval = setInterval(fetchLogs, 2000);
 
-    // Cleanup on unmount
-    return () => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
-    };
+    return () => clearInterval(interval);
   }, [assistantId]);
 
   // Auto-scroll to bottom

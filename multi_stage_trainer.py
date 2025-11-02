@@ -617,11 +617,19 @@ class MultiStageTrainer:
             self.log("🎉 All 5 stages completed successfully!")
             self.log("=" * 80)
             
+            # Find the last successfully completed stage checkpoint
+            final_checkpoint = None
+            for stage_num in [5, 4, 3, 2, 1]:
+                stage_key = f'stage_{stage_num}'
+                if results.get(stage_key, {}).get('checkpoint'):
+                    final_checkpoint = results[stage_key]['checkpoint']
+                    break
+            
             return {
                 "status": "success",
                 "agent_id": self.agent_id,
                 "stages": results,
-                "final_model": results['stage_5']['checkpoint']
+                "final_model": final_checkpoint
             }
             
         except Exception as e:

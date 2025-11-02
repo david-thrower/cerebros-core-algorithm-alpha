@@ -30,7 +30,7 @@ sys.path.insert(0, str(project_root))
 # Configuration
 NFS_PATH = Path(os.environ.get("CEREBROS_NFS_PATH", "priv/nfs"))
 HOST = os.environ.get("CEREBROS_API_HOST", "0.0.0.0")
-PORT = int(os.environ.get("CEREBROS_API_PORT", "8000"))
+PORT = int(os.environ.get("CEREBROS_API_PORT", "8080"))
 
 # Global model cache
 loaded_models: Dict[str, Dict] = {}
@@ -513,9 +513,12 @@ async def train_assistant(request: TrainingRequest, background_tasks: Background
             training_env["TF_FORCE_GPU_ALLOW_GROWTH"] = "false"
             training_env["TF_CPP_MIN_VLOG_LEVEL"] = "0"
             
-            # Use Popen for streaming output
+            # Use Popen for streaming output with virtual environment Python
+            venv_python = str(Path(__file__).parent.parent / ".venv" / "bin" / "python3")
+            python_executable = venv_python if Path(venv_python).exists() else sys.executable
+            
             process = subprocess.Popen(
-                ["python3", "-u", "multi_stage_trainer.py",
+                [python_executable, "-u", "multi_stage_trainer.py",
                  assistant_id,
                  request.assistant_name or assistant_id,
                  str(NFS_PATH)],

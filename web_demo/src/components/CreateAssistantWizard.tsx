@@ -393,6 +393,18 @@ export function CreateAssistantWizard() {
           </div>
         )}
 
+        {/* Manual Terminal Toggle */}
+        {assistantId && currentStep === 4 && (
+          <div className="mt-4">
+            <button
+              onClick={() => setShowTerminal(!showTerminal)}
+              className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 font-semibold"
+            >
+              {showTerminal ? 'Hide' : 'Show'} Training Terminal
+            </button>
+          </div>
+        )}
+
         {/* Navigation Buttons */}
         <div className="flex justify-between mt-8">
           <button
