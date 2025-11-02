@@ -16,7 +16,7 @@ from datetime import datetime
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File
+from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File, Form, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
@@ -34,6 +34,10 @@ PORT = int(os.environ.get("CEREBROS_API_PORT", "8000"))
 
 # Global model cache
 loaded_models: Dict[str, Dict] = {}
+
+# Training job tracking
+active_training_jobs: Dict[str, Dict] = {}  # assistant_id -> {process, status, logs}
+training_websockets: Dict[str, List[WebSocket]] = {}  # assistant_id -> [websocket connections]
 
 
 # Pydantic models
@@ -354,15 +358,24 @@ async def upload_file(
 @app.post("/api/process-stage")
 async def process_stage(
     file: UploadFile = File(...),
-    assistant_id: str = None,
-    stage: str = "1"
+    assistant_id: str = Form(None),
+    stage: str = Form("1")
 ):
     """Process uploaded file: chunk text to 512 chars, save as training CSV"""
     import csv
     import re
+    import logging
+    logger = logging.getLogger(__name__)
     
-    if not assistant_id:
+    logger.info(f"📦 Received upload: assistant_id='{assistant_id}', stage={stage}, file={file.filename}")
+    
+    # Generate assistant_id if not provided or empty
+    if not assistant_id or assistant_id.strip() == "":
         assistant_id = f"assistant_{int(time.time())}"
+        logger.info(f"🆔 Generated new ID: {assistant_id}")
+    else:
+        assistant_id = assistant_id.strip()
+        logger.info(f"✅ Using provided ID: {assistant_id}")
     
     # Create directories
     datasets_dir = NFS_PATH / "agents" / assistant_id / "datasets"
@@ -437,37 +450,161 @@ async def train_assistant(request: TrainingRequest, background_tasks: Background
     # In production, this would start the training pipeline
     # For demo, we'll simulate the process
     
-    def training_task():
-        """Background training task"""
+    async def training_task():
+        """Background training task with live streaming"""
         import subprocess
         import logging
+        import shutil
         
         logger = logging.getLogger(__name__)
         logger.info(f"Starting training for assistant: {assistant_id}")
         
         # Check if CSV files exist from wizard uploads
         datasets_dir = NFS_PATH / "agents" / assistant_id / "datasets"
-        csv_files = list(datasets_dir.glob("training_stage*.csv")) if datasets_dir.exists() else []
+        csv_files = sorted(datasets_dir.glob("training_stage*.csv")) if datasets_dir.exists() else []
         
-        if csv_files:
-            logger.info(f"Found {len(csv_files)} CSV files for training")
-            # Run training with existing CSV files
-            try:
-                result = subprocess.run([
-                    "python3", "multi_stage_trainer.py",
-                    assistant_id,
-                    request.assistant_name or assistant_id,
-                    str(NFS_PATH)
-                ], capture_output=True, text=True, timeout=3600)
-                logger.info(f"Training completed with exit code: {result.returncode}")
-                if result.stdout:
-                    logger.info(f"Training output: {result.stdout}")
-                if result.stderr:
-                    logger.error(f"Training errors: {result.stderr}")
-            except Exception as e:
-                logger.error(f"Training failed: {str(e)}")
-        else:
-            logger.warning(f"No CSV files found in {datasets_dir}, skipping training")
+        if not csv_files:
+            error_msg = f"No training data found. Please upload files in the wizard before starting training."
+            logger.error(f"No CSV files found in {datasets_dir}, cannot train")
+            active_training_jobs[assistant_id] = {
+                "status": "failed",
+                "error": error_msg,
+                "logs": [f"❌ Error: {error_msg}", f"   Expected location: {datasets_dir}", "   Make sure to upload files in steps 1-4 of the wizard before training."]
+            }
+            # Notify WebSocket clients of failure
+            if assistant_id in training_websockets:
+                for ws in training_websockets[assistant_id]:
+                    try:
+                        await ws.send_json({"type": "complete", "status": "failed", "error": error_msg})
+                    except:
+                        pass
+            return
+            
+        logger.info(f"Found {len(csv_files)} CSV files for training: {[f.name for f in csv_files]}")
+        
+        # Create processed directory for multi_stage_trainer
+        processed_dir = NFS_PATH / "agents" / assistant_id / "processed"
+        processed_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Copy CSV files to processed directory with expected names
+        stage_mapping = {
+            "training_stage1.csv": "stage1_base.csv",
+            "training_stage2.csv": "stage2_domain.csv", 
+            "training_stage3.csv": "stage3_knowledge.csv",
+            "training_stage4.csv": "stage4_style.csv"
+        }
+        
+        for csv_file in csv_files:
+            if csv_file.name in stage_mapping:
+                dest_name = stage_mapping[csv_file.name]
+                dest_path = processed_dir / dest_name
+                shutil.copy2(csv_file, dest_path)
+                logger.info(f"Copied {csv_file.name} -> {dest_name}")
+        
+        # Run training with live output streaming
+        try:
+            logger.info(f"Launching multi_stage_trainer.py for {assistant_id}")
+            
+            # Prepare environment with CPU-only mode to avoid CUDA conflicts
+            training_env = os.environ.copy()
+            training_env["CUDA_VISIBLE_DEVICES"] = ""  # Force CPU mode
+            training_env["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Reduce TF logging
+            training_env["LD_LIBRARY_PATH"] = ""  # Clear library path to prevent CUDA loading
+            training_env["TF_FORCE_GPU_ALLOW_GROWTH"] = "false"
+            training_env["TF_CPP_MIN_VLOG_LEVEL"] = "0"
+            
+            # Use Popen for streaming output
+            process = subprocess.Popen(
+                ["python3", "-u", "multi_stage_trainer.py",
+                 assistant_id,
+                 request.assistant_name or assistant_id,
+                 str(NFS_PATH)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env=training_env,
+                text=True,
+                bufsize=1,
+                universal_newlines=True,
+                cwd=str(Path(__file__).parent.parent)
+            )
+            
+            # Track the job
+            active_training_jobs[assistant_id] = {
+                "status": "training",
+                "process": process,
+                "logs": [],
+                "started_at": datetime.now().isoformat()
+            }
+            
+            # Stream output line by line
+            for line in process.stdout:
+                line = line.rstrip()
+                if line:
+                    logger.info(f"[{assistant_id}] {line}")
+                    active_training_jobs[assistant_id]["logs"].append(line)
+                    
+                    # Broadcast to connected WebSockets
+                    if assistant_id in training_websockets:
+                        disconnected = []
+                        for ws in training_websockets[assistant_id]:
+                            try:
+                                await ws.send_json({"type": "log", "data": line})
+                            except:
+                                disconnected.append(ws)
+                        # Clean up disconnected clients
+                        for ws in disconnected:
+                            training_websockets[assistant_id].remove(ws)
+            
+            # Wait for process to complete
+            return_code = process.wait(timeout=3600)
+            
+            logger.info(f"Training completed with exit code: {return_code}")
+                
+            # Update assistant status
+            if return_code == 0:
+                logger.info(f"Training succeeded for {assistant_id}")
+                active_training_jobs[assistant_id]["status"] = "completed"
+                
+                # Create metadata file
+                metadata = {
+                    "assistant_id": assistant_id,
+                    "name": request.assistant_name or assistant_id,
+                    "status": "ready",
+                    "trained_at": datetime.now().isoformat(),
+                    "training_files": len(csv_files)
+                }
+                metadata_path = NFS_PATH / "agents" / assistant_id / "metadata.json"
+                with open(metadata_path, 'w') as f:
+                    json.dump(metadata, f, indent=2)
+                    
+                # Notify WebSocket clients of completion
+                if assistant_id in training_websockets:
+                    for ws in training_websockets[assistant_id]:
+                        try:
+                            await ws.send_json({"type": "complete", "status": "success"})
+                        except:
+                            pass
+            else:
+                logger.error(f"Training failed with exit code {return_code}")
+                active_training_jobs[assistant_id]["status"] = "failed"
+                active_training_jobs[assistant_id]["error"] = f"Exit code {return_code}"
+                
+                # Notify WebSocket clients of failure
+                if assistant_id in training_websockets:
+                    for ws in training_websockets[assistant_id]:
+                        try:
+                            await ws.send_json({"type": "complete", "status": "failed", "error": f"Exit code {return_code}"})
+                        except:
+                            pass
+                
+        except subprocess.TimeoutExpired:
+            logger.error(f"Training timed out after 1 hour")
+            active_training_jobs[assistant_id]["status"] = "failed"
+            active_training_jobs[assistant_id]["error"] = "Timeout after 1 hour"
+        except Exception as e:
+            logger.error(f"Training failed with exception: {str(e)}", exc_info=True)
+            active_training_jobs[assistant_id]["status"] = "failed"
+            active_training_jobs[assistant_id]["error"] = str(e)
     
     # Add to background tasks
     background_tasks.add_task(training_task)
@@ -478,6 +615,76 @@ async def train_assistant(request: TrainingRequest, background_tasks: Background
         "status": "training_started",
         "message": "Training pipeline started in background"
     }
+
+
+@app.get("/training/status/{assistant_id}")
+async def get_training_status(assistant_id: str):
+    """Get training job status and logs"""
+    if assistant_id not in active_training_jobs:
+        raise HTTPException(status_code=404, detail=f"No training job found for assistant '{assistant_id}'")
+    
+    job = active_training_jobs[assistant_id]
+    return {
+        "assistant_id": assistant_id,
+        "status": job["status"],
+        "started_at": job.get("started_at"),
+        "log_lines": len(job.get("logs", [])),
+        "error": job.get("error")
+    }
+
+
+@app.get("/training/logs/{assistant_id}")
+async def get_training_logs(assistant_id: str, offset: int = 0):
+    """Get training logs for an assistant"""
+    if assistant_id not in active_training_jobs:
+        raise HTTPException(status_code=404, detail=f"No training job found for assistant '{assistant_id}'")
+    
+    logs = active_training_jobs[assistant_id].get("logs", [])
+    return {
+        "assistant_id": assistant_id,
+        "logs": logs[offset:],
+        "total_lines": len(logs),
+        "status": active_training_jobs[assistant_id]["status"]
+    }
+
+
+@app.websocket("/ws/training/{assistant_id}")
+async def training_websocket(websocket: WebSocket, assistant_id: str):
+    """WebSocket endpoint for live training logs"""
+    await websocket.accept()
+    
+    # Register this WebSocket
+    if assistant_id not in training_websockets:
+        training_websockets[assistant_id] = []
+    training_websockets[assistant_id].append(websocket)
+    
+    try:
+        # Send existing logs if job is active
+        if assistant_id in active_training_jobs:
+            job = active_training_jobs[assistant_id]
+            await websocket.send_json({
+                "type": "init",
+                "status": job["status"],
+                "logs": job.get("logs", [])
+            })
+        
+        # Keep connection alive and listen for client messages
+        while True:
+            try:
+                data = await websocket.receive_text()
+                # Echo back for ping/pong
+                await websocket.send_json({"type": "pong"})
+            except WebSocketDisconnect:
+                break
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+    finally:
+        # Cleanup on disconnect
+        if assistant_id in training_websockets:
+            if websocket in training_websockets[assistant_id]:
+                training_websockets[assistant_id].remove(websocket)
+            if not training_websockets[assistant_id]:
+                del training_websockets[assistant_id]
 
 
 @app.delete("/assistants/{assistant_id}")

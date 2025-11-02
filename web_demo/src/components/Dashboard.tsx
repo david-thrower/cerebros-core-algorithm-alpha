@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Trash2, Plus } from 'lucide-react';
 
 interface Assistant {
   assistant_id: string;
@@ -40,6 +41,26 @@ export function Dashboard() {
     }
   };
 
+  const deleteAssistant = async (assistantId: string) => {
+    if (!window.confirm(`Are you sure you want to delete assistant "${assistantId}"? This cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8080/assistants/${assistantId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) throw new Error('Failed to delete assistant');
+
+      // Reload assistants after deletion
+      loadAssistants();
+    } catch (err) {
+      console.error('Delete failed:', err);
+      window.alert('Failed to delete assistant');
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ready': return 'bg-green-100 text-green-800';
@@ -55,11 +76,15 @@ export function Dashboard() {
       <header className="bg-blue-600 text-white p-4 shadow-md">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">🧠 CEREBROS Dashboard</h1>
-          <nav className="flex gap-4">
-            <Link to="/" className="hover:underline">Dashboard</Link>
-            <Link to="/upload" className="hover:underline">Upload Data</Link>
-            <Link to="/new" className="hover:underline">Training Wizard</Link>
-          </nav>
+          <div className="flex items-center gap-4">
+            <Link 
+              to="/wizard" 
+              className="flex items-center gap-2 bg-white text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 font-semibold transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              Create Agent
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -138,12 +163,13 @@ export function Dashboard() {
                         Chat
                       </Link>
                     )}
-                    <Link
-                      to={`/status/${assistant.assistant_id}`}
-                      className="flex-1 bg-gray-200 text-gray-800 text-center px-4 py-2 rounded hover:bg-gray-300"
+                    <button
+                      onClick={() => deleteAssistant(assistant.assistant_id)}
+                      className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
+                      title="Delete assistant"
                     >
-                      Details
-                    </Link>
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               ))

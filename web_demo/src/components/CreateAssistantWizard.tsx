@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Upload, FileText, CheckCircle, ArrowRight, ArrowLeft, Loader } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Upload, FileText, CheckCircle, ArrowRight, ArrowLeft, Loader, AlertCircle } from 'lucide-react';
+import TrainingTerminal from './TrainingTerminal';
 
 interface UploadedFile {
   name: string;
@@ -8,16 +9,7 @@ interface UploadedFile {
   stage: number;
 }
 
-interface ProcessResponse {
-  status: string;
-  assistant_id: string;
-  stage: number;
-  csv_file: string;
-  chunks_created: number;
-}
-
 export function CreateAssistantWizard() {
-  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [assistantName, setAssistantName] = useState('');
   const [assistantId, setAssistantId] = useState('');
@@ -30,6 +22,7 @@ export function CreateAssistantWizard() {
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
+  const [showTerminal, setShowTerminal] = useState(false);
 
   const steps = [
     { num: 0, label: 'Name', sublabel: 'Name your assistant' },
@@ -43,28 +36,46 @@ export function CreateAssistantWizard() {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    console.log('📤 Starting file upload, files:', files.length);
     setUploading(true);
     setError('');
 
     try {
-      const currentId = assistantId;
+      // Ensure assistant ID exists before uploading
+      let currentId = assistantId;
+      if (!currentId) {
+        const sanitizedName = assistantName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        currentId = sanitizedName || `assistant_${Date.now()}`;
+        setAssistantId(currentId);
+        console.log('🆔 Generated assistant ID:', currentId);
+      } else {
+        console.log('🆔 Using existing assistant ID:', currentId);
+      }
 
       for (const file of Array.from(files)) {
+        console.log(`📄 Uploading file: ${file.name} (${file.size} bytes) to stage ${currentStep}`);
+        
         const formData = new FormData();
         formData.append('file', file);
         formData.append('assistant_id', currentId);
         formData.append('stage', currentStep.toString());
 
+        console.log('🌐 Sending POST to /api/process-stage...');
         const response = await fetch('http://localhost:8080/api/process-stage', {
           method: 'POST',
           body: formData
         });
 
+        console.log(`📊 Response status: ${response.status} ${response.statusText}`);
+
         if (!response.ok) {
-          throw new Error(`Failed to process ${file.name}`);
+          const errorText = await response.text();
+          console.error('❌ Upload failed:', errorText);
+          throw new Error(`Failed to process ${file.name}: ${response.status}`);
         }
 
-        const data: ProcessResponse = await response.json();
+        const result = await response.json();
+        console.log('✅ Upload successful:', result);
 
         // Add to uploaded files list
         setUploadedFiles(prev => ({
@@ -75,7 +86,9 @@ export function CreateAssistantWizard() {
           ]
         }));
       }
+      console.log('✨ All files uploaded successfully');
     } catch (err) {
+      console.error('💥 Upload error:', err);
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setUploading(false);
@@ -111,8 +124,9 @@ export function CreateAssistantWizard() {
     setError('');
 
     try {
-      console.log('Starting training for:', assistantId, assistantName);
-      console.log('Total files uploaded:', getTotalFiles());
+      console.log('🚀 Starting training for:', assistantId, assistantName);
+      console.log('📊 Total files uploaded:', getTotalFiles());
+      console.log('📁 Files by stage:', uploadedFiles);
       
       const response = await fetch('http://localhost:8080/assistants/train', {
         method: 'POST',
@@ -123,7 +137,7 @@ export function CreateAssistantWizard() {
         })
       });
 
-      console.log('Response status:', response.status);
+      console.log('📡 Training response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -131,15 +145,12 @@ export function CreateAssistantWizard() {
         throw new Error(`Training failed: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log('Training started successfully:', data);
+      await response.json();
+      console.log('Training started successfully');
       
-      // Keep processing state true to show success message
-      // Navigate to dashboard after delay
-      setTimeout(() => {
-        console.log('Navigating to dashboard');
-        navigate('/');
-      }, 3000);
+      // Show terminal
+      setShowTerminal(true);
+      setProcessing(false);
     } catch (err) {
       console.error('Error in startTraining:', err);
       setError(err instanceof Error ? err.message : 'Training failed');
@@ -152,9 +163,11 @@ export function CreateAssistantWizard() {
       return assistantName.trim().length > 0;
     }
     if (currentStep === 4) {
+      // Require at least one file across all stages before training
       return getTotalFiles() > 0;
     }
-    return uploadedFiles[currentStep]?.length > 0;
+    // Allow skipping file uploads on individual steps (1-3)
+    return true;
   };
 
   const getTotalFiles = () => {
@@ -183,7 +196,7 @@ export function CreateAssistantWizard() {
                   step.num === currentStep ? 'bg-blue-600' : 
                   step.num < currentStep ? 'bg-green-500' : 'bg-gray-300'
                 }`}>
-                  {step.num < currentStep ? <CheckCircle className="w-6 h-6" /> : step.num}
+                  {step.num < currentStep ? <CheckCircle className="w-6 h-6" /> : (step.num === 0 ? '1' : step.num)}
                 </div>
                 <div className="mt-2 text-center">
                   <div className="font-semibold text-sm text-gray-900">{step.label}</div>
@@ -323,19 +336,50 @@ export function CreateAssistantWizard() {
               </div>
             </div>
 
-            {processing && (
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg mb-6">
+            {getTotalFiles() === 0 && (
+              <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-lg mb-6">
                 <div className="flex items-center gap-3">
-                  <Loader className="w-5 h-5 text-green-600 animate-spin" />
+                  <AlertCircle className="w-6 h-6 text-yellow-600" />
                   <div>
-                    <p className="font-semibold text-green-900">Training Started!</p>
-                    <p className="text-sm text-green-700">
-                      Assistant "{assistantName || assistantId}" is being trained with {getTotalFiles()} files.
+                    <p className="font-semibold text-yellow-900">⚠️ No Training Data Uploaded</p>
+                    <p className="text-sm text-yellow-700 mb-2">
+                      You must upload at least one file in steps 1-4 before starting training.
                     </p>
-                    <p className="text-xs text-green-600 mt-1">
-                      Redirecting to dashboard in 3 seconds...
+                    <p className="text-xs text-yellow-600">
+                      Go back to any step and click "Choose Files" to upload documents that will train your AI assistant.
                     </p>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {processing && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg mb-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Loader className="w-5 h-5 text-green-600 animate-spin" />
+                    <div>
+                      <p className="font-semibold text-green-900">Training Started!</p>
+                      <p className="text-sm text-green-700">
+                        Assistant "{assistantName || assistantId}" is being trained with {getTotalFiles()} files.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="bg-white p-3 rounded border border-green-200">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">Training Pipeline:</p>
+                    <ul className="text-xs text-gray-600 space-y-1">
+                      <li>✓ Files processed and chunked to 512 characters</li>
+                      <li>✓ Training CSVs generated for all stages</li>
+                      <li>⏳ Running CEREBROS multi-stage trainer (5 stages)</li>
+                      <li>⏳ This may take several minutes...</li>
+                    </ul>
+                  </div>
+                  <Link
+                    to="/"
+                    className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
+                  >
+                    Return to Dashboard
+                  </Link>
                 </div>
               </div>
             )}
@@ -386,6 +430,15 @@ export function CreateAssistantWizard() {
           </button>
         </div>
       </div>
+
+      {/* Training Terminal */}
+      {showTerminal && assistantId && (
+        <TrainingTerminal
+          assistantId={assistantId}
+          assistantName={assistantName || assistantId}
+          onClose={() => setShowTerminal(false)}
+        />
+      )}
     </div>
   );
 }

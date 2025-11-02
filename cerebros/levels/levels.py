@@ -749,6 +749,10 @@ class FinalDenseLevel(DenseLevel):
         for i in np.arange(len(self.output_shapes)):
             i_int = int(i)
             output_shape = self.output_shapes[i_int]
+            # Extract integer from tuple if needed
+            if isinstance(output_shape, (tuple, list)):
+                output_shape = output_shape[0]
+            output_shape = int(output_shape)
             unit_0 =\
                 FinalDenseUnit(
                     output_shape=output_shape,
