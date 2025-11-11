@@ -46,6 +46,15 @@ The deeper technical details can be found here:
 
 ![documentation/cerebros-technical-details.md](documentation/cerebros-technical-details.md)
 
+### How does `cerebros-core-algorithm-alpha` work under the hood?
+
+Check out this interactive walkthrough of the `cerebros-core-algorithm-alpha` codebase on CodeCanvas [here](https://www.code-canvas.com/?session=unauthenticatedGithub&repo=cerebros-core-algorithm-alpha&owner=david-thrower&branch=269-model-recompiled-after-phase-1-small-scale-hpo-267&OnboardingTutorial=true).
+
+To refine existing dataflow simulation or create new ones, follow the quick tutorial [here](https://docs.code-canvas.com/updating-diagram).
+
+<img width="1916" alt="CodeCanvas Screenshot" src="https://codecanvas-media-public.s3.amazonaws.com/images/codecanvas-readme-screenshot.png" />
+
+
 ## Use example: Try it for yourself:
 
 shell:
