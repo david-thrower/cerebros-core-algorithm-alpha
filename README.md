@@ -52,7 +52,7 @@ Check out this interactive walkthrough of the `cerebros-core-algorithm-alpha` co
 
 To refine existing dataflow simulation or create new ones, follow the quick tutorial [here](https://docs.code-canvas.com/updating-diagram).
 
-<img width="1916" alt="CodeCanvas Screenshot" src="https://codecanvas-media-public.s3.amazonaws.com/images/codecanvas-readme-screenshot.png" />
+<img width="1388" height="725" alt="image" src="https://github.com/user-attachments/assets/dbf0f260-dba6-40f1-a6a5-845e3b34d9ab" />
 
 
 ## Use example: Try it for yourself:
