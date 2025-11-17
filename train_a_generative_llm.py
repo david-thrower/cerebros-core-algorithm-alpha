@@ -532,7 +532,6 @@ for sample in prompt_samples:
     test_text(
             test_prompt=sample,
             max_new_tokens=MAX_NEW_TOKENS,
-            sample_number=counter,
             result_cutoff=15,
             trial_id=trial_number,
             test_sample_number=counter,
@@ -693,7 +692,6 @@ for sample in prompt_samples:
     test_text(
             test_prompt=sample,
             max_new_tokens=MAX_NEW_TOKENS,
-            sample_number=counter,
             result_cutoff=15,
             trial_id=trial_number,
             test_sample_number=counter,
