@@ -102,7 +102,7 @@ learning_rate = 0.005833579849262622
 INITIAL_LR_STAGE_I_B = 10 ** -4
 # A fixed number for the initial warmup
 WARMUP_EPOCHS_STAGE_I_B = 7
-WARMUP_STEPS = 760
+WARMUP_STEPS = 760 # Generally between 500 and 2000
 FIRST_DECAY_STEPS_STAGE_I_B = 76 # Set this to the number of steps in an epoch given your data.
 
 epochs = 54
