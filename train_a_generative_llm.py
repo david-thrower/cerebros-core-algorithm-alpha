@@ -153,21 +153,14 @@ non_instruct_samples = bible[:PHASE_I_A_SAMPLES_TO_CREATE]
 phase_i_b_samples = bible[PHASE_I_A_SAMPLES_TO_CREATE:PHASE_I_B_SAMPLES_TO_CREATE + PHASE_I_A_SAMPLES_TO_CREATE] 
 print(f"Samples from KJV bible consisting of {len(non_instruct_samples)} look like this (sub-sample of 3): {non_instruct_samples[:3]}")
 
-# Split the phase I-b data set for training and validation:
 
-phase_i_b_train_samples, phase_i_b_val_samples = train_test_split(
-        phase_i_b_samples, 
-        test_size=PHASE_I_B_VAL_SPLIT, 
-        shuffle=False
-)
+# Preprocess data for Stage I-a training
+x, y, vocab_size = prepare_data(data_0=non_instruct_samples, tokenizer_0=tokenizer, max_seq_length=MAX_SEQ_LENGTH,
+                                prompt_length=PROMPT_LENGTH)        # Preprocess data for Stage I-a training
 
-
-        
 X_train, X_test, y_train, y_test = \
         train_test_split(x, y, test_size=0.85, shuffle=False)
-        
-INPUT_SHAPES = [(MAX_SEQ_LENGTH,)]
-OUTPUT_SHAPES = [(VOCABULARY_SIZE)]
+
         
 x_train_tf = tf.constant(X_train, tf.int32)
 y_train_tf = tf.constant(y_train, tf.float32)
@@ -181,6 +174,17 @@ y_test_tf = tf.constant(y_test, tf.float32)
 x_test_packaged = [x_test_tf] 
 y_test_packaged = [y_test_tf]
 
+# Important parameters for the training run
+INPUT_SHAPES = [(MAX_SEQ_LENGTH,)]
+OUTPUT_SHAPES = [(VOCABULARY_SIZE)]
+
+# Split the phase I-b data set for training and validation:
+
+phase_i_b_train_samples, phase_i_b_val_samples = train_test_split(
+        phase_i_b_samples,
+        test_size=PHASE_I_B_VAL_SPLIT,
+        shuffle=False
+)
 
 ####### Text embedding base model #####################
 
