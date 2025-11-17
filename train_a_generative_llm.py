@@ -99,7 +99,7 @@ num_lateral_connection_tries_per_unit = 20
 learning_rate = 0.005833579849262622
 
 # LR Scheduler for training stage I-b
-INITIAL_LR_STAGE_I_B = 10 ** -4
+INITIAL_LR_STAGE_I_B = 5 * 10 ** -5
 # A fixed number for the initial warmup
 WARMUP_EPOCHS_STAGE_I_B = 7
 WARMUP_STEPS = 760 # Generally between 500 and 2000
@@ -709,15 +709,20 @@ class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedu
         return (warmup_multiplier * warmup_lr) + (decay_multiplier * decay_lr)
 
     def get_config(self):
-        # This remains the same and is important for saving/loading.
-        return {
+        # Use the stored public attributes for the config.
+        # This bypasses the issue of accessing private attributes (_t_mul) from
+        # the nested Keras object, which can be brittle.
+        config = {
             "initial_learning_rate": self.initial_learning_rate,
             "warmup_steps": self.warmup_steps,
-            "first_decay_steps": self.cosine_restarts_schedule.first_decay_steps,
-            "t_mul": self.cosine_restarts_schedule.t_mul,
-            "m_mul": self.cosine_restarts_schedule.m_mul,
-            "alpha": self.cosine_restarts_schedule.alpha,
+            "first_decay_steps": self.first_decay_steps,
+            "t_mul": self.t_mul,
+            "m_mul": self.m_mul,
+            "alpha": self.alpha,
         }
+
+        # Use from_config to properly allow deserialization
+        return config
 
 
 # Create the schedule instance
