@@ -98,7 +98,12 @@ num_lateral_connection_tries_per_unit = 20
     
 learning_rate = 0.005833579849262622
 
-phase_i_b_learning_rate = 0.005132833045559803
+# LR Scheduler for training stage I-b
+INITIAL_LR_STAGE_I_B = 10 ** -4
+# A fixed number for the initial warmup
+WARMUP_EPOCHS_STAGE_I_B = 7
+WARMUP_STEPS = 760
+
 
 epochs = 54
 phase_i_b_epochs = 46
@@ -656,6 +661,65 @@ phase_i_b_loss = tf.keras.losses.CategoricalCrossentropy()
 phase_i_b_categorical_accuracy = tf.keras.metrics.CategoricalAccuracy()
 phase_i_b_perplexity = Perplexity(name="perplexity_phase_i_b")
 
+# A custom schedule: Cosine decay with some warm - up steps
+class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedule):
+    """
+    A learning rate schedule that combines a linear warmup with cosine decay restarts.
+    This is practical for datasets with an unknown number of steps per epoch.
+    """
+
+    def __init__(self, initial_learning_rate, warmup_steps, first_decay_steps, t_mul=2.0, m_mul=1.0, alpha=0.0):
+        super().__init__()
+        self.initial_learning_rate = initial_learning_rate
+        self.warmup_steps = tf.cast(warmup_steps, tf.float32)
+
+        # Create the CosineDecayRestarts schedule to be used after warmup.
+        # We will manage the step offset for it.
+        self.cosine_restarts_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(
+            initial_learning_rate=initial_learning_rate,
+            first_decay_steps=first_decay_steps,
+            t_mul=t_mul,
+            m_mul=m_mul,
+            alpha=alpha
+        )
+
+    def __call__(self, step):
+        step = tf.cast(step, dtype=tf.float32)
+
+        # 1. Linear Warmup Phase
+        if step < self.warmup_steps:
+            # Linearly increase from 0 to initial_learning_rate
+            return self.initial_learning_rate * step / self.warmup_steps
+
+        # 2. Cosine Decay with Restarts Phase
+        # We pass the "post-warmup" step to the cosine schedule.
+        # The cosine schedule starts its first decay cycle right after warmup ends.
+        return self.cosine_restarts_schedule(step - self.warmup_steps)
+
+    def get_config(self):
+        # This is important for saving/loading the model
+        return {
+            "initial_learning_rate": self.initial_learning_rate,
+            "warmup_steps": self.warmup_steps,
+            "first_decay_steps": self.cosine_restarts_schedule.first_decay_steps,
+            "t_mul": self.cosine_restarts_schedule.t_mul,
+            "m_mul": self.cosine_restarts_schedule.m_mul,
+            "alpha": self.cosine_restarts_schedule.alpha,
+        }
+
+
+
+# Create the schedule instance
+lr_scheduler = WarmupCosineDecayRestarts(
+    initial_learning_rate=INITIAL_LR_STAGE_I_B,
+    warmup_steps=WARMUP_STEPS,
+    first_decay_steps=FIRST_DECAY_STEPS_STAGE_I_B,
+    t_mul=1.0, # Keep the cycle length constant (restart every epoch)
+    m_mul=0.9, # Decrease the peak LR by 10% at each restart for finer tuning
+    alpha=0.01 # Don't let the LR decay to zero within a cycle
+)
+
+
 # Recompile the existing model
 generator.model.compile(
         loss=phase_i_b_loss,
@@ -664,7 +728,7 @@ generator.model.compile(
                 phase_i_b_perplexity
         ],
         optimizer=tf.keras.optimizers.AdamW(
-                learning_rate=phase_i_b_learning_rate,
+                learning_rate=lr_scheduler,
                 weight_decay=phase_i_b_weight_decay,
                 gradient_accumulation_steps=phase_i_b_gradient_accumulation_steps
         ),
@@ -672,11 +736,25 @@ generator.model.compile(
 )
 
 
+
+# 2. Define the Early Stopping callback
+# This stops training when validation perplexity stops improving.
+early_stopping = tf.keras.callbacks.EarlyStopping(
+    monitor='val_perplexity_phase_i_b',  # Monitor validation perplexity
+    patience=5,  # Number of epochs with no improvement after which training will be stopped.
+    verbose=1,
+    restore_best_weights=True  # Restores model weights from the epoch with the best value of the monitored metric.
+)
+
+callbacks_list = [early_stopping]
+
 phase_i_b_history = \
     generator.model.fit(
         x=phase_i_b_train_dataset,
         validation_data=phase_i_b_val_dataset,
-        epochs=phase_i_b_epochs)
+        epochs=phase_i_b_epochs,
+        callbacks=callbacks_list
+    )
 
 phase_i_b_history = \
     pd.DataFrame(phase_i_b_history.history)
@@ -687,12 +765,13 @@ result_phase_i_b = float(phase_i_b_history['perplexity_phase_i_b'].min())
 
 print("########### Phase I-b Model Checkpoint Generation Samples: ###########")
 
+
 counter = 0
 for sample in prompt_samples:
     test_text(
             test_prompt=sample,
             max_new_tokens=MAX_NEW_TOKENS,
-            result_cutoff=15,
+            result_cutoff=35,
             trial_id=trial_number,
             test_sample_number=counter,
             result_0=result_phase_i_b)
