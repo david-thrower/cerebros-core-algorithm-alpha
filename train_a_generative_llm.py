@@ -1,20 +1,16 @@
 
-from ast import literal_eval
 import subprocess
 import time
 from gc import collect
-import re
 
 
 import tensorflow as tf
 import pandas as pd
-import numpy as np
 import pendulum
 
 
 from transformers import AutoTokenizer
 from sklearn.model_selection import train_test_split
-from sklearn.utils import shuffle
 from cerebros.units.units import DenseUnit
 from cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search\
     import SimpleCerebrosRandomSearch
@@ -145,7 +141,7 @@ VOCABULARY_SIZE = len(tokenizer)
 EMBEDDING_N = 6 # trial.suggest_int('embedding_n',6, 9) # 12
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
     
-PROJECTION_N = 1 # Punatuve increase of ram, leaving this as 1 until we are running on HPC
+PROJECTION_N = 1 # Punitive increase of ram, leaving this as 1 until we are running on HPC
 
 ## Get training data:
 
@@ -383,7 +379,7 @@ def complete_text_beam(text: str,
 trial_number = 1
 
 
-def test_text(test_prompt: str, max_new_tokens: int, sample_number: int, result_cutoff: float, trial_id: int,
+def test_text(test_prompt: str, max_new_tokens: int, result_cutoff: float, trial_id: int,
               test_sample_number: int, result_0: float) -> None:
     """
     If the result_0 < result_cutoff, this will run a matrix of different sampling values and print out the resulting text for human subjective evaluation.
@@ -502,7 +498,7 @@ def test_text(test_prompt: str, max_new_tokens: int, sample_number: int, result_
             }
         ]
         # Default cases, no params
-        response_1 = response = complete_text_greedy(text=test_prompt, max_new_tokens=max_new_tokens)
+        response_1 = complete_text_greedy(text=test_prompt, max_new_tokens=max_new_tokens)
         print(
             f"Trial #: {trial_id} Text Sample #: {test_sample_number} Perplexity: {result_0}  GENERATE SAMPLING PARAMS: Greedy max_new_tokens=10 otherwise - N/A: PROMPT: '{test_prompt}' RESPONSE: '{response_1}'")
         # print(f"Sample {sample_number}: I ask the generator (greedy): {test_prompt}... It responds: '{response_1}'.")
@@ -552,7 +548,7 @@ print(f"Trial: {trial_number} proceeding to phase I-b:")
 
 
 # Create the Dataset Generator:
-#     Allows us to process laeger data than we can hold in memory
+#     Allows us to process larger data than we can hold in memory
 class SampleExpansionGenerator:
     def __init__(self,
                  raw_text_samples,
@@ -729,6 +725,3 @@ else:
     print("STDERR:", str(result.stderr))
     if result.stdout is not None:
         print(str(result.stdout))
-
-
-
