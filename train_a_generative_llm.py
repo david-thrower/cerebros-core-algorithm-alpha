@@ -644,7 +644,7 @@ def create_dataset(raw_text_samples, tokenizer, sample_expansion_batch_size=50, 
 
     # Batch it
     dataset = dataset.batch(model_batch_size)
-    dataset = dataset.repeat()  # Repeat for multiple epochs
+    # dataset = dataset.repeat()  # Repeat for multiple epochs
     dataset = dataset.prefetch(tf.data.AUTOTUNE)  # Prefetch for performance
     return dataset
 
