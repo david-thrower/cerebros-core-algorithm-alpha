@@ -644,7 +644,6 @@ def create_dataset(raw_text_samples, tokenizer, sample_expansion_batch_size=50, 
 
     # Batch it
     dataset = dataset.batch(model_batch_size)
-    # dataset = dataset.repeat()  # Repeat for multiple epochs
     dataset = dataset.prefetch(tf.data.AUTOTUNE)  # Prefetch for performance
     return dataset
 
@@ -755,16 +754,35 @@ early_stopping = tf.keras.callbacks.EarlyStopping(
     monitor='val_perplexity_phase_i_b',  # Monitor validation perplexity
     patience=5,  # Number of epochs with no improvement after which training will be stopped.
     verbose=1,
-    restore_best_weights=True  # Restores model weights from the epoch with the best value of the monitored metric.
+    restore_best_weights=True,  # Restores model weights from the epoch with the best value of the monitored metric.
+    mode='min'
 )
 
 callbacks_list = [early_stopping]
+
+print("Calculating steps per epoch...")
+
+# Calculate steps for the training dataset
+train_steps = 0
+for _ in phase_i_b_train_dataset:
+    train_steps += 1
+print(f"Calculated training steps per epoch: {train_steps}")
+
+
+# Calculate steps for the validation dataset
+val_steps = 0
+for _ in phase_i_b_val_dataset:
+    val_steps += 1
+print(f"Calculated validation steps: {val_steps}")
+
 
 phase_i_b_history = \
     generator.model.fit(
         x=phase_i_b_train_dataset,
         validation_data=phase_i_b_val_dataset,
         epochs=phase_i_b_epochs,
+        steps_per_epoch=train_steps,
+        validation_steps=val_steps,
         callbacks=callbacks_list
     )
 
