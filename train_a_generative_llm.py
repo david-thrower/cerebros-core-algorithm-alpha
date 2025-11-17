@@ -617,7 +617,7 @@ class SampleExpansionGenerator:
         input_sample = self.data.pop(0)
         label_sample = self.labels.pop(0)
 
-        return ([input_sample], label_sample)
+        return ((input_sample,), label_sample)
 
 
 # Create the tf.data.Dataset
@@ -631,10 +631,14 @@ def create_dataset(raw_text_samples, tokenizer, sample_expansion_batch_size=50, 
 
     dataset = tf.data.Dataset.from_generator(
         lambda: generator_0,
+        # output_signature=(
+        #     (tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),),
+        #     # tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),  # Use generator's parameter
+        #     tf.TensorSpec(shape=(generator_0.vocabulary_size,), dtype=tf.float32)  # Use generator's parameter
+        # )
         output_signature=(
-            (tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),),
-            # tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),  # Use generator's parameter
-            tf.TensorSpec(shape=(generator_0.vocabulary_size,), dtype=tf.float32)  # Use generator's parameter
+            (tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),),  # A tuple containing ONE TensorSpec
+            tf.TensorSpec(shape=(generator_0.vocabulary_size,), dtype=tf.float32)  # A single TensorSpec
         )
     )
 
