@@ -1,5 +1,6 @@
 
 from ast import literal_eval
+import subprocess
 import time
 from gc import collect
 import re
@@ -532,7 +533,7 @@ for sample in prompt_samples:
             test_prompt=sample,
             max_new_tokens=MAX_NEW_TOKENS,
             sample_number=counter,
-            result_cutoff=RESULT_CUTOFF,
+            result_cutoff=15,
             trial_id=trial_number,
             test_sample_number=counter,
             result_0=phase_i_a_result)
@@ -693,7 +694,7 @@ for sample in prompt_samples:
             test_prompt=sample,
             max_new_tokens=MAX_NEW_TOKENS,
             sample_number=counter,
-            result_cutoff=RESULT_CUTOFF,
+            result_cutoff=15,
             trial_id=trial_number,
             test_sample_number=counter,
             result_0=result_phase_i_b)
