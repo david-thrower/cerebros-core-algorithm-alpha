@@ -103,7 +103,7 @@ INITIAL_LR_STAGE_I_B = 10 ** -4
 # A fixed number for the initial warmup
 WARMUP_EPOCHS_STAGE_I_B = 7
 WARMUP_STEPS = 760
-
+FIRST_DECAY_STEPS_STAGE_I_B = 76 # Set this to the number of steps in an epoch given your data.
 
 epochs = 54
 phase_i_b_epochs = 46
