@@ -36,7 +36,7 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Train an LLM with Cerebros
-      run: python3 rain_a_generative_llm.py
+      run: python3 train_a_generative_llm.py
       timeout-minutes: 90
     # - name: Test distributed random search Ames by running
     #   run: python3 regression-example-ames-no-preproc.py
