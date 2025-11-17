@@ -665,7 +665,7 @@ phase_i_b_perplexity = Perplexity(name="perplexity_phase_i_b")
 class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedule):
     """
     A learning rate schedule that combines a linear warmup with cosine decay restarts.
-    This is practical for datasets with an unknown number of steps per epoch.
+    This version is compatible with TensorFlow's graph execution (used in model.fit).
     """
 
     def __init__(self, initial_learning_rate, warmup_steps, first_decay_steps, t_mul=2.0, m_mul=1.0, alpha=0.0):
@@ -674,7 +674,6 @@ class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedu
         self.warmup_steps = tf.cast(warmup_steps, tf.float32)
 
         # Create the CosineDecayRestarts schedule to be used after warmup.
-        # We will manage the step offset for it.
         self.cosine_restarts_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(
             initial_learning_rate=initial_learning_rate,
             first_decay_steps=first_decay_steps,
@@ -686,18 +685,25 @@ class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedu
     def __call__(self, step):
         step = tf.cast(step, dtype=tf.float32)
 
-        # 1. Linear Warmup Phase
-        if step < self.warmup_steps:
-            # Linearly increase from 0 to initial_learning_rate
-            return self.initial_learning_rate * step / self.warmup_steps
+        # Calculate the learning rate for both phases unconditionally
+        warmup_lr = self.initial_learning_rate * step / self.warmup_steps
 
-        # 2. Cosine Decay with Restarts Phase
-        # We pass the "post-warmup" step to the cosine schedule.
-        # The cosine schedule starts its first decay cycle right after warmup ends.
-        return self.cosine_restarts_schedule(step - self.warmup_steps)
+        # The cosine schedule is designed to start from step 0, so we give it
+        # the "post-warmup" step count.
+        decay_lr = self.cosine_restarts_schedule(step - self.warmup_steps)
+
+        # Create a multiplier that is 1.0 during warmup and 0.0 after.
+        # tf.cast(condition, tf.float32) converts a boolean tensor to 1.0 or 0.0.
+        warmup_multiplier = tf.cast(step < self.warmup_steps, tf.float32)
+
+        # The decay multiplier is the opposite.
+        decay_multiplier = 1.0 - warmup_multiplier
+
+        # Combine the two learning rates. Only one will be active at a time.
+        return (warmup_multiplier * warmup_lr) + (decay_multiplier * decay_lr)
 
     def get_config(self):
-        # This is important for saving/loading the model
+        # This remains the same and is important for saving/loading.
         return {
             "initial_learning_rate": self.initial_learning_rate,
             "warmup_steps": self.warmup_steps,
@@ -706,7 +712,6 @@ class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedu
             "m_mul": self.cosine_restarts_schedule.m_mul,
             "alpha": self.cosine_restarts_schedule.alpha,
         }
-
 
 
 # Create the schedule instance
