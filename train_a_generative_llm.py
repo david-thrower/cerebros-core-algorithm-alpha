@@ -14,11 +14,12 @@ from sklearn.model_selection import train_test_split
 from cerebros.units.units import DenseUnit
 from cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search\
     import SimpleCerebrosRandomSearch
-from cerebrosllmutils.llm_utils import prepare_data, \
-                                       InterleavedRoPE, \
-                                       Perplexity, \
-                                       CerebrosNotGPTConfig, \
-                                       CerebrosNotGPT
+from cerebrosllmutils.llm_utils import (prepare_data,
+                                       InterleavedRoPE,
+                                       Perplexity,
+                                       CerebrosNotGPTConfig,
+                                       CerebrosNotGPT,
+                                       WarmupCosineDecayRestarts)
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 
@@ -667,71 +668,6 @@ phase_i_b_loss = tf.keras.losses.CategoricalCrossentropy()
 phase_i_b_categorical_accuracy = tf.keras.metrics.CategoricalAccuracy()
 phase_i_b_perplexity = Perplexity(name="perplexity_phase_i_b")
 
-# A custom schedule: Cosine decay with some warm - up steps
-class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedule):
-    """
-    A learning rate schedule that combines a linear warmup with cosine decay restarts.
-    This version is compatible with TensorFlow's graph execution (used in model.fit).
-    """
-
-    def __init__(self, initial_learning_rate, warmup_steps, first_decay_steps, t_mul=2.0, m_mul=1.0, alpha=0.0):
-        super().__init__()
-
-        # Store all parameters as public attributes for get_config serialization
-        self.initial_learning_rate = initial_learning_rate
-        self.warmup_steps = warmup_steps
-        self.first_decay_steps = first_decay_steps
-        self.t_mul = t_mul
-        self.m_mul = m_mul
-        self.alpha = alpha
-
-        # Create the CosineDecayRestarts schedule for internal logic.
-        # The parameters passed here are the same ones we just stored.
-        self.cosine_restarts_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(
-            initial_learning_rate=initial_learning_rate,
-            first_decay_steps=first_decay_steps,
-            t_mul=t_mul,
-            m_mul=m_mul,
-            alpha=alpha
-        )
-
-
-    def __call__(self, step):
-        step = tf.cast(step, dtype=tf.float32)
-
-        # Calculate the learning rate for both phases unconditionally
-        warmup_lr = self.initial_learning_rate * step / self.warmup_steps
-
-        # The cosine schedule is designed to start from step 0, so we give it
-        # the "post-warmup" step count.
-        decay_lr = self.cosine_restarts_schedule(step - self.warmup_steps)
-
-        # Create a multiplier that is 1.0 during warmup and 0.0 after.
-        # tf.cast(condition, tf.float32) converts a boolean tensor to 1.0 or 0.0.
-        warmup_multiplier = tf.cast(step < self.warmup_steps, tf.float32)
-
-        # The decay multiplier is the opposite.
-        decay_multiplier = 1.0 - warmup_multiplier
-
-        # Combine the two learning rates. Only one will be active at a time.
-        return (warmup_multiplier * warmup_lr) + (decay_multiplier * decay_lr)
-
-    def get_config(self):
-        # Use the stored public attributes for the config.
-        # This bypasses the issue of accessing private attributes (_t_mul) from
-        # the nested Keras object, which can be brittle.
-        config = {
-            "initial_learning_rate": self.initial_learning_rate,
-            "warmup_steps": self.warmup_steps,
-            "first_decay_steps": self.first_decay_steps,
-            "t_mul": self.t_mul,
-            "m_mul": self.m_mul,
-            "alpha": self.alpha,
-        }
-
-        # Use from_config to properly allow deserialization
-        return config
-
 
 # Create the schedule instance
 lr_scheduler = WarmupCosineDecayRestarts(
@@ -765,7 +701,7 @@ generator.model.compile(
 # This stops training when validation perplexity stops improving.
 early_stopping = tf.keras.callbacks.EarlyStopping(
     monitor='val_perplexity_phase_i_b',  # Monitor validation perplexity
-    patience=15,  # Number of epochs with no improvement after which training will be stopped.
+    patience=25,  # Number of epochs with no improvement after which training will be stopped.
     verbose=1,
     restore_best_weights=True,  # Restores model weights from the epoch with the best value of the monitored metric.
     mode='min'

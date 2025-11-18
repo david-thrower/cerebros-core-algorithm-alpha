@@ -9,7 +9,8 @@ from cerebrosllmutils.llm_utils import (
             InterleavedRoPE,
             Perplexity,
             CerebrosNotGPTConfig,
-            CerebrosNotGPT)
+            CerebrosNotGPT,
+            WarmupCosineDecayRestarts)
 
 def test_serialization(tokenizer_path: str, model_path: str):
     try:
