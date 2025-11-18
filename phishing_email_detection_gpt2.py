@@ -37,7 +37,8 @@ from os.path import getsize
 #
 # Load the email data
 #
-df = pd.read_csv("Phishing_Email.csv")
+datasets_folder = "vanilladatasets"
+df = pd.read_csv(f"{datasets_folder}/Phishing_Email.csv")
 #
 # Get the rows where 'Email Text' is a string, remove everything else
 #
