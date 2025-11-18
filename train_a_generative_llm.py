@@ -99,7 +99,7 @@ num_lateral_connection_tries_per_unit = 20
 learning_rate = 0.005833579849262622
 
 # LR Scheduler for training stage I-b
-INITIAL_LR_STAGE_I_B = 5 * 10 ** -5
+INITIAL_LR_STAGE_I_B = 0.005132833045559803 # 5 * 10 ** -5
 # A fixed number for the initial warmup
 WARMUP_EPOCHS_STAGE_I_B = 7
 WARMUP_STEPS = 760 # Generally between 500 and 2000
@@ -765,7 +765,7 @@ generator.model.compile(
 # This stops training when validation perplexity stops improving.
 early_stopping = tf.keras.callbacks.EarlyStopping(
     monitor='val_perplexity_phase_i_b',  # Monitor validation perplexity
-    patience=5,  # Number of epochs with no improvement after which training will be stopped.
+    patience=15,  # Number of epochs with no improvement after which training will be stopped.
     verbose=1,
     restore_best_weights=True,  # Restores model weights from the epoch with the best value of the monitored metric.
     mode='min'
