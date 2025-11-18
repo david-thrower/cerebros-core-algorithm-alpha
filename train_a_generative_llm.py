@@ -27,7 +27,7 @@ from vanilladatasets.web_english_bible import samples as bible
     
     
 PHASE_I_A_SAMPLES_TO_CREATE = 10
-PHASE_I_B_SAMPLES_TO_CREATE = 40
+PHASE_I_B_SAMPLES_TO_CREATE = 20
 PHASE_I_B_VAL_SPLIT = 0.15
 
 PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE = 10
@@ -703,7 +703,7 @@ generator.model.compile(
 # 2. Define the Early Stopping callback
 # This stops training when validation perplexity stops improving.
 early_stopping = tf.keras.callbacks.EarlyStopping(
-    monitor='val_perplexity_phase_i_b',  # Monitor validation perplexity
+    monitor='perplexity_phase_i_b',  # Monitor validation perplexity
     patience=35,  # Number of epochs with no improvement after which training will be stopped.
     verbose=1,
     restore_best_weights=True,  # Restores model weights from the epoch with the best value of the monitored metric.
