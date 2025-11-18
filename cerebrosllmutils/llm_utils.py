@@ -598,7 +598,7 @@ class CerebrosNotGPT(tf.keras.Model):
         return token_ids + generated_tokens
 
 # A custom schedule: Cosine decay with some warm - up steps
-@tf.keras.utils.register_keras_serializable
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='WarmupCosineDecayRestarts')
 class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedule):
     """
     A learning rate schedule that combines a linear warmup with cosine decay restarts.
