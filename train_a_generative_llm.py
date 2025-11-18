@@ -641,8 +641,11 @@ def create_dataset(raw_text_samples, tokenizer, sample_expansion_batch_size=50, 
         #     tf.TensorSpec(shape=(generator_0.vocabulary_size,), dtype=tf.float32)  # Use generator's parameter
         # )
         output_signature=(
-            (tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),),  # A tuple containing ONE TensorSpec
-            tf.TensorSpec(shape=(generator_0.vocabulary_size,), dtype=tf.float32)  # A single TensorSpec
+            # (tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),),  # A tuple containing ONE TensorSpec
+            # tf.TensorSpec(shape=(generator_0.vocabulary_size,), dtype=tf.float32)  # A single TensorSpec
+            ##
+            tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),
+            tf.TensorSpec(shape=(generator_0.vocabulary_size,), dtype=tf.float32)
         )
     )
 
