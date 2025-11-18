@@ -554,6 +554,9 @@ print(f"Trial: {trial_number} proceeding to phase I-b:")
 
 # Create the Dataset Generator:
 #     Allows us to process larger data than we can hold in memory
+
+
+# Replace your existing class and function with these:
 class SampleExpansionGenerator:
     def __init__(self,
                  raw_text_samples,
@@ -576,27 +579,27 @@ class SampleExpansionGenerator:
         self.current_index = 0
 
     def _expand_next_batch(self):
+        # If we've already processed all raw samples for this epoch, do nothing.
+        if self.current_index >= len(self.raw_text_samples):
+            return
+
         # Determine the next meta-batch
         start_idx = self.current_index
         end_idx = min(start_idx + self.sample_expansion_batch_size, len(self.raw_text_samples))
-        collect()
-
-        if start_idx >= end_idx:
-            raise StopIteration("No more raw samples to process.")
 
         batch_samples = self.raw_text_samples[start_idx:end_idx]
         self.current_index = end_idx
 
-        # Run prepare_data on this batch - use the instance parameters
+        # Run prepare_data on this batch
         input_ids_list, labels_list, _ = prepare_data(
             data_0=batch_samples,
             tokenizer_0=self.tokenizer,
             max_seq_length=self.max_seq_length,
             prompt_length=self.prompt_length_0)
 
-        # Assign to internal queues
-        self.data = input_ids_list
-        self.labels = labels_list
+        # Add the new data to our internal queues
+        self.data.extend(input_ids_list)
+        self.labels.extend(labels_list)
 
     def __iter__(self):
         # Reset to initial state for new epoch
@@ -606,13 +609,13 @@ class SampleExpansionGenerator:
         return self
 
     def __next__(self):
-        # Check for mismatched state
-        if (len(self.data) == 0) != (len(self.labels) == 0):
-            raise ValueError("Data and labels queues are out of sync.")
-
-        # If queues are empty, expand next batch
-        if len(self.data) == 0:
+        # If queues are empty, try to expand them from raw samples
+        if not self.data:
             self._expand_next_batch()
+
+        # If they are STILL empty after trying to expand, the epoch is over.
+        if not self.data:
+            raise StopIteration
 
         # Pop and return one sample
         input_sample = self.data.pop(0)
