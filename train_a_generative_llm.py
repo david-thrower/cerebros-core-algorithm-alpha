@@ -27,7 +27,7 @@ from vanilladatasets.web_english_bible import samples as bible
     
     
 PHASE_I_A_SAMPLES_TO_CREATE = 10
-PHASE_I_B_SAMPLES_TO_CREATE = 20
+PHASE_I_B_SAMPLES_TO_CREATE = 40
 PHASE_I_B_VAL_SPLIT = 0.15
 
 PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE = 10
@@ -733,8 +733,8 @@ phase_i_b_history = \
         x=phase_i_b_train_dataset,
         validation_data=phase_i_b_val_dataset,
         epochs=phase_i_b_epochs,
-        steps_per_epoch=train_steps,
-        validation_steps=val_steps,
+        # steps_per_epoch=train_steps,
+        # validation_steps=val_steps,
         callbacks=callbacks_list
     )
 
