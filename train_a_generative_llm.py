@@ -676,10 +676,17 @@ class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedu
 
     def __init__(self, initial_learning_rate, warmup_steps, first_decay_steps, t_mul=2.0, m_mul=1.0, alpha=0.0):
         super().__init__()
-        self.initial_learning_rate = initial_learning_rate
-        self.warmup_steps = tf.cast(warmup_steps, tf.float32)
 
-        # Create the CosineDecayRestarts schedule to be used after warmup.
+        # Store all parameters as public attributes for get_config serialization
+        self.initial_learning_rate = initial_learning_rate
+        self.warmup_steps = warmup_steps
+        self.first_decay_steps = first_decay_steps
+        self.t_mul = t_mul
+        self.m_mul = m_mul
+        self.alpha = alpha
+
+        # Create the CosineDecayRestarts schedule for internal logic.
+        # The parameters passed here are the same ones we just stored.
         self.cosine_restarts_schedule = tf.keras.optimizers.schedules.CosineDecayRestarts(
             initial_learning_rate=initial_learning_rate,
             first_decay_steps=first_decay_steps,
@@ -687,6 +694,7 @@ class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedu
             m_mul=m_mul,
             alpha=alpha
         )
+
 
     def __call__(self, step):
         step = tf.cast(step, dtype=tf.float32)
