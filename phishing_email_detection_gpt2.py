@@ -11,7 +11,6 @@ Original file is located at
 
 
 import tensorflow as tf
-import tensorflow_text
 from keras_nlp.models import GPT2Tokenizer, GPT2Preprocessor, GPT2Backbone
 from keras_nlp.layers import PositionEmbedding
 from transformers import AutoTokenizer
