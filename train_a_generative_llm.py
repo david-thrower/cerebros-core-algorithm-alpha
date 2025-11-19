@@ -24,108 +24,145 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 
 from vanilladatasets.web_english_bible import samples as bible   
-    
-    
+
+# It is obvious that anything used for production we would train with a
+# dickens of a lot more than 10 and 20 samples... This script can be
+# re-used with a scaled up data set.  This script as used here  is
+# a vanilla demo and for CICD testing purposes on a 4 CPU / 16 GB RAM
+# environment.
+
+# Samples to use for the neural architecture seaerch stage
 PHASE_I_A_SAMPLES_TO_CREATE = 10
+
+# Samples to use for the main training stage
 PHASE_I_B_SAMPLES_TO_CREATE = 20
 PHASE_I_B_VAL_SPLIT = 0.15
+
+# This is a single head model. It only returns the next token. For this reason,
+# a training text sample is "expanded" into several sub - samples at training time.
+# The first token becomes the first sub-sample. The second token expressed as a one
+# hot representationn of the vocabulary becomes the first sub-label. The first and
+# second token become the second sub sample,  and the 3rd token one hot encoded
+# becomes the second sub-label. ... until a padding token becomes the label.
+#
+# In training Stage I-a, this is done in memory for all samples (a streaming dataset object)
+# is not yet supported for the NAS algorithm. It is on the road map, with some
+# challenges to implementation.
+#
+# For training Stage I-b: At scale, we will be training on a large number of samples. The
+# sample expansion process turns dozens of KBs of text into GBs of tensors. For this reason,
+# we must preprocess in batches, otherwise we would need a lot of RAM to hold the preprocessed
+# tokens. The parameter 'PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE' bleow controls how many to
+# process at a time. If you are training at scale, I would raise this to a few hunded,
+# depending on your RAM and GPU RAM.
+
 
 PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE = 10
 
 # How many tokens to provide before expecting the next token to be predicted. 
-# Half this = double RAM  (inversely proportional to RAM requirement)
+# It is recommended to keep this as 1. Raising it may reduce RAM pressure at
+# the expense of poor accuracy when responding to short prompts.
+#
 PROMPT_LENGTH = 1
     
 # Text encoding / embedding related constants
 
-MAX_SEQ_LENGTH = 40 # 1536 (Linear and directly proportional to RAM requirement)
+# A minimum of 1536 is recommended for any model meant for typical use.
+# (MAX_SEQ_LENGTH has a linear and directly proportional to RAM and
+# CPU requirement for Cerebros NotGPT. This is a subquadratic NLP
+# algo)
+
+MAX_SEQ_LENGTH = 40
 
 #
 # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
+# (Parameters to Stage I-a / Neural Architecture Search stage)
 #
 
+# How many permutations of layers to try, basically.
 moities_to_try = 3 # ++ Accuracy, linear increase in computation time (Raise this before resorting to raising the next one)
-tries_per_moity = 1 # ++ Modest ++ Accuracy, quadratic increase in computation time 
+
+# How many different topologies between the same permutation of
+# layers to try, basically (Multiplies the number of models to be tried:
+# number of models it will try =  moities_to_try * tries_per_moity)
+tries_per_moity = 1 # ++ Modest ++ Accuracy, quadratic increase in computation time
+
+
+# Main tunable hyperparameters:
+
+POSITIONAL_EMBEDDING_DROPOUT = 0.7760921781088126
+activation = 'softplus'
+
+# Directly proportional to the connectivity density between the Input layer
+# (output of the text embedding) and the first Dense layer.
+predecessor_level_connection_affinity_factor_first = 15.94834332206339
+
+# Directly propertional to the connectivity density between hidden layers
+# and upstream layers.
+predecessor_level_connection_affinity_factor_main = 13.749457115102823
+
+# Cerebros arranges a grid of Dense layers (Units) on rows (Levels). They connect both
+# laterally with Dense layers on the same row as well as verticly with layers on other
+# rows. A limit to the number of consecutive connections on the same row.
+max_consecutive_lateral_connections = 3
+
+# Basically the density of lateral comnnectiosn approximately
+# equals p_lateral_connection * num_lateral_connection_tries_per_unit
+p_lateral_connection = 0.22164673054843198
+
+num_lateral_connection_tries_per_unit = 20
+
+# The learning rate for Srage I-a
+learning_rate = 0.005833579849262622
+
+# Number of epochs for Training Stage I-a
+epochs = 54
+
+# Batch size for both stages.
+batch_size = 5 # When training at scale, use a higher batch size.
+
+# In the Neural architecture search, if set to 1, it will omit the gradient_accumulation_steps.
+# It allows '1' to be selected because we want to use it in hyperparameter tuning and not raise
+# an error if 1 is called...
+
+gradient_accumulation_steps = 1
+
+# How many hidden "Levels" or rows of Dense layers:
+minimum_levels = 2
+maximum_levels = 2
+
+# Number of hidden Dense layers per row (Level):
+minimum_units_per_level = 3
+maximum_units_per_level = 3
+
+# Number of units in each Dense layer:
+minimum_neurons_per_unit = 1
+maximum_neurons_per_unit = 3
+
+
+
+## Training Stage I-b parameters: ###
+
+# LR Scheduler for training stage I-b
+INITIAL_LR_STAGE_I_B = 0.005132833045559803 # 5 * 10 ** -5
+
+# A fixed number for the initial warmup
+WARMUP_EPOCHS_STAGE_I_B = 7
+WARMUP_STEPS = 760 # Generally between 500 and 2000
+FIRST_DECAY_STEPS_STAGE_I_B = 76 # Set this to the number of steps in an epoch given your data.
+
+phase_i_b_epochs = 46
+
+phase_i_b_gradient_accumulation_steps = 2
+
+phase_i_b_weight_decay = 0.08313244799928765
 
 ## Generation time configurables: ##########
 
 GENERATION_PROMPT_LEN = 25
 MAX_NEW_TOKENS = MAX_SEQ_LENGTH - GENERATION_PROMPT_LEN
 
-# Tunable parameters:
 
-
-"""
-
-[I 2025-11-17 00:28:46,086] Trial 3 finished with value: 26.472869873046875 and parameters: 
-
-{'POSITIONAL_EMBEDDING_DROPOUT': 0.7760921781088126, 
-'activation': 'softplus', 
-'predecessor_level_connection_affinity_factor_first': 15.94834332206339, 
-'predecessor_level_connection_affinity_factor_main': 13.749457115102823, 
-'max_consecutive_lateral_connections': 3, 
-'p_lateral_connection': 0.22164673054843198, 
-'num_lateral_connection_tries_per_unit': 20, 
-'learning_rate': 0.005833579849262622, 
-'phase_i_b_learning_rate': 0.005132833045559803, 
-'epochs': 54, 
-'phase_i_b_epochs': 46, 
-'gradient_accumulation_steps': 1, 
-'phase_i_b_gradient_accumulation_steps': 2, 
-'phase_i_b_weight_decay': 0.08313244799928765, 
-'minimum_units_per_level': 3, 
-'maximum_units_per_level': 3, 
-'minimum_neurons_per_unit': 1, 
-'maximum_neurons_per_unit': 1}. Best is trial 3 with value: 26.472869873046875.
-
-"""
-
-
-
-
-POSITIONAL_EMBEDDING_DROPOUT = 0.7760921781088126
-
-activation = 'softplus'
-
-predecessor_level_connection_affinity_factor_first = 15.94834332206339
-
-predecessor_level_connection_affinity_factor_main = 13.749457115102823
-
-max_consecutive_lateral_connections = 3
-
-p_lateral_connection = 0.22164673054843198
-
-num_lateral_connection_tries_per_unit = 20
-    
-learning_rate = 0.005833579849262622
-
-# LR Scheduler for training stage I-b
-INITIAL_LR_STAGE_I_B = 0.005132833045559803 # 5 * 10 ** -5
-# A fixed number for the initial warmup
-WARMUP_EPOCHS_STAGE_I_B = 7
-WARMUP_STEPS = 760 # Generally between 500 and 2000
-FIRST_DECAY_STEPS_STAGE_I_B = 76 # Set this to the number of steps in an epoch given your data.
-
-epochs = 54
-phase_i_b_epochs = 46
-    
-batch_size = 5
-
-gradient_accumulation_steps = 1
-
-phase_i_b_gradient_accumulation_steps = 2
-
-phase_i_b_weight_decay = 0.08313244799928765
-
-minimum_levels = 2
-maximum_levels = 2
-
-
-minimum_units_per_level = 3
-maximum_units_per_level = 3
-    
-minimum_neurons_per_unit = 1
-maximum_neurons_per_unit = 3
 
 # Tokenization 
     
@@ -146,7 +183,8 @@ VOCABULARY_SIZE = len(tokenizer)
     
 EMBEDDING_N = 6 # trial.suggest_int('embedding_n',6, 9) # 12
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
-    
+
+# Size of the projection layer bet
 PROJECTION_N = 1 # Punitive increase of ram, leaving this as 1 until we are running on HPC
 
 ## Get training data:

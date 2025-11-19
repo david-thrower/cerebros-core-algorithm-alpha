@@ -32,7 +32,7 @@ def make_dataset(dataset):
     images = []
     labels = []
     for i in np.arange(ciphar10_metadata.shape[0]):
-        imfile = f"{datasets_folder}/ciphar10_metadata.loc[i]['file_name']"
+        imfile = f"{datasets_folder}/{ciphar10_metadata.loc[i]['file_name']}"
 
         # Debug delete
         # print(f"$$$$: attempting file: {imfile}")
