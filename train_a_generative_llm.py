@@ -149,7 +149,7 @@ INITIAL_LR_STAGE_I_B = 0.0039295722955565125
 # A fixed number for the initial warmup
 WARMUP_EPOCHS_STAGE_I_B = 7
 WARMUP_STEPS = 1140  # Generally between 500 and 2000
-FIRST_DECAY_STEPS_STAGE_I_B = 1140
+FIRST_DECAY_STEPS_STAGE_I_B = 1900
 
 phase_i_b_epochs = 53
 
