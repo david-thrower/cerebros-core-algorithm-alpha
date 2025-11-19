@@ -90,33 +90,33 @@ tries_per_moity = 1 # ++ Modest ++ Accuracy, quadratic increase in computation t
 
 # Main tunable hyperparameters:
 
-POSITIONAL_EMBEDDING_DROPOUT = 0.7760921781088126
+POSITIONAL_EMBEDDING_DROPOUT = 0.7651951380000674
 activation = 'softplus'
 
 # Directly proportional to the connectivity density between the Input layer
 # (output of the text embedding) and the first Dense layer.
-predecessor_level_connection_affinity_factor_first = 15.94834332206339
+predecessor_level_connection_affinity_factor_first = 17.851026458010523
 
 # Directly propertional to the connectivity density between hidden layers
 # and upstream layers.
-predecessor_level_connection_affinity_factor_main = 13.749457115102823
+predecessor_level_connection_affinity_factor_main = 21.487301631581428
 
 # Cerebros arranges a grid of Dense layers (Units) on rows (Levels). They connect both
 # laterally with Dense layers on the same row as well as verticly with layers on other
 # rows. A limit to the number of consecutive connections on the same row.
-max_consecutive_lateral_connections = 3
+max_consecutive_lateral_connections = 7
 
 # Basically the density of lateral comnnectiosn approximately
 # equals p_lateral_connection * num_lateral_connection_tries_per_unit
-p_lateral_connection = 0.22164673054843198
+p_lateral_connection = 0.24927354102044022
 
-num_lateral_connection_tries_per_unit = 20
+num_lateral_connection_tries_per_unit = 32
 
 # The learning rate for Srage I-a
-learning_rate = 0.005833579849262622
+learning_rate = 0.003025583248301791
 
 # Number of epochs for Training Stage I-a
-epochs = 54
+epochs = 41
 
 # Batch size for both stages.
 batch_size = 5 # When training at scale, use a higher batch size.
@@ -125,37 +125,37 @@ batch_size = 5 # When training at scale, use a higher batch size.
 # It allows '1' to be selected because we want to use it in hyperparameter tuning and not raise
 # an error if 1 is called...
 
-gradient_accumulation_steps = 1
+gradient_accumulation_steps = 4
 
 # How many hidden "Levels" or rows of Dense layers:
 minimum_levels = 2
 maximum_levels = 2
 
 # Number of hidden Dense layers per row (Level):
-minimum_units_per_level = 3
-maximum_units_per_level = 3
+minimum_units_per_level = 2
+maximum_units_per_level = 2
 
 # Number of units in each Dense layer:
-minimum_neurons_per_unit = 1
-maximum_neurons_per_unit = 3
+minimum_neurons_per_unit = 2
+maximum_neurons_per_unit = 2
 
 
 
 ## Training Stage I-b parameters: ###
 
 # LR Scheduler for training stage I-b
-INITIAL_LR_STAGE_I_B = 0.005132833045559803 # 5 * 10 ** -5
+INITIAL_LR_STAGE_I_B = 0.0039295722955565125
 
 # A fixed number for the initial warmup
 WARMUP_EPOCHS_STAGE_I_B = 7
 WARMUP_STEPS = 760 # Generally between 500 and 2000
 FIRST_DECAY_STEPS_STAGE_I_B = 76 # Set this to the number of steps in an epoch given your data.
 
-phase_i_b_epochs = 46
+phase_i_b_epochs = 53
 
-phase_i_b_gradient_accumulation_steps = 2
+phase_i_b_gradient_accumulation_steps = 7
 
-phase_i_b_weight_decay = 0.08313244799928765
+phase_i_b_weight_decay = 0.01647018768215773
 
 ## Generation time configurables: ##########
 
