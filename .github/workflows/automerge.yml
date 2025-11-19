@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "275-create-a-permanent-minimal-generative-llm-cicd-run-0001" ]
+    branches: [ "main", "277-attempt-to-imporve-parameters-on--dev-branch-275" ]
 
 
 permissions:
@@ -38,13 +38,13 @@ jobs:
     - name: Train an LLM with Cerebros
       run: python3 train_a_generative_llm.py
       timeout-minutes: 45
-    - name: Test distributed random search Ames by running
-      run: python3 regression-example-ames-no-preproc.py
-    - name: Test distributed random search Ames by running - Val set
-      run: python3 regression-example-ames-no-preproc-val-set.py
-    - name: Test image classifier - small subset of CIFAR10 # add back
-      timeout-minutes: 90
-      run: python3 cifar10-example.py
-    - name: Phishing email detection with GPT2 embedding
-      timeout-minutes: 420
-      run: python3 phishing_email_detection_gpt2.py
+    # - name: Test distributed random search Ames by running
+    #   run: python3 regression-example-ames-no-preproc.py
+    # - name: Test distributed random search Ames by running - Val set
+    #   run: python3 regression-example-ames-no-preproc-val-set.py
+    # - name: Test image classifier - small subset of CIFAR10 # add back
+    #   timeout-minutes: 90
+    #   run: python3 cifar10-example.py
+    # - name: Phishing email detection with GPT2 embedding
+    #   timeout-minutes: 420
+    #   run: python3 phishing_email_detection_gpt2.py
