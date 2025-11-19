@@ -117,7 +117,7 @@ class GPT2Layer(tf.keras.layers.Layer):
     def call(self, inputs):
         #
         # Output the GPT2 embedding
-        prep = self.preprocessor([inputs])
+        prep = self.preprocessor(inputs)
         embedding  = self.encoder(prep)
         avg_pool = tf.reduce_mean(embedding, axis=1)
         #
