@@ -773,7 +773,7 @@ phase_i_b_history = \
         epochs=phase_i_b_epochs,
         # steps_per_epoch=train_steps,
         # validation_steps=val_steps # ,
-        # callbacks=callbacks_list
+        callbacks=callbacks_list
     )
 
 phase_i_b_history = \
