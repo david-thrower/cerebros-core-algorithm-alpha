@@ -132,8 +132,10 @@ This script is easily scalable to run on a larger data set (we have tested it mu
 
 The prepare_data function from cerebrosllmutils.llm_utils implements a sliding window to create next-token prediction tasks. For a given text sequence, it creates multiple training samples:
 
+```
 Sample 1: Input: [token_1], Label: [token_2]
 Sample 2: Input: [token_1, token_2], Label: [token_3]
+```
 
 ...and so on. (padded to max_sequence_length with the tokenizer’s padding token)
 
