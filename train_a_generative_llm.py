@@ -742,10 +742,11 @@ generator.model.compile(
 # This stops training when validation perplexity stops improving.
 early_stopping = tf.keras.callbacks.EarlyStopping(
     monitor='perplexity_phase_i_b',  # Monitor validation perplexity
-    patience=35,  # Number of epochs with no improvement after which training will be stopped.
+    patience=10,  # Number of epochs with no improvement after which training will be stopped.
     verbose=1,
     restore_best_weights=True,  # Restores model weights from the epoch with the best value of the monitored metric.
-    mode='min'
+    mode='min',
+    start_from_epoch=40
 )
 
 callbacks_list = [early_stopping]
