@@ -11,7 +11,6 @@ Original file is located at
 
 
 import tensorflow as tf
-import tensorflow_text
 from keras_nlp.models import GPT2Tokenizer, GPT2Preprocessor, GPT2Backbone
 from keras_nlp.layers import PositionEmbedding
 from transformers import AutoTokenizer
@@ -37,7 +36,8 @@ from os.path import getsize
 #
 # Load the email data
 #
-df = pd.read_csv("Phishing_Email.csv")
+datasets_folder = "vanilladatasets"
+df = pd.read_csv(f"{datasets_folder}/Phishing_Email.csv")
 #
 # Get the rows where 'Email Text' is a string, remove everything else
 #
@@ -117,7 +117,7 @@ class GPT2Layer(tf.keras.layers.Layer):
     def call(self, inputs):
         #
         # Output the GPT2 embedding
-        prep = self.preprocessor([inputs])
+        prep = self.preprocessor(inputs)
         embedding  = self.encoder(prep)
         avg_pool = tf.reduce_mean(embedding, axis=1)
         #
