@@ -109,6 +109,96 @@ For examale, 1024 to 3072 tokens is roughly x3 in sequence length and x2.82 in t
 
 This outcome follows earlier work on more scalable tokenisation, RoPE/iRoPE integration, and related performance fixes.
 
+## Train an LLM Using Cerebros: Cerebros NotGPT
+
+The script `train_a_generative_llm.py` demonstrates how to train a custom, generative Large Language Model (LLM) using the Cerebros AutoML engine. The resulting model, which we call "Cerebros NotGPT", is trained from scratch with a neural architecture discovered by Cerebros, not based on a pre-existing LLM like GPT 4 or Llama. It is sub-quadratic in both inference and training modes. 
+
+### The training process is designed to be efficient and is broken into two distinct stages:
+
+Stage I-a (Neural Architecture Search): Cerebros rapidly searches for an optimal, biologically-inspired neural network architecture using a very small dataset.
+Stage I-b (Full Training): The best architecture found in Stage I-a is then trained on a larger dataset.
+
+This script is easily scalable to run on a larger data set (we have tested it much larger sets on our own machine), but in this vanilla demo run in the Github Actions Workflows runner (4CPU / 16GB RAM), this is training on a total of 30 samples. Run as - is, it is a vanilla demo. 
+
+## Key Concepts
+
+1. Cerebros Architecture Search for LLMs
+  - Unlike standard transformer blocks, Cerebros builds a multi-dimensional lattice of Dense layers. The search algorithm determines:
+  - The number of "Levels" (rows) of layers.
+  - The number of "Units" (Dense layers) per level.
+  - The number of neurons per unit: n where the layer is tf.keras.layers.Dense(n).
+  - The complex web of vertical and lateral connections between units, mimicking the connectivity of a biological brain. This allows the model to discover intricate feature pathways that are often missed by purely sequential architectures and emulates the neuroscience concept of modularity.
+2. Data Preparation / Preprocessing and Sample Expansion
+
+The prepare_data function from cerebrosllmutils.llm_utils implements a sliding window to create next-token prediction tasks. For a given text sequence, it creates multiple training samples:
+
+```
+Sample 1: Input: [token_1], Label: [token_2]
+Sample 2: Input: [token_1, token_2], Label: [token_3]
+```
+
+...and so on. (padded to max_sequence_length with the tokenizer’s padding token)
+
+This process, called "sample expansion", turns a small amount of raw text into a large number of training examples. For Stage I-a: this is applied to the entire small data set used in - memory. Stage I-b, a SampleExpansionGenerator, a streaming tf.data.Dataset is used to perform this expansion in batches, so RAM is not a bottleneck when training with larger datasets (Keep in mind, the sample expansion preprocessing turns a few MB of text into GB of tensors, so we do this preprocessing in batches). The number preprocessed at once is controlled by the parameter: PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE
+
+3. Efficient Positional Embeddings (iRoPE)
+
+- The script uses an InterleavedRoPE (Interleaved Rotary Positional Embedding) layer.  This is a custom implementation of Rotary Positional Embeddings that captures more granular and longer sequential information about the input sequence by applying rotations to the embedded sequence.
+- Cerebros NAS Feed Forward Block: This is an alternative to an attention layer that allows the model's training time to scale linearly (O(n)) with sequence length, avoiding the quadratic bottleneck (O(n^2)) of standard attention mechanisms.
+
+### Running the Training Script
+
+- Prerequisites: Ensure you have installed all required packages from requirements.txt, cicd-requirements.txt: `pip install -r requirements.txt` then `pip install -r cicd-requirements.txt`
+- Execute: Run the script from your terminal: `python3 train_a_generative_llm.py`
+- The script will print progress for both Stage I-a and Stage I-b, including the best perplexity score found during the architecture search and the final validation perplexity after full training. It will also generate text samples at the end of each stage for qualitative evaluation.
+
+### Configuration and Hyperparameters
+
+The script is configured via constants defined at the top. Here are the most important groups:
+1. Data and Tokenization
+  - PHASE_I_A_SAMPLES_TO_CREATE: Number of text samples for the NAS stage.
+  - PHASE_I_B_SAMPLES_TO_CREATE: Number of text samples for the full training stage.
+  - MAX_SEQ_LENGTH: The maximum sequence length for the model. Has a linear impact on RAM/CPU usage.
+  - tokenizer_checkpoint: The Hugging Face tokenizer to use (e.g., "HuggingFaceTB/SmolLM3-3B").
+2. Stage I-a: Neural Architecture Search
+  - moities_to_try: The number of different architectural permutations (e.g., different numbers of levels/units) to try. Increasing this improves accuracy at a linear computational cost.
+  - tries_per_moity: For each permutation, the number of different topologies to try (random connectivity patterns) to try. Increasing this has a quadratic computational cost.
+  - predecessor_level_connection_affinity_factor_first/main: Controls the density of connections between layers. Higher values mean denser connections.
+  - P_lateral_connection, num_lateral_connection_tries_per_unit: The probability of creating a lateral connection between units on the same level.
+  - epochs, batch_size: Standard training parameters for the NAS stage.
+3. Stage I-b: Main Training
+  - INITIAL_LR_STAGE_I_B: The initial learning rate for the main training phase.
+  - WARMUP_STEPS: The number of steps before the cosine learning rate scheduler starts.
+  - phase_i_b_epochs: The total number of epochs for full training.
+  - FIRST_DECAY_STEPS_STAGE_I_B: The number of steps that the cosine decay spans.
+  - phase_i_b_weight_decay: The weight decay for the AdamW optimizer.
+  - PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE: Controls how many raw text samples are processed at once during streaming data preparation. Increase this for larger datasets if you have sufficient RAM.
+
+### Understanding the Output
+
+- Stage I-a Logs: You will see Keras training logs for each model architecture that is tried. The final output will report the best validation perplexity achieved, e.g., Cerebros best perplexity achieved in Phase I-a is 12.34.
+- Stage I-b Logs: You will see the standard Keras model.fit progress bar, including loss, categorical accuracy, and the custom perplexity_phase_i_b metric for both training and validation sets.
+- Text Generation Samples: After each stage, the script runs test_text to generate text completions for a set of prompts. This allows you to subjectively evaluate the model's coherence and style. The output will show the prompt, the generation parameters used, and the model's response.
+
+## Saved Artifacts: Upon completion, the script saves:
+- final_phase_ib_model_tr_*.keras: The trained Keras model, ready for inference.
+- tokenizer-tr_*: A directory containing the fine-tuned tokenizer configuration.
+- A serialization test is run automatically to ensure the model can be reloaded successfully.
+
+### Scaling Up for Production
+
+- This script (with the configurations we have set) is a vanilla demonstration and used for CICD purpoises. For production-grade models, you will need to scale up:
+  - Data: Drastically increase PHASE_I_B_SAMPLES_TO_CREATE with a large, high-quality text corpus.
+  - Model Complexity: Increase the NAS search space parameters to allow for larger, more powerful models:
+  - minimum_levels / maximum_levels: Increase to allow for deeper networks.
+  - minimum_units_per_level / maximum_units_per_level: Increase to add more parallel pathways.
+  - minimum_neurons_per_unit / maximum_neurons_per_unit: Increase to add more capacity per layer.
+- Training Parameters:
+  - Increase batch_size to fit your GPU memory.
+  - Increase epochs for phase_i_b_epochs to allow for more convergence.
+  - Increase PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE to speed up data preprocessing.
+
+
 # Documentation
 
 ![documentation/api-docs/summary-and-navigation.md](documentation/api-docs/summary-and-navigation.md)

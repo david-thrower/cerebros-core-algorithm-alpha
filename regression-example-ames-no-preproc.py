@@ -33,7 +33,8 @@ PROJECT_NAME = f"{TIME}_cerebros_auto_ml_test"
 PROJECT_NAME = f"{PROJECT_NAME}_meta_{META_TRIAL_NUMBER}"
 
 
-raw_data = pd.read_csv('ames.csv')
+datasets_folder = "vanilladatasets"
+raw_data = pd.read_csv(f'{datasets_folder}/ames.csv')
 needed_cols = [
     col for col in raw_data.columns 
     if raw_data[col].dtype != 'object' 

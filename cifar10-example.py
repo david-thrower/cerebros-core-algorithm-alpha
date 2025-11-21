@@ -21,7 +21,8 @@ RESIZE_TO = (224, 224, 3)
 
 # Read in the data set and make it useable
 
-ciphar10_metadata = pd.read_csv("cifar10-mini/file_metadata.csv")
+datasets_folder = "vanilladatasets"
+ciphar10_metadata = pd.read_csv(f"{datasets_folder}/cifar10-mini/file_metadata.csv")
 
 ciphar10_train = ciphar10_metadata.query("data_set == 'train'")
 ciphar10_test = ciphar10_metadata.query("data_set == 'test'")
@@ -31,7 +32,7 @@ def make_dataset(dataset):
     images = []
     labels = []
     for i in np.arange(ciphar10_metadata.shape[0]):
-        imfile = ciphar10_metadata.loc[i]['file_name']
+        imfile = f"{datasets_folder}/{ciphar10_metadata.loc[i]['file_name']}"
 
         # Debug delete
         # print(f"$$$$: attempting file: {imfile}")

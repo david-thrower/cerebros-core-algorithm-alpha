@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "237-copy-purge-model-storage-functionality-for-main" ]
+    branches: [ "main", "277-attempt-to-imporve-parameters-on--dev-branch-275" ]
 
 
 permissions:
@@ -35,13 +35,13 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         # flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Train an LLM with Cerebros
+      run: python3 train_a_generative_llm.py
+      timeout-minutes: 45
     - name: Test distributed random search Ames by running
       run: python3 regression-example-ames-no-preproc.py
     - name: Test distributed random search Ames by running - Val set
       run: python3 regression-example-ames-no-preproc-val-set.py
-    # - name: Test text classifier - random search - ham-spam
-    #   run: python3 text-class-ham-or-spam.py
-    #   timeout-minutes: 90
     - name: Test image classifier - small subset of CIFAR10 # add back
       timeout-minutes: 90
       run: python3 cifar10-example.py
