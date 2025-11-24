@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "277-attempt-to-imporve-parameters-on--dev-branch-275" ]
+    branches: [ "main", "279-add-a-jupyter-notebook-for-llm-training" ]
 
 
 permissions:
