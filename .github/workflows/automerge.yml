@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "279-add-a-jupyter-notebook-for-llm-training" ]
+    branches: [ "main", "281-fix-misspelling-in-llm-from-scratch-jupyter" ]
 
 
 permissions:
