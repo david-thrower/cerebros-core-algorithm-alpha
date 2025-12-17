@@ -21,7 +21,8 @@ from cerebrosllmutils.llm_utils import (prepare_data,
                                        CerebrosNotGPTConfig,
                                        CerebrosNotGPT,
                                        WarmupCosineDecayRestarts,
-                                       VoxelAttentionLayer)
+                                       VoxelAttentionLayer,
+                                       ReduceSumLayer)
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 
@@ -249,8 +250,11 @@ position_embedding = InterleavedRoPE(
 # embedded_2d = tf.reduce_sum(embedded, axis=-1) # Shape: (batch, 40)
 # position_embedding_2d = tf.reduce_sum(position_embedding, axis=-1) # Shape: (batch, 40)
 
-embedded_2d = tf.keras.layers.Lambda(lambda x: tf.reduce_sum(x, axis=-1))(embedded) # Shape: (batch, 40)
-position_embedding_2d = tf.keras.layers.Lambda(lambda x: tf.reduce_sum(x, axis=-1))(position_embedding) # Shape: (batch, 40)
+# embedded_2d = tf.keras.layers.Lambda(lambda x: tf.reduce_sum(x, axis=-1))(embedded) # Shape: (batch, 40)
+# position_embedding_2d = tf.keras.layers.Lambda(lambda x: tf.reduce_sum(x, axis=-1))(position_embedding) # Shape: (batch, 40)
+
+embedded_2d = ReduceSumLayer(axis=-1, keepdims=False)(embedded) # Shape: (batch, 40)
+position_embedding_2d = ReduceSumLayer(axis=-1, keepdims=False)(position_embedding) # Shape: (batch, 40)
 
 # Now, feed the 2D tensors into the VoxelAttentionLayer
 attention_embedded =\
