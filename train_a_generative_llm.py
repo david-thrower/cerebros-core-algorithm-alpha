@@ -236,8 +236,20 @@ embedded = tf.keras.layers.Embedding(
     input_dim=VOCABULARY_SIZE,
     output_dim=EMBEDDING_DIM,
     input_length=MAX_SEQ_LENGTH,
-    mask_zero=False)(inp)
+    mask_zero=False)(inp) # Shape: (batch, 40, 12)
 
+position_embedding = InterleavedRoPE(
+    dim=EMBEDDING_DIM,
+    max_seq_len=MAX_SEQ_LENGTH,
+)(embedded) # Shape: (batch, 40, 12)
+
+
+# Project the 3D embeddings down to 2D by summing over the feature dimension.
+# This creates a single value representation for each token in the sequence.
+embedded_2d = tf.reduce_sum(embedded, axis=-1) # Shape: (batch, 40)
+position_embedding_2d = tf.reduce_sum(position_embedding, axis=-1) # Shape: (batch, 40)
+
+# Now, feed the 2D tensors into the VoxelAttentionLayer
 attention_embedded =\
         VoxelAttentionLayer(
                 sequence_length=MAX_SEQ_LENGTH,
@@ -245,13 +257,7 @@ attention_embedded =\
                 steps=3, ca_kernel_size=(3,3,3),
                 kernel_initializer='glorot_uniform',
                 gate_locked=False,
-                output_dim=40)(embedded)
-
-position_embedding = InterleavedRoPE(
-    dim=EMBEDDING_DIM,
-    max_seq_len=MAX_SEQ_LENGTH,
-    # initializer="uniform",
-)(embedded)
+                output_dim=40)(embedded_2d)
 
 attention_position_embedded =\
         VoxelAttentionLayer(
@@ -260,20 +266,17 @@ attention_position_embedded =\
                 steps=3, ca_kernel_size=(3,3,3),
                 kernel_initializer='glorot_uniform',
                 gate_locked=False,
-                output_dim=40)(position_embedding)
+                output_dim=40)(position_embedding_2d)
 
-# As an FYI, we tried an add layer both with and without
-# LayerNorm ... Counterintuitively, adding LayerNorm degraded
-# accuracy. Just an FYI for anyone trying to apply conventional
-# wisdom, to save you the time ...
-x = tf.keras.layers.Concatenate()([attention_embedded, attention_position_embedded])
-x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT)(x)  # AI suggested 0.4
-# flattened = tf.keras.layers.Flatten()(x)
-# projected = tf.keras.layers.Dense(EMBEDDING_DIM * PROJECTION_N)(flattened)  # Dimensionality reduction
+
+x = tf.keras.layers.Concatenate()([attention_embedded, attention_position_embedded]) # Shape: (batch, 80)
+x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT)(x)
+flattened = tf.keras.layers.Flatten()(x) # Shape: (batch, 80)
+projected = tf.keras.layers.Dense(EMBEDDING_DIM * PROJECTION_N)(flattened)
 
 cerebros_base_model = tf.keras.Model(
     inputs=inp,
-    outputs=x # projected  # Output enhanced embeddings now
+    outputs=projected
 )
 
 ######## Cerebros Neural Architecture Search #######
