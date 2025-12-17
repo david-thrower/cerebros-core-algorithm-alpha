@@ -664,6 +664,23 @@ class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedu
         return config
 
 
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='ReduceSumLayer')
+class ReduceSumLayer(tf.keras.layers.Layer):
+    def __init__(self, axis=None, keepdims=False, **kwargs):
+        super(ReduceSumLayer, self).__init__(**kwargs)
+        self.axis = axis
+        self.keepdims = keepdims
+
+    def call(self, inputs):
+        return tf.reduce_sum(inputs, axis=self.axis, keepdims=self.keepdims)
+
+    # Optional: Implement get_config to make the layer serializable
+    def get_config(self):
+        config = super(ReduceSumLayer, self).get_config()
+        config.update({"axis": self.axis, "keepdims": self.keepdims})
+        return config
+
+
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='VoxelAttentionLayer')
 class VoxelAttentionLayer(tf.keras.layers.Layer):
     """
