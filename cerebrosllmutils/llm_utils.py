@@ -681,139 +681,149 @@ class ReduceSumLayer(tf.keras.layers.Layer):
         return config
 
 
-@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='VoxelAttentionLayer')
-class VoxelAttentionLayer(tf.keras.layers.Layer):
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='DynamicVoxelAttentionLayer')
+class DynamicVoxelAttentionLayer(tf.keras.layers.Layer):
     """
-    Enhanced 3D Cellular Automata-based Attention Layer.
+    Hybrid Voxel Attention with dynamic scaling and linear complexity.
 
-    This version incorporates:
-    - Learnable CA rules via a Conv3D layer.
-    - Layer Normalization for stable training.
-    - Residual connections to improve gradient flow.
-    - A more aggressive default compression factor.
+    This layer combines the robustness of a fixed-grid architecture with the
+    efficiency of dynamic scaling. It is built for a maximum grid size but
+    crops the grid to an optimal size for each sequence, ensuring the
+    computationally expensive CA part scales sub-quadratically with sequence length.
+
+    Key Features:
+    - **Batchable:** Can process sequences of different lengths in the same batch.
+    - **Dynamic Scaling:** The CA computation adapts to the input sequence length.
+    - **Linear Complexity:** Overall complexity is O(N) with respect to sequence length.
+    - **Simple Components:** Uses standard Dense, Conv3D, and LayerNorm layers.
     """
     def __init__(self, 
-                 sequence_length, 
-                 voxel_compression_factor=4,  # More aggressive default
-                 steps=5, 
-                 ca_kernel_size=(3, 3, 3),    # Kernel for learnable CA rule
-                 kernel_initializer='glorot_uniform', # Stable init for projections
+                 output_dim, 
+                 max_voxel_grid_size=64,  # The largest grid the layer will handle
+                 ca_steps=5, 
+                 ca_kernel_size=(3, 3, 3),
+                 interaction_kernel_size=(3, 3, 3),
+                 kernel_initializer='glorot_uniform',
                  gate_locked=False, 
-                 output_dim=None, 
                  **kwargs):
         super().__init__(**kwargs)
-        self.sequence_length = sequence_length
-        self.voxel_compression_factor = voxel_compression_factor
-        self.steps = steps
-        self.gate_locked = gate_locked
         self.output_dim = output_dim
+        self.max_voxel_grid_size = max_voxel_grid_size
+        self.ca_steps = ca_steps
+        self.gate_locked = gate_locked
         self.ca_kernel_size = ca_kernel_size
+        self.interaction_kernel_size = interaction_kernel_size
         self.kernel_initializer = tf.keras.initializers.get(kernel_initializer)
         self._has_been_configured = False
         
-        # Calculate voxel dimensions
-        # This ensures complexity is O(d^3) where d = ceil(n/f), and d^3 < n^2
-        self.d = math.ceil(sequence_length / voxel_compression_factor)
-        self.projection_length = self.d ** 3
-        
-        # Initialize projection layers with a suitable initializer
-        self.dense_k = tf.keras.layers.Dense(self.projection_length, kernel_initializer=self.kernel_initializer)
-        self.dense_q = tf.keras.layers.Dense(self.projection_length, kernel_initializer=self.kernel_initializer)
-        self.dense_v = tf.keras.layers.Dense(self.projection_length, kernel_initializer=self.kernel_initializer)
-        self.output_projection = tf.keras.layers.Dense(output_dim or sequence_length, kernel_initializer=self.kernel_initializer)
+        # All internal components are built for the MAXIMUM size
+        self.max_projection_length = self.max_voxel_grid_size ** 3
 
     def build(self, input_shape):
-        # Create gate weights for K, Q, V. Initialized to zero for a neutral start.
-        self.gate_k = self.add_weight(name='gate_k', shape=(self.projection_length,), initializer='zeros', trainable=True)
-        self.gate_q = self.add_weight(name='gate_q', shape=(self.projection_length,), initializer='zeros', trainable=True)
-        self.gate_v = self.add_weight(name='gate_v', shape=(self.projection_length,), initializer='zeros', trainable=True)
+        # --- Gating Weights (for max projection length) ---
+        self.gate_k = self.add_weight(name='gate_k', shape=(self.max_projection_length,), initializer='zeros', trainable=True)
+        self.gate_q = self.add_weight(name='gate_q', shape=(self.max_projection_length,), initializer='zeros', trainable=True)
+        self.gate_v = self.add_weight(name='gate_v', shape=(self.max_projection_length,), initializer='zeros', trainable=True)
 
-        # --- Mitigation 1 & 3: Learnable CA Rule with Normalization ---
-        # A Conv3D layer learns the neighborhood interaction rule.
-        # Using 1 filter to combine neighborhood info into a single channel.
-        self.ca_conv = tf.keras.layers.Conv3D(
-            filters=1, 
-            kernel_size=self.ca_kernel_size, 
-            padding='same', 
-            kernel_initializer=self.kernel_initializer,
-            name='ca_convolution'
-        )
-        # LayerNorm stabilizes the CA dynamics and gradient flow.
-        self.layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        # --- Dense Projections (to max length) ---
+        self.dense_k = tf.keras.layers.Dense(self.max_projection_length, kernel_initializer=self.kernel_initializer)
+        self.dense_q = tf.keras.layers.Dense(self.max_projection_length, kernel_initializer=self.kernel_initializer)
+        self.dense_v = tf.keras.layers.Dense(self.max_projection_length, kernel_initializer=self.kernel_initializer)
         
+        # --- CA Components (for max grid size) ---
+        self.ca_conv_qk = tf.keras.layers.Conv3D(filters=1, kernel_size=self.ca_kernel_size, padding='same', kernel_initializer=self.kernel_initializer, name='ca_conv_qk')
+        self.layer_norm_qk = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.ca_conv_v = tf.keras.layers.Conv3D(filters=1, kernel_size=self.ca_kernel_size, padding='same', kernel_initializer=self.kernel_initializer, name='ca_conv_v')
+        self.layer_norm_v = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        
+        # --- Interaction Layer Components (for max grid size) ---
+        self.interaction_conv = tf.keras.layers.Conv3D(filters=1, kernel_size=self.interaction_kernel_size, padding='same', kernel_initializer=self.kernel_initializer, name='interaction_conv')
+        self.layer_norm_interaction = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+
+        # --- Output Projection ---
+        self.output_projection = tf.keras.layers.Dense(self.output_dim, kernel_initializer=self.kernel_initializer)
         super().build(input_shape)
 
+    def _run_ca(self, voxel, conv_layer, norm_layer):
+        """A helper function to run the CA simulation."""
+        result = voxel
+        for _ in range(self.ca_steps):
+            conv_update = conv_layer(result)
+            normalized_update = norm_layer(conv_update)
+            result = tf.tanh(result + normalized_update)
+        return result
+
     def call(self, inputs):
-        # Configure gate locking on first call
         if not self._has_been_configured and self.gate_locked:
             for gate in [self.gate_k, self.gate_q, self.gate_v]:
-                gate.assign(tf.ones_like(gate) * 5.0)  # sigmoid(5) ≈ 0.99
+                gate.assign(tf.ones_like(gate) * 5.0)
                 gate.trainable = False
             self.trainable = False
             self._has_been_configured = True
 
-        # 1. Triplicate input
-        k_input, q_input, v_input = inputs, inputs, inputs
-        
-        # 2. Project to compressed space
-        k_proj = self.dense_k(k_input)
-        q_proj = self.dense_q(q_input)
-        v_proj = self.dense_v(v_input)
-        
-        # 3. Apply differentiable gates
-        k_gated = k_proj * tf.nn.sigmoid(self.gate_k)
-        q_gated = q_proj * tf.nn.sigmoid(self.gate_q)
-        v_gated = v_proj * tf.nn.sigmoid(self.gate_v)
-        
-        # 4. Reshape to 3D voxels
-        k_voxel = tf.reshape(k_gated, [-1, self.d, self.d, self.d, 1])
-        q_voxel = tf.reshape(q_gated, [-1, self.d, self.d, self.d, 1])
-        v_voxel = tf.reshape(v_gated, [-1, self.d, self.d, self.d, 1])
-        
-        # 5. Apply learnable CA simulation
-        def run_ca(voxel):
-            result = voxel
-            for _ in range(self.steps):
-                # Apply learnable convolution rule
-                conv_update = self.ca_conv(result)
-                # Normalize for stability
-                normalized_update = self.layer_norm(conv_update)
-                # Residual connection + tanh activation
-                result = tf.tanh(result + normalized_update)
-            return result
+        # 1. Get the actual sequence length from the input tensor shape
+        seq_len = tf.shape(inputs)[1]
+        batch_size = tf.shape(inputs)[0]
 
-        k_ca = run_ca(k_voxel)
-        q_ca = run_ca(q_voxel)
-        v_ca = run_ca(v_voxel)
+        # 2. Calculate the optimal grid dimension `d_opt` to ensure sub-quadratic complexity
+        # A good choice is d_opt = cbrt(seq_len). We can add a scaling factor `c` if needed.
+        # Here, we ensure d_opt is at least 1 and does not exceed max_voxel_grid_size.
+        d_opt_float = tf.math.pow(tf.cast(seq_len, tf.float32), 1/3)
+        d_opt = tf.cast(tf.math.ceil(d_opt_float), tf.int32)
+        d_opt = tf.clip_by_value(d_opt, 1, self.max_voxel_grid_size)
         
-        # 6. Flatten back to vectors
-        k_flat = tf.reshape(k_ca, [-1, self.projection_length])
-        q_flat = tf.reshape(q_ca, [-1, self.projection_length])
-        v_flat = tf.reshape(v_ca, [-1, self.projection_length])
+        # 3. Project to the MAXIMUM space
+        q_proj = self.dense_q(inputs) * tf.nn.sigmoid(self.gate_q)
+        k_proj = self.dense_k(inputs) * tf.nn.sigmoid(self.gate_k)
+        v_proj = self.dense_v(inputs) * tf.nn.sigmoid(self.gate_v)
         
-        # 7. Compute attention weights (diagonal approximation)
-        # Scale factor is now based on the projection dimension
-        attn_weights = tf.nn.softmax(
-            q_flat * k_flat / tf.sqrt(tf.cast(self.projection_length, tf.float32))
-        )
+        # 4. Reshape to the MAXIMUM voxel grid
+        q_voxel_max = tf.reshape(q_proj, [batch_size, self.max_voxel_grid_size, self.max_voxel_grid_size, self.max_voxel_grid_size, 1])
+        k_voxel_max = tf.reshape(k_proj, [batch_size, self.max_voxel_grid_size, self.max_voxel_grid_size, self.max_voxel_grid_size, 1])
+        v_voxel_max = tf.reshape(v_proj, [batch_size, self.max_voxel_grid_size, self.max_voxel_grid_size, self.max_voxel_grid_size, 1])
+
+        # 5. Crop the voxel grids to the optimal size
+        q_voxel = q_voxel_max[:, :d_opt, :d_opt, :d_opt, :]
+        k_voxel = k_voxel_max[:, :d_opt, :d_opt, :d_opt, :]
+        v_voxel = v_voxel_max[:, :d_opt, :d_opt, :d_opt, :]
         
-        # 8. Apply attention to V
-        output_vector = v_flat * attn_weights
+        # 6. Run CA on the smaller, optimal-sized grids (THIS IS THE EFFICIENCY GAIN)
+        q_ca = self._run_ca(q_voxel, self.ca_conv_qk, self.layer_norm_qk)
+        k_ca = self._run_ca(k_voxel, self.ca_conv_qk, self.layer_norm_qk)
+        v_ca = self._run_ca(v_voxel, self.ca_conv_v, self.layer_norm_v)
         
-        # 9. Project back to original dimension
-        output = self.output_projection(output_vector)
+        attention_map_voxel = q_ca * k_ca
+
+        # 7. Interaction on the optimal-sized grid
+        combined_voxel = tf.concat([attention_map_voxel, v_ca], axis=-1)
+        interaction_output = self.interaction_conv(combined_voxel)
+        normalized_interaction = self.layer_norm_interaction(interaction_output)
+        
+        final_voxel_optimal = tf.tanh(v_ca + normalized_interaction)
+        
+        # 8. Pad the result back to the MAXIMUM grid size for the final projection
+        paddings = [[0, 0], 
+                    [0, self.max_voxel_grid_size - d_opt], 
+                    [0, self.max_voxel_grid_size - d_opt], 
+                    [0, self.max_voxel_grid_size - d_opt], 
+                    [0, 0]]
+        final_voxel_max = tf.pad(final_voxel_optimal, paddings)
+        
+        # 9. Final Output
+        final_flat = tf.reshape(final_voxel_max, [batch_size, self.max_projection_length])
+        output = self.output_projection(final_flat)
         
         return output
 
     def get_config(self):
         config = super().get_config()
         config.update({
-            'sequence_length': self.sequence_length,
-            'voxel_compression_factor': self.voxel_compression_factor,
-            'steps': self.steps,
+            'output_dim': self.output_dim,
+            'max_voxel_grid_size': self.max_voxel_grid_size,
+            'ca_steps': self.ca_steps,
             'ca_kernel_size': self.ca_kernel_size,
+            'interaction_kernel_size': self.interaction_kernel_size,
             'kernel_initializer': tf.keras.initializers.serialize(self.kernel_initializer),
             'gate_locked': self.gate_locked,
-            'output_dim': self.output_dim,
         })
         return config
