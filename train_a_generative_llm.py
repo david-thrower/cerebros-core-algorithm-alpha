@@ -246,8 +246,11 @@ position_embedding = InterleavedRoPE(
 
 # Project the 3D embeddings down to 2D by summing over the feature dimension.
 # This creates a single value representation for each token in the sequence.
-embedded_2d = tf.reduce_sum(embedded, axis=-1) # Shape: (batch, 40)
-position_embedding_2d = tf.reduce_sum(position_embedding, axis=-1) # Shape: (batch, 40)
+# embedded_2d = tf.reduce_sum(embedded, axis=-1) # Shape: (batch, 40)
+# position_embedding_2d = tf.reduce_sum(position_embedding, axis=-1) # Shape: (batch, 40)
+
+embedded_2d = tf.keras.layers.Lambda(lambda x: tf.reduce_sum(x, axis=-1))(embedded) # Shape: (batch, 40)
+position_embedding_2d = tf.keras.layers.Lambda(lambda x: tf.reduce_sum(x, axis=-1))(position_embedding) # Shape: (batch, 40)
 
 # Now, feed the 2D tensors into the VoxelAttentionLayer
 attention_embedded =\
