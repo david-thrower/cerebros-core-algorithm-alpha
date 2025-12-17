@@ -236,24 +236,42 @@ embedded = tf.keras.layers.Embedding(
     input_length=MAX_SEQ_LENGTH,
     mask_zero=False)(inp)
 
+attention_embedded =\
+        VoxelAttentionLayer(
+                sequence_length=MAX_SEQ_LENGTH,
+                voxel_compression_factor=8,
+                steps=3, ca_kernel_size=(3,3,3),
+                kernel_initializer='glorot_uniform',
+                gate_locked=False,
+                output_dim=40)(embedded)
+
 position_embedding = InterleavedRoPE(
     dim=EMBEDDING_DIM,
     max_seq_len=MAX_SEQ_LENGTH,
     # initializer="uniform",
 )(embedded)
 
+attention_position_embedded =\
+        VoxelAttentionLayer(
+                sequence_length=MAX_SEQ_LENGTH,
+                voxel_compression_factor=8,
+                steps=3, ca_kernel_size=(3,3,3),
+                kernel_initializer='glorot_uniform',
+                gate_locked=False,
+                output_dim=40)(position_embedding)
+
 # As an FYI, we tried an add layer both with and without
 # LayerNorm ... Counterintuitively, adding LayerNorm degraded
 # accuracy. Just an FYI for anyone trying to apply conventional
 # wisdom, to save you the time ...
-x = tf.keras.layers.Concatenate()([embedded, position_embedding])
+x = tf.keras.layers.Concatenate()([attention_embedded, attention_position_embedded])
 x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT)(x)  # AI suggested 0.4
-flattened = tf.keras.layers.Flatten()(x)
-projected = tf.keras.layers.Dense(EMBEDDING_DIM * PROJECTION_N)(flattened)  # Dimensionality reduction
+# flattened = tf.keras.layers.Flatten()(x)
+# projected = tf.keras.layers.Dense(EMBEDDING_DIM * PROJECTION_N)(flattened)  # Dimensionality reduction
 
 cerebros_base_model = tf.keras.Model(
     inputs=inp,
-    outputs=projected  # Output enhanced embeddings now
+    outputs=x # projected  # Output enhanced embeddings now
 )
 
 ######## Cerebros Neural Architecture Search #######
