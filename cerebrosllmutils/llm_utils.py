@@ -662,3 +662,141 @@ class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedu
 
         # Use from_config to properly allow deserialization
         return config
+
+
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='VoxelAttentionLayer')
+class VoxelAttentionLayer(tf.keras.layers.Layer):
+    """
+    Enhanced 3D Cellular Automata-based Attention Layer.
+
+    This version incorporates:
+    - Learnable CA rules via a Conv3D layer.
+    - Layer Normalization for stable training.
+    - Residual connections to improve gradient flow.
+    - A more aggressive default compression factor.
+    """
+    def __init__(self, 
+                 sequence_length, 
+                 voxel_compression_factor=4,  # More aggressive default
+                 steps=5, 
+                 ca_kernel_size=(3, 3, 3),    # Kernel for learnable CA rule
+                 kernel_initializer='glorot_uniform', # Stable init for projections
+                 gate_locked=False, 
+                 output_dim=None, 
+                 **kwargs):
+        super().__init__(**kwargs)
+        self.sequence_length = sequence_length
+        self.voxel_compression_factor = voxel_compression_factor
+        self.steps = steps
+        self.gate_locked = gate_locked
+        self.output_dim = output_dim
+        self.ca_kernel_size = ca_kernel_size
+        self.kernel_initializer = tf.keras.initializers.get(kernel_initializer)
+        self._has_been_configured = False
+        
+        # Calculate voxel dimensions
+        # This ensures complexity is O(d^3) where d = ceil(n/f), and d^3 < n^2
+        self.d = math.ceil(sequence_length / voxel_compression_factor)
+        self.projection_length = self.d ** 3
+        
+        # Initialize projection layers with a suitable initializer
+        self.dense_k = layers.Dense(self.projection_length, kernel_initializer=self.kernel_initializer)
+        self.dense_q = layers.Dense(self.projection_length, kernel_initializer=self.kernel_initializer)
+        self.dense_v = layers.Dense(self.projection_length, kernel_initializer=self.kernel_initializer)
+        self.output_projection = layers.Dense(output_dim or sequence_length, kernel_initializer=self.kernel_initializer)
+
+    def build(self, input_shape):
+        # Create gate weights for K, Q, V. Initialized to zero for a neutral start.
+        self.gate_k = self.add_weight(name='gate_k', shape=(self.projection_length,), initializer='zeros', trainable=True)
+        self.gate_q = self.add_weight(name='gate_q', shape=(self.projection_length,), initializer='zeros', trainable=True)
+        self.gate_v = self.add_weight(name='gate_v', shape=(self.projection_length,), initializer='zeros', trainable=True)
+
+        # --- Mitigation 1 & 3: Learnable CA Rule with Normalization ---
+        # A Conv3D layer learns the neighborhood interaction rule.
+        # Using 1 filter to combine neighborhood info into a single channel.
+        self.ca_conv = layers.Conv3D(
+            filters=1, 
+            kernel_size=self.ca_kernel_size, 
+            padding='same', 
+            kernel_initializer=self.kernel_initializer,
+            name='ca_convolution'
+        )
+        # LayerNorm stabilizes the CA dynamics and gradient flow.
+        self.layer_norm = layers.LayerNormalization(epsilon=1e-6)
+        
+        super().build(input_shape)
+
+    def call(self, inputs):
+        # Configure gate locking on first call
+        if not self._has_been_configured and self.gate_locked:
+            for gate in [self.gate_k, self.gate_q, self.gate_v]:
+                gate.assign(tf.ones_like(gate) * 5.0)  # sigmoid(5) ≈ 0.99
+                gate.trainable = False
+            self.trainable = False
+            self._has_been_configured = True
+
+        # 1. Triplicate input
+        k_input, q_input, v_input = inputs, inputs, inputs
+        
+        # 2. Project to compressed space
+        k_proj = self.dense_k(k_input)
+        q_proj = self.dense_q(q_input)
+        v_proj = self.dense_v(v_input)
+        
+        # 3. Apply differentiable gates
+        k_gated = k_proj * tf.nn.sigmoid(self.gate_k)
+        q_gated = q_proj * tf.nn.sigmoid(self.gate_q)
+        v_gated = v_proj * tf.nn.sigmoid(self.gate_v)
+        
+        # 4. Reshape to 3D voxels
+        k_voxel = tf.reshape(k_gated, [-1, self.d, self.d, self.d, 1])
+        q_voxel = tf.reshape(q_gated, [-1, self.d, self.d, self.d, 1])
+        v_voxel = tf.reshape(v_gated, [-1, self.d, self.d, self.d, 1])
+        
+        # 5. Apply learnable CA simulation
+        def run_ca(voxel):
+            result = voxel
+            for _ in range(self.steps):
+                # Apply learnable convolution rule
+                conv_update = self.ca_conv(result)
+                # Normalize for stability
+                normalized_update = self.layer_norm(conv_update)
+                # Residual connection + tanh activation
+                result = tf.tanh(result + normalized_update)
+            return result
+
+        k_ca = run_ca(k_voxel)
+        q_ca = run_ca(q_voxel)
+        v_ca = run_ca(v_voxel)
+        
+        # 6. Flatten back to vectors
+        k_flat = tf.reshape(k_ca, [-1, self.projection_length])
+        q_flat = tf.reshape(q_ca, [-1, self.projection_length])
+        v_flat = tf.reshape(v_ca, [-1, self.projection_length])
+        
+        # 7. Compute attention weights (diagonal approximation)
+        # Scale factor is now based on the projection dimension
+        attn_weights = tf.nn.softmax(
+            q_flat * k_flat / tf.sqrt(tf.cast(self.projection_length, tf.float32))
+        )
+        
+        # 8. Apply attention to V
+        output_vector = v_flat * attn_weights
+        
+        # 9. Project back to original dimension
+        output = self.output_projection(output_vector)
+        
+        return output
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            'sequence_length': self.sequence_length,
+            'voxel_compression_factor': self.voxel_compression_factor,
+            'steps': self.steps,
+            'ca_kernel_size': self.ca_kernel_size,
+            'kernel_initializer': tf.keras.initializers.serialize(self.kernel_initializer),
+            'gate_locked': self.gate_locked,
+            'output_dim': self.output_dim,
+        })
+        return config
