@@ -77,6 +77,11 @@ PROMPT_LENGTH = 1
 
 MAX_SEQ_LENGTH = 40
 
+# Attention block constants:
+
+CA_KERNEL_LENGTH = 3
+VOXEL_COMPRESSION_FACTOR = 4
+
 #
 # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
 # (Parameters to Stage I-a / Neural Architecture Search stage)
@@ -260,11 +265,11 @@ position_embedding_2d = ReduceSumLayer(axis=-1, keepdims=False)(position_embeddi
 attention_embedded =\
         VoxelAttentionLayer(
                 sequence_length=MAX_SEQ_LENGTH,
-                voxel_compression_factor=5,
-                steps=3, ca_kernel_size=(3,3,3),
+                voxel_compression_factor=VOXEL_COMPRESSION_FACTOR,
+                steps=3, ca_kernel_size=(CA_KERNEL_LENGTH,CA_KERNEL_LENGTH,CA_KERNEL_LENGTH),
                 kernel_initializer='glorot_uniform',
                 gate_locked=False,
-                output_dim=40)(embedded_2d)
+                output_dim=MAX_SEQ_LENGTH)(embedded_2d)
 
 attention_position_embedded =\
         VoxelAttentionLayer(
@@ -273,7 +278,7 @@ attention_position_embedded =\
                 steps=3, ca_kernel_size=(3,3,3),
                 kernel_initializer='glorot_uniform',
                 gate_locked=False,
-                output_dim=40)(position_embedding_2d)
+                output_dim=MAX_SEQ_LENGTH)(position_embedding_2d)
 
 
 x = tf.keras.layers.Concatenate()([attention_embedded, attention_position_embedded]) # Shape: (batch, 80)
