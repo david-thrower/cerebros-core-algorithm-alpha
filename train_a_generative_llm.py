@@ -260,7 +260,7 @@ position_embedding_2d = ReduceSumLayer(axis=-1, keepdims=False)(position_embeddi
 attention_embedded =\
         VoxelAttentionLayer(
                 sequence_length=MAX_SEQ_LENGTH,
-                voxel_compression_factor=8,
+                voxel_compression_factor=5,
                 steps=3, ca_kernel_size=(3,3,3),
                 kernel_initializer='glorot_uniform',
                 gate_locked=False,
