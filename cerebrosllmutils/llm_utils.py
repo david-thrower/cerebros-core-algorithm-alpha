@@ -700,10 +700,10 @@ class VoxelAttentionLayer(tf.keras.layers.Layer):
         self.projection_length = self.d ** 3
         
         # Initialize projection layers with a suitable initializer
-        self.dense_k = layers.Dense(self.projection_length, kernel_initializer=self.kernel_initializer)
-        self.dense_q = layers.Dense(self.projection_length, kernel_initializer=self.kernel_initializer)
-        self.dense_v = layers.Dense(self.projection_length, kernel_initializer=self.kernel_initializer)
-        self.output_projection = layers.Dense(output_dim or sequence_length, kernel_initializer=self.kernel_initializer)
+        self.dense_k = tf.keras.layers.Dense(self.projection_length, kernel_initializer=self.kernel_initializer)
+        self.dense_q = tf.keras.layers.Dense(self.projection_length, kernel_initializer=self.kernel_initializer)
+        self.dense_v = tf.keras.layers.Dense(self.projection_length, kernel_initializer=self.kernel_initializer)
+        self.output_projection = tf.keras.layers.Dense(output_dim or sequence_length, kernel_initializer=self.kernel_initializer)
 
     def build(self, input_shape):
         # Create gate weights for K, Q, V. Initialized to zero for a neutral start.
@@ -714,7 +714,7 @@ class VoxelAttentionLayer(tf.keras.layers.Layer):
         # --- Mitigation 1 & 3: Learnable CA Rule with Normalization ---
         # A Conv3D layer learns the neighborhood interaction rule.
         # Using 1 filter to combine neighborhood info into a single channel.
-        self.ca_conv = layers.Conv3D(
+        self.ca_conv = tf.keras.layers.Conv3D(
             filters=1, 
             kernel_size=self.ca_kernel_size, 
             padding='same', 
@@ -722,7 +722,7 @@ class VoxelAttentionLayer(tf.keras.layers.Layer):
             name='ca_convolution'
         )
         # LayerNorm stabilizes the CA dynamics and gradient flow.
-        self.layer_norm = layers.LayerNormalization(epsilon=1e-6)
+        self.layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
         
         super().build(input_shape)
 
