@@ -77,12 +77,10 @@ MAX_SEQ_LENGTH = 40
 
 ## Base model projection constants
 
-
-# --- GNN Input Constraint ---
-# The final output must be (BATCH_SIZE, n) where n <= 80.
-# We will target n = 80, which means 2 features per token.
+# Output dim of base model is (BATCH_SIZE,FINAL_GNN_OUTPUT_DIM) 
 GNN_OUTPUT_FEATURES_PER_TOKEN = 2
 FINAL_GNN_OUTPUT_DIM = MAX_SEQ_LENGTH * GNN_OUTPUT_FEATURES_PER_TOKEN # 40 * 2 = 80
+K_PROJ = 5
 
 #
 # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
@@ -247,7 +245,7 @@ tf.print("Shape after Embedding Layer:", tf.shape(embedded))
 standard_attention = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM, k_proj=K_PROJ, name="standard_attention_head")(embedded)
 tf.print("Shape of Standard Attention Scores:", tf.shape(standard_attention))
 
-position_embedding = InterleavedRoPE(dim=EMBEDDING_DIM, max_seq_len=MAX_SEQ_LEN, name="rope_positional_embedding")(embedded)
+position_embedding = InterleavedRoPE(dim=EMBEDDING_DIM, max_seq_len=MAX_SEQ_LENGTH, name="rope_positional_embedding")(embedded)
 irope_attention = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM, k_proj=K_PROJ, name="irope_attention_head")(position_embedding)
 tf.print("Shape of IRoPE Attention Scores:", tf.shape(irope_attention))
 
@@ -291,7 +289,7 @@ tf.print("Shape after Embedding Layer:", tf.shape(embedded))
 standard_attention = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM, k_proj=K_PROJ, name="standard_attention_head")(embedded)
 tf.print("Shape of Standard Attention Scores:", tf.shape(standard_attention))
 
-position_embedding = InterleavedRoPE(dim=EMBEDDING_DIM, max_seq_len=MAX_SEQ_LEN, name="rope_positional_embedding")(embedded)
+position_embedding = InterleavedRoPE(dim=EMBEDDING_DIM, max_seq_len=MAX_SEQ_LENGTH, name="rope_positional_embedding")(embedded)
 irope_attention = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM, k_proj=K_PROJ, name="irope_attention_head")(position_embedding)
 tf.print("Shape of IRoPE Attention Scores:", tf.shape(irope_attention))
 
