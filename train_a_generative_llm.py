@@ -21,7 +21,7 @@ from cerebrosllmutils.llm_utils import (prepare_data,
                                        CerebrosNotGPTConfig,
                                        CerebrosNotGPT,
                                        WarmupCosineDecayRestarts,
-                                       VoxelAttentionLayer,
+                                       DynamicVoxelAttentionLayer,
                                        ReduceSumLayer)
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
@@ -263,22 +263,26 @@ position_embedding_2d = ReduceSumLayer(axis=-1, keepdims=False)(position_embeddi
 
 # Now, feed the 2D tensors into the VoxelAttentionLayer
 attention_embedded =\
-        VoxelAttentionLayer(
-                sequence_length=MAX_SEQ_LENGTH,
-                voxel_compression_factor=VOXEL_COMPRESSION_FACTOR,
-                steps=3, ca_kernel_size=(CA_KERNEL_LENGTH,CA_KERNEL_LENGTH,CA_KERNEL_LENGTH),
-                kernel_initializer='glorot_uniform',
-                gate_locked=False,
-                output_dim=MAX_SEQ_LENGTH)(embedded_2d)
+        DynamicVoxelAttentionLayer(
+                 output_dim=MAX_SEQ_LENGTH, 
+                 max_voxel_grid_size=5,
+                 ca_steps=5, 
+                 ca_kernel_size=(CA_KERNEL_LENGTH, CA_KERNEL_LENGTH, CA_KERNEL_LENGTH),
+                 interaction_kernel_size=(INTERACTION_KERNEL_SIZE, INTERACTION_KERNEL_SIZE, INTERACTION_KERNEL_SIZE),
+                 kernel_initializer='glorot_uniform',
+                 gate_locked=False, 
+        )(embedded_2d)
 
 attention_position_embedded =\
-        VoxelAttentionLayer(
-                sequence_length=MAX_SEQ_LENGTH,
-                voxel_compression_factor=8,
-                steps=3, ca_kernel_size=(3,3,3),
-                kernel_initializer='glorot_uniform',
-                gate_locked=False,
-                output_dim=MAX_SEQ_LENGTH)(position_embedding_2d)
+        DynamicVoxelAttentionLayer(
+                 output_dim=MAX_SEQ_LENGTH, 
+                 max_voxel_grid_size=5,
+                 ca_steps=5, 
+                 ca_kernel_size=(CA_KERNEL_LENGTH, CA_KERNEL_LENGTH, CA_KERNEL_LENGTH),
+                 interaction_kernel_size=(INTERACTION_KERNEL_SIZE, INTERACTION_KERNEL_SIZE, INTERACTION_KERNEL_SIZE),
+                 kernel_initializer='glorot_uniform',
+                 gate_locked=False, 
+        )(position_embedding_2d)
 
 
 x = tf.keras.layers.Concatenate()([attention_embedded, attention_position_embedded]) # Shape: (batch, 80)
