@@ -324,7 +324,7 @@ tf.print("Final Output Shape for GNN:", tf.shape(projected_for_gnn))
 # 4. CREATE AND SUMMARIZE THE MODEL
 # ==============================================================================
 
-cerebros_base_model = tf.keras.Model(inputs=inp, outputs=projected_for_gnn, name="Cere
+cerebros_base_model = tf.keras.Model(inputs=inp, outputs=projected_for_gnn, name="CerebrosBaseModel")
 
                                      
 ######## Cerebros Neural Architecture Search #######
