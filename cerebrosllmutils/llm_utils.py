@@ -662,3 +662,140 @@ class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedu
 
         # Use from_config to properly allow deserialization
         return config
+
+
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='ReduceSumLayer')
+class ReduceSumLayer(tf.keras.layers.Layer):
+    def __init__(self, axis=None, keepdims=False, **kwargs):
+        super(ReduceSumLayer, self).__init__(**kwargs)
+        self.axis = axis
+        self.keepdims = keepdims
+
+    def call(self, inputs):
+        return tf.reduce_sum(inputs, axis=self.axis, keepdims=self.keepdims)
+
+    # Optional: Implement get_config to make the layer serializable
+    def get_config(self):
+        config = super(ReduceSumLayer, self).get_config()
+        config.update({"axis": self.axis, "keepdims": self.keepdims})
+        return config
+
+
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='SingleHeadChunkedAttentionScalarOutput')
+class SingleHeadChunkedAttentionScalarOutput(tf.keras.layers.Layer):
+    """
+    A single-head attention mechanism with a chunked compression and a scalar output.
+
+    This layer is designed to produce a single scalar output for each token in the
+    input sequence. It uses the "Chunked Attention with Context" method to
+    efficiently compress Keys and Values, making it suitable for long sequences
+    and downstream augmentation by a Graph Neural Network (GNN).
+
+    Args:
+        d_model (int): The dimension of the input embeddings (e.g., 512, 768).
+        k_proj (int): The target sequence length after chunking.
+                      The original sequence length must be a multiple of this.
+    """
+    def __init__(self, d_model, k_proj, **kwargs):
+        super().__init__(**kwargs)
+        self.d_model = d_model
+        self.k_proj = k_proj
+        self.compressed_dim = 2 * d_model
+
+        # Standard linear projections to get Q, K, and V from the input
+        self.q_dense = tf.keras.layers.Dense(d_model)
+        self.k_dense = tf.keras.layers.Dense(d_model)
+        self.v_dense = tf.keras.layers.Dense(d_model)
+
+        # Project Q to match the new compressed dimension of K and V
+        self.q_compression_dense = tf.keras.layers.Dense(self.compressed_dim)
+
+        # A small, learned layer to create the context vector from a chunk summary
+        self.summary_context_dense = tf.keras.layers.Dense(d_model)
+
+        # === FINAL OUTPUT PROJECTION ===
+        # To create a more expressive scalar output, we use a small MLP.
+        # This allows for non-linear feature interactions before collapsing
+        # the context vector to a single value per token.
+        # The final Dense(1) layer is a standard and effective way to map
+        # a feature vector to a scalar, applied independently to each token.
+        self.output_mlp_1 = tf.keras.layers.Dense(self.compressed_dim, activation='relu')
+        self.output_mlp_2 = tf.keras.layers.Dense(self.compressed_dim // 2, activation='relu')
+        self.output_mlp_3 = tf.keras.layers.Dense(1) # Final projection to a scalar
+
+    def _compress_kv(self, kv_tensor):
+        """
+        Helper function to compress Key or Value tensors using the chunked approach.
+        """
+        # kv_tensor shape: (BATCH_SIZE, SEQUENCE_LENGTH, D_MODEL)
+        batch_size = tf.shape(kv_tensor)[0]
+        seq_len = tf.shape(kv_tensor)[1]
+        chunk_size = seq_len // self.k_proj
+
+        # === Step 2a: Chunk the tensor ===
+        # Shape: (BATCH_SIZE, K_PROJ, CHUNK_SIZE, D_MODEL)
+        kv_reshaped = tf.reshape(kv_tensor, [batch_size, self.k_proj, chunk_size, self.d_model])
+
+        # === Step 2b: Compute the fixed summary (mean) for each chunk ===
+        # Shape: (BATCH_SIZE, K_PROJ, D_MODEL)
+        summary = tf.reduce_mean(kv_reshaped, axis=2)
+
+        # === Step 2c: Compute the learned context vector for each chunk ===
+        # Shape: (BATCH_SIZE, K_PROJ, D_MODEL)
+        context = self.summary_context_dense(summary)
+
+        # === Step 2d: Concatenate summary and context ===
+        # Shape: (BATCH_SIZE, K_PROJ, 2 * D_MODEL)
+        kv_compressed = tf.concat([summary, context], axis=-1)
+
+        return kv_compressed
+
+    def call(self, inputs):
+        # inputs shape: (BATCH_SIZE, SEQUENCE_LENGTH, D_MODEL)
+        batch_size = tf.shape(inputs)[0]
+        seq_len = tf.shape(inputs)[1]
+
+        if seq_len % self.k_proj != 0:
+            raise ValueError(
+                f"Sequence length ({seq_len}) must be divisible by k_proj ({self.k_proj}) "
+                "for this chunked compression strategy."
+            )
+
+        # === Step 1: Create Query, Key, and Value matrices ===
+        # Shape: (BATCH_SIZE, SEQUENCE_LENGTH, D_MODEL)
+        q = self.q_dense(inputs)
+        k = self.k_dense(inputs)
+        v = self.v_dense(inputs)
+
+        # === Step 2: Compress K and V ===
+        # k_compressed/v_compressed shape: (BATCH_SIZE, K_PROJ, 2 * D_MODEL)
+        k_compressed = self._compress_kv(k)
+        v_compressed = self._compress_kv(v)
+
+        # === Step 3: Prepare Q for attention ===
+        # q shape: (BATCH_SIZE, SEQUENCE_LENGTH, 2 * D_MODEL)
+        q = self.q_compression_dense(q)
+
+        # === Step 4: Scaled Dot-Product Attention ===
+        # scores shape: (BATCH_SIZE, SEQUENCE_LENGTH, K_PROJ)
+        scores = tf.matmul(q, k_compressed, transpose_b=True)
+        scores = scores / tf.math.sqrt(tf.cast(self.compressed_dim, tf.float32))
+        attention_weights = tf.nn.softmax(scores, axis=-1)
+
+        # context_vector shape: (BATCH_SIZE, SEQUENCE_LENGTH, 2 * D_MODEL)
+        context_vector = tf.matmul(attention_weights, v_compressed)
+
+        # === Step 5: Final Output Projection to a Scalar using an MLP ===
+        # This MLP processes each token's context vector independently.
+        # Shape: (BATCH_SIZE, SEQUENCE_LENGTH, 2 * D_MODEL) -> (BATCH_SIZE, SEQUENCE_LENGTH, 2 * D_MODEL)
+        x = self.output_mlp_1(context_vector)
+        # Shape: (BATCH_SIZE, SEQUENCE_LENGTH, 2 * D_MODEL) -> (BATCH_SIZE, SEQUENCE_LENGTH, D_MODEL)
+        x = self.output_mlp_2(x)
+        # Shape: (BATCH_SIZE, SEQUENCE_LENGTH, D_MODEL) -> (BATCH_SIZE, SEQUENCE_LENGTH, 1)
+        output = self.output_mlp_3(x)
+
+        # Remove the last dimension to get the desired (BATCH_SIZE, SEQUENCE_LENGTH) shape.
+        # Shape: (BATCH_SIZE, SEQUENCE_LENGTH, 1) -> (BATCH_SIZE, SEQUENCE_LENGTH)
+        output = tf.squeeze(output, axis=-1)
+
+        return output
