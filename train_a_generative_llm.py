@@ -291,7 +291,7 @@ attention_position_embedded =\
 x = tf.keras.layers.Concatenate()([attention_embedded, attention_position_embedded]) # Shape: (batch, 80)
 x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT)(x)
 flattened = tf.keras.layers.Flatten()(x)
-projected = tf.keras.layers.Dense(EMBEDDING_DIM * PROJECTION_N)(flattened)
+projected = tf.keras.layers.Dense(ATTENTION_OUTPUT_DIM)(flattened),  # EMBEDDING_DIM * PROJECTION_N)(flattened)
 
 cerebros_base_model = tf.keras.Model(
     inputs=inp,
