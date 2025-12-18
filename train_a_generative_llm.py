@@ -19,7 +19,8 @@ from cerebrosllmutils.llm_utils import (prepare_data,
                                        Perplexity,
                                        CerebrosNotGPTConfig,
                                        CerebrosNotGPT,
-                                       WarmupCosineDecayRestarts)
+                                       WarmupCosineDecayRestarts,
+                                       SingleHeadChunkedAttentionScalarOutput)
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 
