@@ -74,6 +74,15 @@ PROMPT_LENGTH = 1
 
 MAX_SEQ_LENGTH = 40
 
+## Base model projection constants
+
+
+# --- GNN Input Constraint ---
+# The final output must be (BATCH_SIZE, n) where n <= 80.
+# We will target n = 80, which means 2 features per token.
+GNN_OUTPUT_FEATURES_PER_TOKEN = 2
+FINAL_GNN_OUTPUT_DIM = MAX_SEQ_LENGTH * GNN_OUTPUT_FEATURES_PER_TOKEN # 40 * 2 = 80
+
 #
 # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
 # (Parameters to Stage I-a / Neural Architecture Search stage)
@@ -228,34 +237,97 @@ phase_i_b_train_samples, phase_i_b_val_samples = train_test_split(
 
 ####### Text embedding base model #####################
 
-inp = tf.keras.layers.Input(shape=(MAX_SEQ_LENGTH,), dtype=tf.int32)
+inp = tf.keras.layers.Input(shape=(MAX_SEQ_LENGTH,), dtype=tf.int32, name="input_tokens")
+tf.print("Shape after Input Layer:", tf.shape(inp))
 
-embedded = tf.keras.layers.Embedding(
-    input_dim=VOCABULARY_SIZE,
-    output_dim=EMBEDDING_DIM,
-    input_length=MAX_SEQ_LENGTH,
-    mask_zero=False)(inp)
+embedded = tf.keras.layers.Embedding(VOCABULARY_SIZE, EMBEDDING_DIM, mask_zero=False, name="token_embedding")(inp)
+tf.print("Shape after Embedding Layer:", tf.shape(embedded))
 
-position_embedding = InterleavedRoPE(
-    dim=EMBEDDING_DIM,
-    max_seq_len=MAX_SEQ_LENGTH,
-    # initializer="uniform",
-)(embedded)
+standard_attention = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM, k_proj=K_PROJ, name="standard_attention_head")(embedded)
+tf.print("Shape of Standard Attention Scores:", tf.shape(standard_attention))
 
-# As an FYI, we tried an add layer both with and without
-# LayerNorm ... Counterintuitively, adding LayerNorm degraded
-# accuracy. Just an FYI for anyone trying to apply conventional
-# wisdom, to save you the time ...
-x = tf.keras.layers.Concatenate()([embedded, position_embedding])
-x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT)(x)  # AI suggested 0.4
-flattened = tf.keras.layers.Flatten()(x)
-projected = tf.keras.layers.Dense(EMBEDDING_DIM * PROJECTION_N)(flattened)  # Dimensionality reduction
+position_embedding = InterleavedRoPE(dim=EMBEDDING_DIM, max_seq_len=MAX_SEQ_LEN, name="rope_positional_embedding")(embedded)
+irope_attention = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM, k_proj=K_PROJ, name="irope_attention_head")(position_embedding)
+tf.print("Shape of IRoPE Attention Scores:", tf.shape(irope_attention))
 
-cerebros_base_model = tf.keras.Model(
-    inputs=inp,
-    outputs=projected  # Output enhanced embeddings now
-)
+# --- CORRECTED Gating Fusion Strategy ---
+# Use tf.math.reduce_mean for robust Keras compatibility.
+# Stack the tensors and then take the mean along the new axis.
+combined_attention = tf.math.reduce_mean(tf.stack([standard_attention, irope_attention], axis=-1), axis=-1)
+tf.print("Shape of Combined Attention Scores:", tf.shape(combined_attention))
 
+gate = tf.expand_dims(combined_attention, axis=-1)
+x = embedded * gate
+tf.print("Shape after Gating Fusion:", tf.shape(x))
+
+x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT, name="post_fusion_dropout")(x)
+tf.print("Shape after Dropout:", tf.shape(x))
+
+# --- EFFICIENT FINAL PROJECTION FOR GNN ---
+# This approach is highly parameter-efficient.
+# It projects the features for each token directly to the final size, avoiding any intermediate layers.
+# Shape: (BATCH_SIZE, 40, 128) -> (BATCH_SIZE, 40, 2)
+# Parameters: 128 * 2 + 2 = 258. Extremely lightweight.
+x = tf.keras.layers.Dense(GNN_OUTPUT_FEATURES_PER_TOKEN, name="token_to_node_feature_projection")(x)
+tf.print("Shape after projection to 2 features per token:", tf.shape(x))
+
+# Flatten to create the (BATCH_SIZE, n) tensor for the GNN.
+# Shape: (BATCH_SIZE, 40, 2) -> (BATCH_SIZE, 80)
+projected_for_gnn = tf.keras.layers.Flatten(name="flatten_for_gnn")(x)
+tf.print("Final Output Shape for GNN:", tf.shape(projected_for_gnn))
+
+
+# ==============================================================================
+# 4. CREATE AND SUMMARIZE THE MODEL
+# ==============================================================================
+
+inp = tf.keras.layers.Input(shape=(MAX_SEQ_LENGTH,), dtype=tf.int32, name="input_tokens")
+tf.print("Shape after Input Layer:", tf.shape(inp))
+
+embedded = tf.keras.layers.Embedding(VOCABULARY_SIZE, EMBEDDING_DIM, mask_zero=False, name="token_embedding")(inp)
+tf.print("Shape after Embedding Layer:", tf.shape(embedded))
+
+standard_attention = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM, k_proj=K_PROJ, name="standard_attention_head")(embedded)
+tf.print("Shape of Standard Attention Scores:", tf.shape(standard_attention))
+
+position_embedding = InterleavedRoPE(dim=EMBEDDING_DIM, max_seq_len=MAX_SEQ_LEN, name="rope_positional_embedding")(embedded)
+irope_attention = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM, k_proj=K_PROJ, name="irope_attention_head")(position_embedding)
+tf.print("Shape of IRoPE Attention Scores:", tf.shape(irope_attention))
+
+# --- CORRECTED Gating Fusion Strategy ---
+# Use tf.math.reduce_mean for robust Keras compatibility.
+# Stack the tensors and then take the mean along the new axis.
+combined_attention = tf.math.reduce_mean(tf.stack([standard_attention, irope_attention], axis=-1), axis=-1)
+tf.print("Shape of Combined Attention Scores:", tf.shape(combined_attention))
+
+gate = tf.expand_dims(combined_attention, axis=-1)
+x = embedded * gate
+tf.print("Shape after Gating Fusion:", tf.shape(x))
+
+x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT, name="post_fusion_dropout")(x)
+tf.print("Shape after Dropout:", tf.shape(x))
+
+# --- EFFICIENT FINAL PROJECTION FOR GNN ---
+# This approach is highly parameter-efficient.
+# It projects the features for each token directly to the final size, avoiding any intermediate layers.
+# Shape: (BATCH_SIZE, 40, 128) -> (BATCH_SIZE, 40, 2)
+# Parameters: 128 * 2 + 2 = 258. Extremely lightweight.
+x = tf.keras.layers.Dense(GNN_OUTPUT_FEATURES_PER_TOKEN, name="token_to_node_feature_projection")(x)
+tf.print("Shape after projection to 2 features per token:", tf.shape(x))
+
+# Flatten to create the (BATCH_SIZE, n) tensor for the GNN.
+# Shape: (BATCH_SIZE, 40, 2) -> (BATCH_SIZE, 80)
+projected_for_gnn = tf.keras.layers.Flatten(name="flatten_for_gnn")(x)
+tf.print("Final Output Shape for GNN:", tf.shape(projected_for_gnn))
+
+
+# ==============================================================================
+# 4. CREATE AND SUMMARIZE THE MODEL
+# ==============================================================================
+
+cerebros_base_model = tf.keras.Model(inputs=inp, outputs=projected_for_gnn, name="Cere
+
+                                     
 ######## Cerebros Neural Architecture Search #######
 
 #
