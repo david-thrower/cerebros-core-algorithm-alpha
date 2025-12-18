@@ -80,7 +80,9 @@ MAX_SEQ_LENGTH = 40
 # Attention block constants:
 
 CA_KERNEL_LENGTH = 3
+INTERACTION_KERNEL_SIZE = 3
 VOXEL_COMPRESSION_FACTOR = 4
+
 
 #
 # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
