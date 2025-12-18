@@ -82,6 +82,7 @@ MAX_SEQ_LENGTH = 40
 CA_KERNEL_LENGTH = 3
 INTERACTION_KERNEL_SIZE = 3
 VOXEL_COMPRESSION_FACTOR = 4
+ATTENTION_OUTPUT_DIM = 128
 
 
 #
@@ -195,7 +196,7 @@ EMBEDDING_N = 6 # trial.suggest_int('embedding_n',6, 9) # 12
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
 # Size of the projection layer bet
-PROJECTION_N = 1 # Punitive increase of ram, leaving this as 1 until we are running on HPC
+PROJECTION_N = 0.5 # Punitive increase of ram, leaving this as 1 until we are running on HPC
 
 ## Get training data:
 
@@ -266,7 +267,7 @@ position_embedding_2d = ReduceSumLayer(axis=-1, keepdims=False)(position_embeddi
 # Now, feed the 2D tensors into the VoxelAttentionLayer
 attention_embedded =\
         DynamicVoxelAttentionLayer(
-                 output_dim=MAX_SEQ_LENGTH, 
+                 output_dim=ATTENTION_OUTPUT_DIM, 
                  max_voxel_grid_size=5,
                  ca_steps=5, 
                  ca_kernel_size=(CA_KERNEL_LENGTH, CA_KERNEL_LENGTH, CA_KERNEL_LENGTH),
@@ -277,7 +278,7 @@ attention_embedded =\
 
 attention_position_embedded =\
         DynamicVoxelAttentionLayer(
-                 output_dim=MAX_SEQ_LENGTH, 
+                 output_dim=ATTENTION_OUTPUT_DIM,
                  max_voxel_grid_size=5,
                  ca_steps=5, 
                  ca_kernel_size=(CA_KERNEL_LENGTH, CA_KERNEL_LENGTH, CA_KERNEL_LENGTH),
@@ -289,7 +290,7 @@ attention_position_embedded =\
 
 x = tf.keras.layers.Concatenate()([attention_embedded, attention_position_embedded]) # Shape: (batch, 80)
 x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT)(x)
-flattened = tf.keras.layers.Flatten()(x) # Shape: (batch, 80)
+flattened = tf.keras.layers.Flatten()(x)
 projected = tf.keras.layers.Dense(EMBEDDING_DIM * PROJECTION_N)(flattened)
 
 cerebros_base_model = tf.keras.Model(
