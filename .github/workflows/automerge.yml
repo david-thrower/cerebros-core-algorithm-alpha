@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "283-first-pass-ca-voxel-compressed-attention" ]
+    branches: [ "main", "284-ca-voxel-layer-more-optimizations" ]
 
 
 permissions:
