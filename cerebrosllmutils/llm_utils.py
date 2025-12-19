@@ -723,6 +723,14 @@ class SingleHeadChunkedAttentionScalarOutput(tf.keras.layers.Layer):
         self.output_mlp_2 = tf.keras.layers.Dense(self.compressed_dim // 2, activation='relu')
         self.output_mlp_3 = tf.keras.layers.Dense(1) # Final projection to a scalar
 
+    def build(self,):
+        seq_len = input_shape[-2]
+        if seq_len % self.k_proj != 0:
+            raise ValueError(
+                f"Sequence length ({seq_len}) must be divisible by k_proj ({self.k_proj}) "
+                "for this chunked compression strategy."
+            )
+
     def _compress_kv(self, kv_tensor):
         """
         Helper function to compress Key or Value tensors using the chunked approach.
@@ -753,13 +761,6 @@ class SingleHeadChunkedAttentionScalarOutput(tf.keras.layers.Layer):
     def call(self, inputs):
         # inputs shape: (BATCH_SIZE, SEQUENCE_LENGTH, D_MODEL)
         batch_size = tf.shape(inputs)[0]
-        seq_len = tf.shape(inputs)[1]
-
-        if seq_len % self.k_proj != 0:
-            raise ValueError(
-                f"Sequence length ({seq_len}) must be divisible by k_proj ({self.k_proj}) "
-                "for this chunked compression strategy."
-            )
 
         # === Step 1: Create Query, Key, and Value matrices ===
         # Shape: (BATCH_SIZE, SEQUENCE_LENGTH, D_MODEL)
