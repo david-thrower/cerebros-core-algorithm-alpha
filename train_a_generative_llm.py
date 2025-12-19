@@ -21,7 +21,8 @@ from cerebrosllmutils.llm_utils import (prepare_data,
                                        CerebrosNotGPT,
                                        WarmupCosineDecayRestarts,
                                        SingleHeadChunkedAttentionScalarOutput,
-                                       MeanAttentionFusion)
+                                       MeanAttentionFusion,
+                                       ExpandDimsLayer)
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 
@@ -248,12 +249,13 @@ position_embedding = InterleavedRoPE(dim=EMBEDDING_DIM, max_seq_len=MAX_SEQ_LENG
 irope_attention = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM, k_proj=K_PROJ, name="irope_attention_head")(position_embedding)
 
 # --- CORRECTED Gating Fusion Strategy using a Keras Layer ---
-# Instantiate the custom fusion layer
 fusion_layer = MeanAttentionFusion(name="mean_attention_fusion")
-# Apply it to a list of the attention tensors
 combined_attention = fusion_layer([standard_attention, irope_attention])
 
-gate = tf.expand_dims(combined_attention, axis=-1)
+# --- CORRECTED using a serializable custom layer for tf.expand_dims ---
+gate = ExpandDimsLayer(axis=-1, name="expand_dims_for_gate")(combined_attention)
+
+# This multiplication is fine, as the '*' operator is overloaded for KerasTensors.
 x = embedded * gate
 
 x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT, name="post_fusion_dropout")(x)
