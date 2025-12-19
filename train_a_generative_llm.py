@@ -81,7 +81,7 @@ MAX_SEQ_LENGTH = 40
 ## Base model projection constants
 
 # Output dim of base model is (BATCH_SIZE,FINAL_GNN_OUTPUT_DIM) 
-GNN_OUTPUT_FEATURES_PER_TOKEN = 2
+GNN_OUTPUT_FEATURES_PER_TOKEN = 10
 
 K_PROJ = 4
 
