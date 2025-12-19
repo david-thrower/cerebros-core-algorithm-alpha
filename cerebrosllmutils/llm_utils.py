@@ -723,7 +723,7 @@ class SingleHeadChunkedAttentionScalarOutput(tf.keras.layers.Layer):
         self.output_mlp_2 = tf.keras.layers.Dense(self.compressed_dim // 2, activation='relu')
         self.output_mlp_3 = tf.keras.layers.Dense(1) # Final projection to a scalar
 
-    def build(self,):
+    def build(self, input_shape):
         seq_len = input_shape[-2]
         if seq_len % self.k_proj != 0:
             raise ValueError(
