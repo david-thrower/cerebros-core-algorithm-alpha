@@ -81,9 +81,9 @@ MAX_SEQ_LENGTH = 40
 ## Base model projection constants
 
 # Output dim of base model is (BATCH_SIZE,FINAL_GNN_OUTPUT_DIM) 
-GNN_OUTPUT_FEATURES_PER_TOKEN = 10
+GNN_OUTPUT_FEATURES_PER_TOKEN = 1
 
-K_PROJ = 4
+K_PROJ = 10
 
 #
 # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
