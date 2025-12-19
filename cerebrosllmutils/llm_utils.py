@@ -694,6 +694,25 @@ class MeanAttentionFusion(tf.keras.layers.Layer):
         return input_shape[0]
 
 
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='ExpandDimsLayer')
+class ExpandDimsLayer(tf.keras.layers.Layer):
+    """
+    A custom Keras layer to wrap tf.expand_dims, making it serializable.
+    """
+    def __init__(self, axis, **kwargs):
+        super().__init__(**kwargs)
+        self.axis = axis
+
+    def call(self, inputs):
+        return tf.expand_dims(inputs, axis=self.axis)
+
+    def get_config(self):
+        # This method is required for serialization.
+        # It allows Keras to save the layer's configuration.
+        config = super().get_config()
+        config.update({"axis": self.axis})
+        return config
+
 
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='SingleHeadChunkedAttentionScalarOutput')
 class SingleHeadChunkedAttentionScalarOutput(tf.keras.layers.Layer):
