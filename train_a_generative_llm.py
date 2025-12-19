@@ -20,7 +20,8 @@ from cerebrosllmutils.llm_utils import (prepare_data,
                                        CerebrosNotGPTConfig,
                                        CerebrosNotGPT,
                                        WarmupCosineDecayRestarts,
-                                       SingleHeadChunkedAttentionScalarOutput)
+                                       SingleHeadChunkedAttentionScalarOutput,
+                                       MeanAttentionFusion)
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 
@@ -243,14 +244,14 @@ embedded = tf.keras.layers.Embedding(VOCABULARY_SIZE, EMBEDDING_DIM, mask_zero=F
 
 standard_attention = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM, k_proj=K_PROJ, name="standard_attention_head")(embedded)
 
-# Corrected MAX_SEQ_LEN to MAX_SEQ_LENGTH
 position_embedding = InterleavedRoPE(dim=EMBEDDING_DIM, max_seq_len=MAX_SEQ_LENGTH, name="rope_positional_embedding")(embedded)
 irope_attention = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM, k_proj=K_PROJ, name="irope_attention_head")(position_embedding)
 
-# --- CORRECTED Gating Fusion Strategy ---
-# Use tf.math.reduce_mean for robust Keras compatibility.
-# Stack the tensors and then take the mean along the new axis.
-combined_attention = tf.math.reduce_mean(tf.stack([standard_attention, irope_attention], axis=-1), axis=-1)
+# --- CORRECTED Gating Fusion Strategy using a Keras Layer ---
+# Instantiate the custom fusion layer
+fusion_layer = MeanAttentionFusion(name="mean_attention_fusion")
+# Apply it to a list of the attention tensors
+combined_attention = fusion_layer([standard_attention, irope_attention])
 
 gate = tf.expand_dims(combined_attention, axis=-1)
 x = embedded * gate
@@ -258,20 +259,11 @@ x = embedded * gate
 x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT, name="post_fusion_dropout")(x)
 
 # --- EFFICIENT FINAL PROJECTION FOR GNN ---
-# This approach is highly parameter-efficient.
-# It projects the features for each token directly to the final size, avoiding any intermediate layers.
-# Shape: (BATCH_SIZE, 40, 128) -> (BATCH_SIZE, 40, 2)
-# Parameters: 128 * 2 + 2 = 258. Extremely lightweight.
 x = tf.keras.layers.Dense(GNN_OUTPUT_FEATURES_PER_TOKEN, name="token_to_node_feature_projection")(x)
-
-# Flatten to create the (BATCH_SIZE, n) tensor for the GNN.
-# Shape: (BATCH_SIZE, 40, 2) -> (BATCH_SIZE, 80)
 projected_for_gnn = tf.keras.layers.Flatten(name="flatten_for_gnn")(x)
 
-# --- Corrected the incomplete model definition line ---
 cerebros_base_model = tf.keras.Model(inputs=inp, outputs=projected_for_gnn, name="CerebrosBaseModel")
 
-# --- The best way to inspect shapes ---
 print("Base model created successfully. Here is the summary:")
 cerebros_base_model.summary()
 
