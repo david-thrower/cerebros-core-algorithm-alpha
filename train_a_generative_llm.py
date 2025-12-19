@@ -39,7 +39,7 @@ from vanilladatasets.web_english_bible import samples as bible
 PHASE_I_A_SAMPLES_TO_CREATE = 10
 
 # Samples to use for the main training stage
-PHASE_I_B_SAMPLES_TO_CREATE = 50
+PHASE_I_B_SAMPLES_TO_CREATE = 20
 PHASE_I_B_VAL_SPLIT = 0.15
 
 # This is a single head model. It only returns the next token. For this reason,
@@ -196,7 +196,7 @@ EMBEDDING_N = 5 # 6 # trial.suggest_int('embedding_n',6, 9) # 12
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
 # Size of the projection layer bet
-BASE_MODEL_OUTPUT_PROJECTION_MULTIPLIER = 0.5 # Punitive increase of ram, leaving this as 1 until we are running on HPC
+BASE_MODEL_OUTPUT_PROJECTION_MULTIPLIER = 1 # Punitive increase of ram, leaving this as 1 until we are running on HPC
 
 ## Get training data:
 
