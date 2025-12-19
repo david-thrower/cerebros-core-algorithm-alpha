@@ -664,21 +664,35 @@ class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedu
         return config
 
 
-@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='ReduceSumLayer')
-class ReduceSumLayer(tf.keras.layers.Layer):
-    def __init__(self, axis=None, keepdims=False, **kwargs):
-        super(ReduceSumLayer, self).__init__(**kwargs)
-        self.axis = axis
-        self.keepdims = keepdims
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='MeanAttentionFusion')
+# --- Define a custom Keras layer for the fusion operation ---
+class MeanAttentionFusion(tf.keras.layers.Layer):
+    """
+    A custom Keras layer that takes a list of tensors, stacks them,
+    and computes the mean along the last axis.
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def call(self, inputs):
-        return tf.reduce_sum(inputs, axis=self.axis, keepdims=self.keepdims)
+        """
+        The forward pass for the layer.
+        
+        Args:
+            inputs: A list of tensors to be fused.
+        
+        Returns:
+            A single tensor representing the mean of the input tensors.
+        """
+        # Stack the list of input tensors along a new axis
+        stacked_tensors = tf.stack(inputs, axis=-1)
+        # Compute the mean along that new axis
+        return tf.math.reduce_mean(stacked_tensors, axis=-1)
 
-    # Optional: Implement get_config to make the layer serializable
-    def get_config(self):
-        config = super(ReduceSumLayer, self).get_config()
-        config.update({"axis": self.axis, "keepdims": self.keepdims})
-        return config
+    def compute_output_shape(self, input_shape):
+        # The output shape is the same as the shape of the first input tensor
+        return input_shape[0]
+
 
 
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='SingleHeadChunkedAttentionScalarOutput')
