@@ -192,7 +192,7 @@ VOCABULARY_SIZE = len(tokenizer)
 # embedding output dim must be an even number
 # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-EMBEDDING_N = 5 # 6 # trial.suggest_int('embedding_n',6, 9) # 12
+EMBEDDING_N = 6 # trial.suggest_int('embedding_n',6, 9) # 12
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
 # Size of the projection layer bet
