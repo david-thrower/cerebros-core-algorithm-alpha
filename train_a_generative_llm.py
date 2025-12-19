@@ -81,8 +81,8 @@ MAX_SEQ_LENGTH = 40
 ## Base model projection constants
 
 # Output dim of base model is (BATCH_SIZE,FINAL_GNN_OUTPUT_DIM) 
-GNN_OUTPUT_FEATURES_PER_TOKEN = 0.7
-FINAL_GNN_OUTPUT_DIM = ceil(MAX_SEQ_LENGTH * GNN_OUTPUT_FEATURES_PER_TOKEN) # 40 * 2 = 80
+GNN_OUTPUT_FEATURES_PER_TOKEN = 1
+
 K_PROJ = 5
 
 #
@@ -196,7 +196,7 @@ EMBEDDING_N = 5 # 6 # trial.suggest_int('embedding_n',6, 9) # 12
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
 # Size of the projection layer bet
-PROJECTION_N = 1 # Punitive increase of ram, leaving this as 1 until we are running on HPC
+BASE_MODEL_OUTPUT_PROJECTION_MULTIPLIER = 0.5 # Punitive increase of ram, leaving this as 1 until we are running on HPC
 
 ## Get training data:
 
@@ -269,7 +269,31 @@ x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT, name="post_fusion_drop
 
 # --- EFFICIENT FINAL PROJECTION FOR GNN ---
 x = tf.keras.layers.Dense(GNN_OUTPUT_FEATURES_PER_TOKEN, name="token_to_node_feature_projection")(x)
-projected_for_gnn = tf.keras.layers.Flatten(name="flatten_for_gnn")(x)
+flatten_for_gnn = tf.keras.layers.Flatten(name="flatten_for_gnn")(x)
+
+# First, calculate the dimension of the tensor after flattening
+pre_projection_dim = int(MAX_SEQ_LENGTH * GNN_OUTPUT_FEATURES_PER_TOKEN)
+
+# Calculate the target dimension for the base model's output using the multiplier
+base_model_final_dim = int(ceil(MAX_SEQ_LENGTH * BASE_MODEL_OUTPUT_PROJECTION_MULTIPLIER))
+
+# Check if a final projection is needed
+if base_model_final_dim != pre_projection_dim:
+    # Determine activation. Use gelu for up-projection as requested, linear otherwise.
+    activation_func = 'gelu' if base_model_final_dim > pre_projection_dim else 'linear'
+    
+    print(f"Applying final base model projection: {pre_projection_dim} -> {base_model_final_dim} with activation '{activation_func}'")
+    
+    # Apply the final Dense layer to the flattened tensor
+    projected_for_gnn = tf.keras.layers.Dense(
+        base_model_final_dim,
+        activation=activation_func,
+        name="final_base_model_projection" # Renamed layer for clarity
+    )(flatten_for_gnn)
+else:
+    print(f"No final projection applied. Base model output dimension remains {pre_projection_dim}.")
+    projected_for_gnn = flatten_for_gnn
+
 
 cerebros_base_model = tf.keras.Model(inputs=inp, outputs=projected_for_gnn, name="CerebrosBaseModel")
 
