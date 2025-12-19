@@ -38,7 +38,7 @@ from vanilladatasets.web_english_bible import samples as bible
 PHASE_I_A_SAMPLES_TO_CREATE = 10
 
 # Samples to use for the main training stage
-PHASE_I_B_SAMPLES_TO_CREATE = 20
+PHASE_I_B_SAMPLES_TO_CREATE = 100
 PHASE_I_B_VAL_SPLIT = 0.15
 
 # This is a single head model. It only returns the next token. For this reason,
