@@ -80,8 +80,8 @@ MAX_SEQ_LENGTH = 40
 ## Base model projection constants
 
 # Output dim of base model is (BATCH_SIZE,FINAL_GNN_OUTPUT_DIM) 
-GNN_OUTPUT_FEATURES_PER_TOKEN = 1
-FINAL_GNN_OUTPUT_DIM = MAX_SEQ_LENGTH * GNN_OUTPUT_FEATURES_PER_TOKEN # 40 * 2 = 80
+GNN_OUTPUT_FEATURES_PER_TOKEN = 0.7
+FINAL_GNN_OUTPUT_DIM = ceil(MAX_SEQ_LENGTH * GNN_OUTPUT_FEATURES_PER_TOKEN) # 40 * 2 = 80
 K_PROJ = 5
 
 #
@@ -191,7 +191,7 @@ VOCABULARY_SIZE = len(tokenizer)
 # embedding output dim must be an even number
 # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-EMBEDDING_N = 6 # trial.suggest_int('embedding_n',6, 9) # 12
+EMBEDDING_N = 5 # 6 # trial.suggest_int('embedding_n',6, 9) # 12
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
 # Size of the projection layer bet
@@ -243,10 +243,16 @@ inp = tf.keras.layers.Input(shape=(MAX_SEQ_LENGTH,), dtype=tf.int32, name="input
 
 embedded = tf.keras.layers.Embedding(VOCABULARY_SIZE, EMBEDDING_DIM, mask_zero=False, name="token_embedding")(inp)
 
-standard_attention = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM, k_proj=K_PROJ, name="standard_attention_head")(embedded)
+standard_attention = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM,
+                                                            k_proj=K_PROJ,
+                                                            name="standard_attention_head")(embedded)
 
-position_embedding = InterleavedRoPE(dim=EMBEDDING_DIM, max_seq_len=MAX_SEQ_LENGTH, name="rope_positional_embedding")(embedded)
-irope_attention = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM, k_proj=K_PROJ, name="irope_attention_head")(position_embedding)
+position_embedding = InterleavedRoPE(dim=EMBEDDING_DIM,
+                                     max_seq_len=MAX_SEQ_LENGTH,
+                                     name="rope_positional_embedding")(embedded)
+irope_attention = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM,
+                                                         k_proj=K_PROJ,
+                                                         name="irope_attention_head")(position_embedding)
 
 # --- CORRECTED Gating Fusion Strategy using a Keras Layer ---
 fusion_layer = MeanAttentionFusion(name="mean_attention_fusion")
