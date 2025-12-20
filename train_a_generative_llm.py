@@ -190,9 +190,6 @@ VOCABULARY_SIZE = len(tokenizer)
 EMBEDDING_N = 15 # trial.suggest_int('embedding_n',6, 9) # 12
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
-# Output dim of base model is (BATCH_SIZE,FINAL_GNN_OUTPUT_DIM) 
-GNN_OUTPUT_FEATURES_PER_TOKEN = 1
-
 
 # Number of equally sized projections in 
 # the chunked attention layer
@@ -200,15 +197,13 @@ K_PROJ = 4
 
 # Multiplier 
 
-# An intermediate projection 
+# An intermediate projection between the attention block and the final base model projection
 GNN_OUTPUT_FEATURES_PER_TOKEN = 1
 
-# Final projection from the attention block to the Cerebros Block
-BASE_MODEL_OUTPUT_PROJECTION_MULTIPLIER: 1: 
-
-
-# Size of the projection layer bet
-BASE_MODEL_OUTPUT_PROJECTION_MULTIPLIER = 1 # Punitive increase of ram, leaving this as 1 until we are running on HPC
+# Final projection from the base model before being fed foreward to the Cerebros Block
+# Punitive increase of ram, leaving this as 1 until we are running on HPC
+BASE_MODEL_OUTPUT_PROJECTION_MULTIPLIER: 1 
+ 
 
 ## Get training data:
 
