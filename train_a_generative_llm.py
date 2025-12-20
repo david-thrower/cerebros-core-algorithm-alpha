@@ -202,8 +202,8 @@ GNN_OUTPUT_FEATURES_PER_TOKEN = 1
 
 # Final projection from the base model before being fed foreward to the Cerebros Block
 # Punitive increase of ram, leaving this as 1 until we are running on HPC
-BASE_MODEL_OUTPUT_PROJECTION_MULTIPLIER: 1 
- 
+BASE_MODEL_OUTPUT_PROJECTION_MULTIPLIER = 1 
+
 
 ## Get training data:
 
