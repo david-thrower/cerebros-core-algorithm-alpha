@@ -78,12 +78,7 @@ PROMPT_LENGTH = 1
 
 MAX_SEQ_LENGTH = 40
 
-## Base model projection constants
 
-# Output dim of base model is (BATCH_SIZE,FINAL_GNN_OUTPUT_DIM) 
-GNN_OUTPUT_FEATURES_PER_TOKEN = 1
-
-K_PROJ = 4
 
 #
 # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
@@ -189,11 +184,28 @@ tokenizer.add_special_tokens(special_tokens)
 VOCABULARY_SIZE = len(tokenizer)
     
 # For interleaved Rotary Positional Embedding (iRoPE), the 
-# embedding output dim must be an even number
+
 # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-EMBEDDING_N = 10 # trial.suggest_int('embedding_n',6, 9) # 12
+EMBEDDING_N = 15 # trial.suggest_int('embedding_n',6, 9) # 12
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
+
+# Output dim of base model is (BATCH_SIZE,FINAL_GNN_OUTPUT_DIM) 
+GNN_OUTPUT_FEATURES_PER_TOKEN = 1
+
+
+# Number of equally sized projections in 
+# the chunked attention layer
+K_PROJ = 4
+
+# Multiplier 
+
+# An intermediate projection 
+GNN_OUTPUT_FEATURES_PER_TOKEN = 1
+
+# Final projection from the attention block to the Cerebros Block
+BASE_MODEL_OUTPUT_PROJECTION_MULTIPLIER: 1: 
+
 
 # Size of the projection layer bet
 BASE_MODEL_OUTPUT_PROJECTION_MULTIPLIER = 1 # Punitive increase of ram, leaving this as 1 until we are running on HPC
