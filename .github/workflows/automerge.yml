@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "286-add-a-stackable-version-of-the-chunked-attention-layer" ]
+    branches: [ "main", "287-hpo-on-stackable-attention-layers" ]
 
 
 permissions:
