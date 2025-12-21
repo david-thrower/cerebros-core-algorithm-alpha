@@ -837,6 +837,71 @@ class SingleHeadChunkedAttentionSameDimOutput(tf.keras.layers.Layer):
         return config
 
 
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='StackableChunkingAttentionBlock')
+class StackableChunkingAttentionBlock(tf.keras.layers.Layer):
+    """
+    A Transformer Block using Pre-Layer Normalization and the
+    SingleHeadChunkedAttentionSameDimOutput layer.
+    """
+    def __init__(self, d_model, k_proj, dff, dropout_rate=0.1, **kwargs):
+        super().__init__(**kwargs)
+        self.d_model = d_model
+        self.k_proj = k_proj
+        self.dff = dff  # Feed-forward network hidden dimension
+
+        # --- Attention Sub-layer ---
+        self.attention = SingleHeadChunkedAttentionSameDimOutput(
+            d_model=d_model,
+            k_proj=k_proj,
+            name="chunked_attention"
+        )
+        self.dropout1 = tf.keras.layers.Dropout(dropout_rate)
+
+        # --- Feed-Forward Network (FFN) Sub-layer ---
+        self.ffn = tf.keras.Sequential([
+            tf.keras.layers.Dense(dff, activation='relu'),  # (batch, seq_len, dff)
+            tf.keras.layers.Dense(d_model)                  # (batch, seq_len, d_model)
+        ], name="feed_forward_network")
+        self.dropout2 = tf.keras.layers.Dropout(dropout_rate)
+
+        # --- Normalization Layers ---
+        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+
+    def call(self, inputs, training=False):
+        # --- Attention Sub-layer with Pre-LN and Residual ---
+        # 1. Normalize inputs
+        norm_x = self.layernorm1(inputs)
+        # 2. Apply attention
+        attn_output = self.attention(norm_x)
+        # 3. Apply dropout
+        attn_output = self.dropout1(attn_output, training=training)
+        # 4. Residual connection
+        out1 = inputs + attn_output
+
+        # --- Feed-Forward Sub-layer with Pre-LN and Residual ---
+        # 1. Normalize the output of the attention sub-layer
+        norm_out1 = self.layernorm2(out1)
+        # 2. Apply FFN
+        ffn_output = self.ffn(norm_out1)
+        # 3. Apply dropout
+        ffn_output = self.dropout2(ffn_output, training=training)
+        # 4. Residual connection
+        out2 = out1 + ffn_output
+
+        return out2
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "d_model": self.d_model,
+            "k_proj": self.k_proj,
+            "dff": self.dff,
+            "dropout_rate": self.dropout1.rate
+        })
+        return config
+
+
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='SingleHeadChunkedAttentionScalarOutput')
 class SingleHeadChunkedAttentionScalarOutput(tf.keras.layers.Layer):
     """
