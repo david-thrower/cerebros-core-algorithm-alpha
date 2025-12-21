@@ -203,7 +203,7 @@ D_FF = 4 * EMBEDDING_DIM
 
 # Rropout rate after all attention blocks 
 # except the final block
-STANDARD_ATTENTION_DROPOUT_RATE = 0.1
+STANDARD_ATTENTION_DROPOUT_RATE = 0.7651951380000674
 
 # There will be NUM_STACKABLE_ATTENTION_LAYERS + 1 
 # Attention layers.
