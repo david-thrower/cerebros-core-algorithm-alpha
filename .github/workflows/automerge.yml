@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "285-try-a-variation-of-linformer" ]
+    branches: [ "main", "286-add-a-stackable-version-of-the-chunked-attention-layer" ]
 
 
 permissions:
