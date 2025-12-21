@@ -185,19 +185,36 @@ tokenizer.add_special_tokens(special_tokens)
     
 VOCABULARY_SIZE = len(tokenizer)
     
+
+
+## Embedding Constants:
 # For interleaved Rotary Positional Embedding (iRoPE), the 
 
 # Maximize EMBEDDING_N based on available RAM and CPU / GPU
+# Embeeding dim = 2 X embedding N
     
 EMBEDDING_N = 7 # trial.suggest_int('embedding_n',6, 9) # 12
-EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
+# Non-tunable embedding constants and attention constants that 
+# are automatically set based on embedding setting (don't directly change)
+EMBEDDING_DIM = int(EMBEDDING_N * 2)
+D_FF = 4 * EMBEDDING_DIM
+
+
+# Rropout rate after all attention blocks 
+# except the final block
+STANDARD_ATTENTION_DROPOUT_RATE = 0.1
+
+# There will be NUM_STACKABLE_ATTENTION_LAYERS + 1 
+# Attention layers.
+NUM_STACKABLE_ATTENTION_LAYERS = 2 
 
 # Number of equally sized projections in 
-# the chunked attention layer
+# the chunked attention layer tradeoff between
+# o(n) scaling and resolution. The lower, the more
+# Efficient. As K_PROJ approaches SEQUENCE_LENGTH
+# you go back to quadratic complexity
 K_PROJ = 4
-
-# Multiplier 
 
 # An intermediate projection between the attention block and the final base model projection
 GNN_OUTPUT_FEATURES_PER_TOKEN = 1
@@ -205,6 +222,8 @@ GNN_OUTPUT_FEATURES_PER_TOKEN = 1
 # Final projection from the base model before being fed foreward to the Cerebros Block
 # Punitive increase of ram, leaving this as 1 until we are running on HPC
 BASE_MODEL_OUTPUT_PROJECTION_MULTIPLIER = 1 
+
+
 
 
 ## Get training data:
@@ -255,10 +274,6 @@ inp = tf.keras.layers.Input(shape=(MAX_SEQ_LENGTH,), dtype=tf.int32, name="input
 ## To Do: Add dropouts, layernorm, etc ...
 embedded = tf.keras.layers.Embedding(VOCABULARY_SIZE, EMBEDDING_DIM, mask_zero=False, name="token_embedding")(inp)
 
-D_FF = 4 * EMBEDDING_DIM
-STANDARD_ATTENTION_DROPOUT_RATE = 0.1
-NUM_STACKABLE_ATTENTION_LAYERS = 2
-
 
 # --- STACK THE TRANSFORMER BLOCKS ---
 for i in range(NUM_STACKABLE_ATTENTION_LAYERS):
@@ -267,7 +282,7 @@ for i in range(NUM_STACKABLE_ATTENTION_LAYERS):
         k_proj=K_PROJ,
         dff=D_FF,
         dropout_rate=STANDARD_ATTENTION_DROPOUT_RATE,
-        name=f"transformer_block_{i}"
+        name=f"standard_transformer_block_{i}"
     )(embedded)
 
 standard_attention_final = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM,
@@ -286,7 +301,7 @@ for i in range(NUM_STACKABLE_ATTENTION_LAYERS):
         k_proj=K_PROJ,
         dff=D_FF,
         dropout_rate=STANDARD_ATTENTION_DROPOUT_RATE,
-        name=f"transformer_block_{i}"
+        name=f"irope_transformer_block_{i}"
     )(position_embedding)
 
 irope_attention_final = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM,
