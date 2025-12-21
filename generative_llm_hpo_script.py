@@ -280,7 +280,44 @@ def objective(trial):
     BASE_MODEL_OUTPUT_PROJECTION_MULTIPLIER = 1
 
 
+    params = {"PHASE_I_A_SAMPLES_TO_CREATE":PHASE_I_A_SAMPLES_TO_CREATE,
+              'PHASE_I_B_SAMPLES_TO_CREATE': PHASE_I_B_SAMPLES_TO_CREATE,
+              "PROMPT_LENGTH":PROMPT_LENGTH,
+              "MAX_SEQ_LENGTH":MAX_SEQ_LENGTH,
+              "POSITIONAL_EMBEDDING_DROPOUT":POSITIONAL_EMBEDDING_DROPOUT,
+              "activation":activation,
+              "predecessor_level_connection_affinity_factor_first":predecessor_level_connection_affinity_factor_first,
+              "predecessor_level_connection_affinity_factor_main":predecessor_level_connection_affinity_factor_main,
+              "max_consecutive_lateral_connections": max_consecutive_lateral_connections,
+              "p_lateral_connection":p_lateral_connection,
+              "num_lateral_connection_tries_per_unit": num_lateral_connection_tries_per_unit,
+              "learning_rate":learning_rate,
+              "INITIAL_LR_STAGE_I_B": INITIAL_LR_STAGE_I_B,
+              "epochs":epochs,
+              "phase_i_b_epochs": phase_i_b_epochs,
+              "batch_size":batch_size,
+              "gradient_accumulation_steps":gradient_accumulation_steps,
+              "phase_i_b_gradient_accumulation_steps": phase_i_b_gradient_accumulation_steps,
+              "phase_i_b_weight_decay": phase_i_b_weight_decay,
+              "minimum_levels":minimum_levels,
+              "maximum_levels":maximum_levels,
+              "minimum_units_per_level":minimum_units_per_level,
+              "maximum_units_per_level":maximum_units_per_level,
+              "minimum_neurons_per_unit":minimum_neurons_per_unit,
+              "maximum_neurons_per_unit":maximum_neurons_per_unit,
+              "VOCABULARY_SIZE":VOCABULARY_SIZE,
+              "EMBEDDING_DIM":EMBEDDING_DIM,
+              "D_FF":D_FF,
+              "STANDARD_ATTENTION_DROPOUT_RATE":STANDARD_ATTENTION_DROPOUT_RATE,
+              "NUM_STACKABLE_ATTENTION_LAYERS":NUM_STACKABLE_ATTENTION_LAYERS,
+              "K_PROJ":K_PROJ,
+              "GNN_OUTPUT_FEATURES_PER_TOKEN":GNN_OUTPUT_FEATURES_PER_TOKEN,
+              "BASE_MODEL_OUTPUT_PROJECTION_MULTIPLIER":BASE_MODEL_OUTPUT_PROJECTION_MULTIPLIER,
+              "PHASE_I_B_VAL_SPLIT":PHASE_I_B_VAL_SPLIT,
+              "PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE":PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE
+             }
 
+    print(f"Parmas for Trial # {trial.number}: {params}")
 
     ## Get training data:
 
@@ -977,4 +1014,24 @@ def objective(trial):
         print("STDERR:", str(result.stderr))
         if result.stdout is not None:
             print(str(result.stdout))
+    # Start an MLflow run
+    with mlflow.start_run():
+        mlflow.log_params(params)
+        mlflow.log_metric("perplexity_phase_i_b", result_phase_i_b)
     return result_phase_i_b
+
+
+def main():
+    n_trials = N_TRIALS
+    sampler = optuna.samplers.TPESampler(multivariate=True, n_startup_trials=5)
+    study = optuna.create_study(direction="minimize", sampler=sampler, storage=optuna_storage)
+    study.optimize(objective, n_trials=N_TRIALS)
+    print('Best trial:')
+    best_trial = study.best_trial
+    print('  Value: ', best_trial.value)
+    print('  Params: ')
+    for key, value in best_trial.params.items():
+        print(f'    {key}: {value}')
+
+if __name__ == '__main__':
+    main()
