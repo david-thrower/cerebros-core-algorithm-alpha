@@ -268,7 +268,7 @@ position_embedding = InterleavedRoPE(dim=EMBEDDING_DIM,
                                      name="rope_positional_embedding")(embedded)
 irope_attention_1 = SingleHeadChunkedAttentionSameDimOutput(d_model=EMBEDDING_DIM,
                                                             k_proj=K_PROJ,
-                                                            name="standard_attention_head_1")(position_embedding)
+                                                            name="irope_attention_head_1")(position_embedding)
 irope_attention_2 = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM,
                                                          k_proj=K_PROJ,
                                                          name="irope_attention_head_2")(irope_attention_1)
