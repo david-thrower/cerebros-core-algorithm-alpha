@@ -24,7 +24,8 @@ from cerebrosllmutils.llm_utils import (prepare_data,
                                        SingleHeadChunkedAttentionScalarOutput,
                                        MeanAttentionFusion,
                                        ExpandDimsLayer,
-                                       SingleHeadChunkedAttentionSameDimOutput)
+                                       SingleHeadChunkedAttentionSameDimOutput,
+                                       StackableChunkingAttentionBlock)
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 
@@ -254,28 +255,47 @@ inp = tf.keras.layers.Input(shape=(MAX_SEQ_LENGTH,), dtype=tf.int32, name="input
 ## To Do: Add dropouts, layernorm, etc ...
 embedded = tf.keras.layers.Embedding(VOCABULARY_SIZE, EMBEDDING_DIM, mask_zero=False, name="token_embedding")(inp)
 
-standard_attention_1 = SingleHeadChunkedAttentionSameDimOutput(d_model=EMBEDDING_DIM,
+D_FF = 4 * EMBEDDING_DIM
+STANDARD_ATTENTION_DROPOUT_RATE = 0.1
+NUM_STACKABLE_ATTENTION_LAYERS = 2
+
+
+# --- STACK THE TRANSFORMER BLOCKS ---
+for i in range(NUM_STACKABLE_ATTENTION_LAYERS):
+    embedded = StackableChunkingAttentionBlock(
+        d_model=EMBEDDING_DIM,
+        k_proj=K_PROJ,
+        dff=D_FF,
+        dropout_rate=STANDARD_ATTENTION_DROPOUT_RATE,
+        name=f"transformer_block_{i}"
+    )(embedded)
+
+standard_attention_final = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM,
                                                             k_proj=K_PROJ,
-                                                            name="standard_attention_head_1")(embedded)
-standard_attention_2 = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM,
-                                                            k_proj=K_PROJ,
-                                                            name="standard_attention_head_2")(standard_attention_1)
+                                                            name="standard_attention_head_final")(embedded)
 
 # Position embedding & its attention layers:
 ## To Do: Add dropouts, layernorm, etc ...
 position_embedding = InterleavedRoPE(dim=EMBEDDING_DIM,
                                      max_seq_len=MAX_SEQ_LENGTH,
                                      name="rope_positional_embedding")(embedded)
-irope_attention_1 = SingleHeadChunkedAttentionSameDimOutput(d_model=EMBEDDING_DIM,
-                                                            k_proj=K_PROJ,
-                                                            name="irope_attention_head_1")(position_embedding)
-irope_attention_2 = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM,
+
+for i in range(NUM_STACKABLE_ATTENTION_LAYERS):
+    position_embedding = StackableChunkingAttentionBlock(
+        d_model=EMBEDDING_DIM,
+        k_proj=K_PROJ,
+        dff=D_FF,
+        dropout_rate=STANDARD_ATTENTION_DROPOUT_RATE,
+        name=f"transformer_block_{i}"
+    )(position_embedding)
+
+irope_attention_final = SingleHeadChunkedAttentionScalarOutput(d_model=EMBEDDING_DIM,
                                                          k_proj=K_PROJ,
-                                                         name="irope_attention_head_2")(irope_attention_1)
+                                                         name="irope_attention_head_final")(position_embedding)
 
 # --- CORRECTED Gating Fusion Strategy using a Keras Layer ---
 fusion_layer = MeanAttentionFusion(name="mean_attention_fusion")
-combined_attention = fusion_layer([standard_attention_2, irope_attention_2])
+combined_attention = fusion_layer([standard_attention_final, irope_attention_final])
 
 # --- CORRECTED using a serializable custom layer for tf.expand_dims ---
 gate = ExpandDimsLayer(axis=-1, name="expand_dims_for_gate")(combined_attention)
