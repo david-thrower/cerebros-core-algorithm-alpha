@@ -193,7 +193,7 @@ VOCABULARY_SIZE = len(tokenizer)
 # Maximize EMBEDDING_N based on available RAM and CPU / GPU
 # Embeeding dim = 2 X embedding N
     
-EMBEDDING_N = 7 # trial.suggest_int('embedding_n',6, 9) # 12
+EMBEDDING_N = 10 # trial.suggest_int('embedding_n',6, 9) # 12
 
 # Non-tunable embedding constants and attention constants that 
 # are automatically set based on embedding setting (don't directly change)
@@ -203,7 +203,7 @@ D_FF = 4 * EMBEDDING_DIM
 
 # Rropout rate after all attention blocks 
 # except the final block
-STANDARD_ATTENTION_DROPOUT_RATE = 0.7651951380000674
+STANDARD_ATTENTION_DROPOUT_RATE = 0.0
 
 # There will be NUM_STACKABLE_ATTENTION_LAYERS + 1 
 # Attention layers.
