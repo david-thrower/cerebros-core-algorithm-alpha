@@ -1,4 +1,6 @@
 import tensorflow as tf
+from transformers import AutoTokenizer
+
 
 from cerebrosllmutils.llm_utils import (
     InterleavedRoPE,
@@ -13,33 +15,52 @@ from cerebrosllmutils.llm_utils import (
 
 # --- Core Model Constants ---
 MAX_SEQ_LENGTH = 40  # Example value, adjust as needed
-VOCABULARY_SIZE = 50257 # replace with tokenize len()
-EMBEDDING_DIM = 512   # Replace with EMBEDDING_DIM * 2
+
+# Tokenization
+
+tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B"  # "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+tokenizer = AutoTokenizer.from_pretrained(tokenizer_checkpoint)
+
+# Step 1: Add special tokens
+special_tokens = {
+    "additional_special_tokens": ["<prompt>", "</prompt>", "<response>", "</response>"]
+}
+tokenizer.add_special_tokens(special_tokens)
+
+VOCABULARY_SIZE = len(tokenizer)
+
+# For interleaved Rotary Positional Embedding (iRoPE), the
+# embedding output dim must be an even number
+# Maximize EMBEDDING_N based on available RAM and CPU / GPU
+EMBEDDING_N = 6 # trial.suggest_int('embedding_n',6, 9) # 12
+# Don't change directly. Use EMBEDDING_N to control
+EMBEDDING_DIM = int(EMBEDDING_N * 2)
+
 
 # --- Initial Stream Merging & Dropout ---
 POSITIONAL_EMBEDDING_DROPOUT = 0.1
 
 # --- SingleHeadChunkedAttention Block Constants ---
 K_PROJ_CHUNKED = 5
-DFF_CHUNKED = 2048
+DFF_CHUNKED = EMBEDDING_DIM # Can be tuned independently, but likely to coincide.
 DROPOUT_RATE_CHUNKED = 0.1
 
 # --- MAMBA Block Constants ---
-MAMBA_D_STATE = 16
+MAMBA_D_STATE = 12
 MAMBA_D_CONV = 4
 MAMBA_EXPAND = 2
-MAMBA_DROPOUT = 0.1
+MAMBA_DROPOUT = 0.05
 
 # --- VoxelAttentionLayer Constants ---
 VOXEL_MAX_GRID_SIZE = 64
 VOXEL_CA_STEPS = 5
 VOXEL_DROPOUT = 0.1
 
-# --- Linformer Block Constants ---
-LINFORMER_K_PROJ = 64
-LINFORMER_DFF = 2048
-LINFORMER_DROPOUT = 0.1
-LINFORMER_FFN_DROPOUT = 0.1
+# --- Linformer Block Constants (Adjusted for tiny model) ---
+LINFORMER_K_PROJ = 16
+LINFORMER_DFF = 64
+LINFORMER_DROPOUT = 0.05
+LINFORMER_FFN_DROPOUT = 0.05
 
 # --- Adapter Block Constants ---
 ADAPTER_DROPOUT = 0.1
