@@ -8,7 +8,8 @@ from cerebrosllmutils.llm_utils import (
     ChunkedAttentionBlock,
     MambaBlock,
     VoxelBlock,
-    LinformerBlock
+    LinformerBlock,
+    AdapterBlock
 )
 
 
@@ -137,28 +138,38 @@ x = LinformerBlock(
     name="linformer_block"
 )(x)
 
-# 4. Adapter Block (Re-optimized)
+# # 4. Adapter Block (Re-optimized)
+# # Reduces dimension from (BATCH, SEQ_LEN, EMBEDDING_DIM) to (BATCH, SEQ_LEN)
+# # This design uses a per-token gating mechanism to create a scalar output for each token.
+# # It maintains O(n) complexity.
+#
+# x = tf.keras.layers.LayerNormalization(epsilon=1e-6, name="adapter_pre_norm")(x)
+# x = tf.keras.layers.Dropout(ADAPTER_DROPOUT, name="adapter_pre_dropout")(x)
+#
+# # Step 1: Create a learned scalar gate for each token in the sequence.
+# # The gate determines how much of the token's information is passed through.
+# # Shape: (BATCH_SIZE, SEQUENCE_LENGTH, 1)
+# token_gates = tf.keras.layers.Dense(1, activation='sigmoid', name="adapter_token_gates")(x)
+#
+# # Step 2: Apply the gate to the original input sequence.
+# # This modulates the features of each token based on its learned gate value.
+# # Shape: (BATCH_SIZE, SEQUENCE_LENGTH, EMBEDDING_DIM)
+# gated_sequence = x * token_gates
+#
+# # Step 3: Reduce the feature dimension for each token to a single scalar.
+# # We sum the gated features across the embedding dimension. This is a linear operation.
+# # Shape: (BATCH_SIZE, SEQUENCE_LENGTH)
+# flattened_output = tf.reduce_sum(gated_sequence, axis=-1)
+
+
+# 4. Adapter Block
 # Reduces dimension from (BATCH, SEQ_LEN, EMBEDDING_DIM) to (BATCH, SEQ_LEN)
-# This design uses a per-token gating mechanism to create a scalar output for each token.
-# It maintains O(n) complexity.
-
-x = tf.keras.layers.LayerNormalization(epsilon=1e-6, name="adapter_pre_norm")(x)
-x = tf.keras.layers.Dropout(ADAPTER_DROPOUT, name="adapter_pre_dropout")(x)
-
-# Step 1: Create a learned scalar gate for each token in the sequence.
-# The gate determines how much of the token's information is passed through.
-# Shape: (BATCH_SIZE, SEQUENCE_LENGTH, 1)
-token_gates = tf.keras.layers.Dense(1, activation='sigmoid', name="adapter_token_gates")(x)
-
-# Step 2: Apply the gate to the original input sequence.
-# This modulates the features of each token based on its learned gate value.
-# Shape: (BATCH_SIZE, SEQUENCE_LENGTH, EMBEDDING_DIM)
-gated_sequence = x * token_gates
-
-# Step 3: Reduce the feature dimension for each token to a single scalar.
-# We sum the gated features across the embedding dimension. This is a linear operation.
-# Shape: (BATCH_SIZE, SEQUENCE_LENGTH)
-flattened_output = tf.reduce_sum(gated_sequence, axis=-1)
+# using the new custom AdapterBlock layer.
+flattened_output = AdapterBlock(
+    d_model=EMBEDDING_DIM,
+    dropout_rate=ADAPTER_DROPOUT,
+    name="adapter_block"
+)(x)
 
 
 # 5. Final Model Assembly
