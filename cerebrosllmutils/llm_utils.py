@@ -1485,3 +1485,52 @@ class LinformerBlock(tf.keras.layers.Layer):
             "ffn_dropout_rate": self.ffn_dropout_rate,
         })
         return config
+
+# Adapter to project the embedded output back to a linear projection (BAT)
+# Add this class to your cerebrosllmutils/llm_utils.py file
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='AdapterBlock')
+class AdapterBlock(tf.keras.layers.Layer):
+    """
+    A block to reduce the dimensionality of a sequence from (batch, seq_len, d_model)
+    to (batch, seq_len) using a learned gating mechanism.
+
+    This block normalizes the input, applies dropout, creates a per-token scalar gate,
+    applies the gate, and then sums the features to produce a single scalar per token.
+    """
+    def __init__(self, d_model, dropout_rate, **kwargs):
+        super().__init__(**kwargs)
+        self.d_model = d_model
+        self.dropout_rate = dropout_rate
+
+        # --- Sub-layers ---
+        self.layernorm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.dropout = tf.keras.layers.Dropout(dropout_rate)
+        # A dense layer to create a learned gate for each token
+        self.token_gate_dense = tf.keras.layers.Dense(1, activation='sigmoid')
+
+    def call(self, inputs, training=False):
+        # 1. Normalize and apply dropout to the input stream
+        x = self.layernorm(inputs)
+        x = self.dropout(x, training=training)
+
+        # 2. Create a learned scalar gate for each token in the sequence.
+        # Shape: (BATCH_SIZE, SEQUENCE_LENGTH, 1)
+        token_gates = self.token_gate_dense(x)
+
+        # 3. Apply the gate to the normalized features using tf.multiply
+        # Shape: (BATCH_SIZE, SEQUENCE_LENGTH, EMBEDDING_DIM)
+        gated_sequence = tf.multiply(x, token_gates)
+
+        # 4. Reduce the feature dimension for each token to a single scalar.
+        # Shape: (BATCH_SIZE, SEQUENCE_LENGTH)
+        flattened_output = tf.reduce_sum(gated_sequence, axis=-1)
+
+        return flattened_output
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "d_model": self.d_model,
+            "dropout_rate": self.dropout_rate,
+        })
+        return config
