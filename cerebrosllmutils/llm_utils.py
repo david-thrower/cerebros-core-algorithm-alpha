@@ -333,12 +333,12 @@ class CerebrosNotGPT(tf.keras.Model):
         # 1. Store the nested model argument.
         self.config = config
         self.model = model
-        
+
         # 2. Extract and remove custom kwargs (like 'model') before calling super.
         #    This is important to prevent 'unrecognized keyword argument' errors.
         #    The nested model is already extracted and stored, so it can be safely removed.
         kwargs.pop('model', None)
-        
+
         # 3. Call the parent constructor with the cleaned kwargs.
         super().__init__(**kwargs)
 
@@ -350,7 +350,7 @@ class CerebrosNotGPT(tf.keras.Model):
         config_dict = {
             'config': self.config.get_config(),
         }
-        
+
         # Explicitly handle nested model serialization.
         # This is required if Keras's automatic tracking fails.
         if self.model is not None:
@@ -366,14 +366,14 @@ class CerebrosNotGPT(tf.keras.Model):
         # Separate the custom config.
         config_obj_dict = config.pop('config')
         config_obj = CerebrosNotGPTConfig.from_config(config_obj_dict)
-        
+
         # Manually extract and load the nested model.
         nested_model_config = config.pop('model', None)
         if nested_model_config:
             nested_model = tf.keras.utils.deserialize_keras_object(nested_model_config)
         else:
             nested_model = None
-            
+
         # Reconstruct the outer model by passing the restored parts.
         return cls(config=config_obj, model=nested_model, **config)
 
@@ -597,6 +597,7 @@ class CerebrosNotGPT(tf.keras.Model):
 
         return token_ids + generated_tokens
 
+
 # A custom schedule: Cosine decay with some warm - up steps
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='WarmupCosineDecayRestarts')
 class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedule):
@@ -625,7 +626,6 @@ class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedu
             m_mul=m_mul,
             alpha=alpha
         )
-
 
     def __call__(self, step):
         step = tf.cast(step, dtype=tf.float32)
@@ -661,4 +661,812 @@ class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedu
         }
 
         # Use from_config to properly allow deserialization
+        return config
+
+
+# Gating merge layer
+
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='GatedMergeLayer')
+class GatedMergeLayer(tf.keras.layers.Layer):
+    """
+    Merges two input streams using a learned gating mechanism.
+
+    The gate is computed from the first input stream and determines the
+    proportion of each stream in the final output.
+    output = gate * input_1 + (1 - gate) * input_2
+
+    Args:
+        d_model (int): The feature dimension of the input streams.
+    """
+    def __init__(self, d_model, **kwargs):
+        super().__init__(**kwargs)
+        self.d_model = d_model
+        # A dense layer to generate the gate values (between 0 and 1)
+        self.gate_dense = tf.keras.layers.Dense(d_model, activation='sigmoid')
+
+    def call(self, inputs):
+        input_1, input_2 = inputs
+        # Generate gate from the first input
+        gate_values = self.gate_dense(input_1)
+        # Blend the two streams
+        return gate_values * input_1 + (1.0 - gate_values) * input_2
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "d_model": self.d_model,
+        })
+        return config
+
+
+## Attention Block 1: Chunked Attention (Big - Bird - Like)
+# Captures short and mid range token to token relationships
+# effectively. Is very computationally efficient.
+
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='SingleHeadChunkedAttentionSameDimOutput')
+class SingleHeadChunkedAttentionSameDimOutput(tf.keras.layers.Layer):
+    """
+    A single-head attention mechanism with a chunked compression and an output
+    of the same dimensionality as the input.
+
+    This layer is designed to produce an output tensor of shape
+    (batch_size, sequence_length, d_model) for each token in the input sequence.
+    It uses the "Chunked Attention with Context" method to efficiently compress
+    Keys and Values, making it suitable for long sequences.
+
+    Args:
+        d_model (int): The dimension of the input embeddings (e.g., 512, 768).
+        k_proj (int): The target sequence length after chunking.
+                      The original sequence length must be a multiple of this.
+    """
+    def __init__(self, d_model, k_proj, **kwargs):
+        super().__init__(**kwargs)
+        self.d_model = d_model
+        self.k_proj = k_proj
+        self.compressed_dim = 2 * d_model
+
+        # Standard linear projections to get Q, K, and V from the input
+        self.q_dense = tf.keras.layers.Dense(d_model)
+        self.k_dense = tf.keras.layers.Dense(d_model)
+        self.v_dense = tf.keras.layers.Dense(d_model)
+
+        # Project Q to match the new compressed dimension of K and V
+        self.q_compression_dense = tf.keras.layers.Dense(self.compressed_dim)
+
+        # A small, learned layer to create the context vector from a chunk summary
+        self.summary_context_dense = tf.keras.layers.Dense(d_model)
+
+        # === FINAL OUTPUT PROJECTION ===
+        # To project the context vector back to the original embedding dimension,
+        # we use a small MLP. This allows for non-linear feature interactions.
+        # The final Dense(d_model) layer maps the features back to the
+        # original d_model space, applied independently to each token.
+        self.output_mlp_1 = tf.keras.layers.Dense(self.compressed_dim, activation='relu')
+        self.output_mlp_2 = tf.keras.layers.Dense(self.d_model, activation='relu')
+
+    def build(self, input_shape):
+        seq_len = input_shape[-2]
+        if seq_len % self.k_proj != 0:
+            raise ValueError(
+                f"Sequence length ({seq_len}) must be divisible by k_proj ({self.k_proj}) "
+                "for this chunked compression strategy."
+            )
+        super().build(input_shape)
+
+    def _compress_kv(self, kv_tensor):
+        """
+        Helper function to compress Key or Value tensors using the chunked approach.
+        """
+        # kv_tensor shape: (BATCH_SIZE, SEQUENCE_LENGTH, D_MODEL)
+        batch_size = tf.shape(kv_tensor)[0]
+        seq_len = tf.shape(kv_tensor)[1]
+        chunk_size = seq_len // self.k_proj
+
+        # === Step 2a: Chunk the tensor ===
+        # Shape: (BATCH_SIZE, K_PROJ, CHUNK_SIZE, D_MODEL)
+        kv_reshaped = tf.reshape(kv_tensor, [batch_size, self.k_proj, chunk_size, self.d_model])
+
+        # === Step 2b: Compute the fixed summary (mean) for each chunk ===
+        # Shape: (BATCH_SIZE, K_PROJ, D_MODEL)
+        summary = tf.reduce_mean(kv_reshaped, axis=2)
+
+        # === Step 2c: Compute the learned context vector for each chunk ===
+        # Shape: (BATCH_SIZE, K_PROJ, D_MODEL)
+        context = self.summary_context_dense(summary)
+
+        # === Step 2d: Concatenate summary and context ===
+        # Shape: (BATCH_SIZE, K_PROJ, 2 * D_MODEL)
+        kv_compressed = tf.concat([summary, context], axis=-1)
+
+        return kv_compressed
+
+    def call(self, inputs):
+        # inputs shape: (BATCH_SIZE, SEQUENCE_LENGTH, D_MODEL)
+        batch_size = tf.shape(inputs)[0]
+
+        # === Step 1: Create Query, Key, and Value matrices ===
+        # Shape: (BATCH_SIZE, SEQUENCE_LENGTH, D_MODEL)
+        q = self.q_dense(inputs)
+        k = self.k_dense(inputs)
+        v = self.v_dense(inputs)
+
+        # === Step 2: Compress K and V ===
+        # k_compressed/v_compressed shape: (BATCH_SIZE, K_PROJ, 2 * D_MODEL)
+        k_compressed = self._compress_kv(k)
+        v_compressed = self._compress_kv(v)
+
+        # === Step 3: Prepare Q for attention ===
+        # q shape: (BATCH_SIZE, SEQUENCE_LENGTH, 2 * D_MODEL)
+        q = self.q_compression_dense(q)
+
+        # === Step 4: Scaled Dot-Product Attention ===
+        # scores shape: (BATCH_SIZE, SEQUENCE_LENGTH, K_PROJ)
+        scores = tf.matmul(q, k_compressed, transpose_b=True)
+        scores = scores / tf.math.sqrt(tf.cast(self.compressed_dim, tf.float32))
+        attention_weights = tf.nn.softmax(scores, axis=-1)
+
+        # context_vector shape: (BATCH_SIZE, SEQUENCE_LENGTH, 2 * D_MODEL)
+        context_vector = tf.matmul(attention_weights, v_compressed)
+
+        # === Step 5: Final Output Projection to d_model using an MLP ===
+        # This MLP processes each token's context vector independently.
+        # Shape: (BATCH_SIZE, SEQUENCE_LENGTH, 2 * D_MODEL) -> (BATCH_SIZE, SEQUENCE_LENGTH, 2 * D_MODEL)
+        x = self.output_mlp_1(context_vector)
+        # Shape: (BATCH_SIZE, SEQUENCE_LENGTH, 2 * D_MODEL) -> (BATCH_SIZE, SEQUENCE_LENGTH, D_MODEL)
+        output = self.output_mlp_2(x)
+
+        return output
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "d_model": self.d_model,
+            "k_proj": self.k_proj,
+        })
+        return config
+
+
+# Block object that adds proper layer normalization, dropout, merging of inputs and outputs, ...
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='ChunkedAttentionBlock')
+class ChunkedAttentionBlock(tf.keras.layers.Layer):
+    """
+    A Transformer Block using Pre-Layer Normalization and the
+    SingleHeadChunkedAttentionSameDimOutput layer.
+    """
+    def __init__(self, d_model, k_proj, dff, dropout_rate=0.1, **kwargs):
+        super().__init__(**kwargs)
+        self.d_model = d_model
+        self.k_proj = k_proj
+        self.dff = dff
+        self.dropout_rate = dropout_rate
+
+        # --- Attention Sub-layer ---
+        self.attention = SingleHeadChunkedAttentionSameDimOutput(
+            d_model=d_model,
+            k_proj=k_proj,
+            name="chunked_attention"
+        )
+        self.dropout1 = tf.keras.layers.Dropout(dropout_rate)
+        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+
+        # --- Stream Merging Layer (GATING) ---
+        # This layer generates a gate to control the flow of information
+        # between the original input and the attention output.
+        self.gate = GatedMergeLayer(d_model)
+
+        # --- Feed-Forward Network (FFN) Sub-layer ---
+        self.ffn = tf.keras.Sequential([
+            tf.keras.layers.Dense(dff, activation='relu'),  # (batch, seq_len, dff)
+            tf.keras.layers.Dense(d_model)  # (batch, seq_len, d_model)
+        ], name="feed_forward_network")
+        self.dropout2 = tf.keras.layers.Dropout(dropout_rate)
+        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+
+    def call(self, inputs, training=False):
+        # --- Attention Sub-layer with Pre-LN and Gated Stream Merging ---
+        # 1. Normalize inputs
+        norm_x = self.layernorm1(inputs)
+        # 2. Apply attention
+        attn_output = self.attention(norm_x)
+        # 3. Apply dropout
+        attn_output = self.dropout1(attn_output, training=training)
+
+        # 4. GATE the original input and the attention output
+        # Generate the gate from the normalized input
+        merged_output = self.gate([inputs, attn_output])
+
+        # --- Feed-Forward Sub-layer with Pre-LN and Residual ---
+        # 1. Normalize the output of the merged stream
+        norm_merged = self.layernorm2(merged_output)
+        # 2. Apply FFN
+        ffn_output = self.ffn(norm_merged)
+        # 3. Apply dropout
+        ffn_output = self.dropout2(ffn_output, training=training)
+        # 4. Residual connection
+        final_output = merged_output + ffn_output
+
+        return final_output
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "d_model": self.d_model,
+            "k_proj": self.k_proj,
+            "dff": self.dff,
+            "dropout_rate": self.dropout_rate,
+        })
+        return config
+
+
+#### Block 2 Mamba ############
+# Also effective at short range to mid - range token - to - token relationships
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='MambaBlock')
+class MambaBlock(tf.keras.layers.Layer):
+    """
+    A Mamba Block with Pre-Layer Normalization and a Gated Residual Connection.
+
+    This block implements a simplified Selective State Space Model, designed for
+    linear sequence modeling. It includes a 1D convolution for local context
+    and a selective scan mechanism for long-range dependencies.
+
+    Args:
+        d_model (int): The dimension of the input embeddings.
+        d_state (int): The dimension of the latent state (B).
+        d_conv (int): The kernel size of the 1D convolution.
+        expand (int): The expansion factor for the inner projection dimension.
+        dropout_rate (float): Dropout rate for the block's output.
+    """
+
+    def __init__(self, d_model, d_state, d_conv, expand, dropout_rate, **kwargs):
+        super().__init__(**kwargs)
+        self.d_model = d_model
+        self.d_state = d_state
+        self.d_conv = d_conv
+        self.expand = expand
+        self.dropout_rate = dropout_rate
+
+        self.d_inner = int(self.expand * self.d_model)
+
+        # --- Normalization and Dropout ---
+        self.layernorm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.dropout = tf.keras.layers.Dropout(dropout_rate)
+
+        # --- Core Mamba Components ---
+        # Input projection
+        self.in_proj = tf.keras.layers.Dense(self.d_inner * 2, use_bias=False)
+
+        # 1D Convolution for local processing
+        self.conv1d = tf.keras.layers.Conv1D(
+            filters=self.d_inner * 2,
+            kernel_size=self.d_conv,
+            padding='causal',
+            groups=self.d_inner * 2,
+            use_bias=False,
+            activation='silu'  # Use SiLU activation directly in the conv layer
+        )
+
+        # Selective SSM parameters (A, B, C, D)
+        # A is a fixed matrix, B and C are data-dependent (selective)
+        self.A_log = self.add_weight(
+            shape=(self.d_inner, self.d_state),
+            initializer='random_normal',
+            trainable=True,
+            name='A_log'
+        )
+        self.D = self.add_weight(
+            shape=(self.d_inner,),
+            initializer='ones',
+            trainable=True,
+            name='D'
+        )
+        # Projects x to get the time-step delta (dt)
+        self.dt_proj = tf.keras.layers.Dense(self.d_inner, use_bias=True)
+
+        # Projects x to get B and C
+        self.x_proj = tf.keras.layers.Dense(self.d_state * 2, use_bias=False)
+
+        # Output projection
+        self.out_proj = tf.keras.layers.Dense(self.d_model, use_bias=False)
+
+        # --- Gated Merge for Residual Connection ---
+        self.gated_merge = GatedMergeLayer(d_model)
+
+    def _selective_scan(self, u, delta, A, B, C, D):
+        """
+        Vectorized selective scan operation.
+        Args:
+            u: (batch, len, d_inner)
+            delta: (batch, len, d_inner)
+            A: (d_inner, d_state)
+            B: (batch, len, d_state)
+            C: (batch, len, d_state)
+            D: (d_inner,)
+        Returns:
+            y: (batch, len, d_inner)
+        """
+        batch_size = tf.shape(u)[0]
+        seq_len = tf.shape(u)[1]
+
+        # Discretize A and B
+        # dA shape: (batch, len, d_inner, d_state)
+        dA = tf.exp(tf.einsum('bld,dn->bldn', delta, A))
+        # dB shape: (batch, len, d_inner, d_state)
+        dB = tf.einsum('bld,bln->bldn', delta, B)
+
+        # Initial state
+        # h shape: (batch, d_inner, d_state)
+        h = tf.zeros((batch_size, self.d_inner, self.d_state), dtype=u.dtype)
+
+        def scan_fn(prev_h, current_inputs):
+            # prev_h: (batch, d_inner, d_state)
+            # current_inputs: tuple of (u_i, dB_i, dA_i, C_i)
+            u_i, dB_i, dA_i, C_i = current_inputs
+
+            # Update state: h_t = dA_t * h_{t-1} + dB_t * u_t
+            # Note: u_i is broadcasted to match dB_i shape for the multiplication
+            h_t = dA_i * prev_h + dB_i * u_i[:, :, tf.newaxis]
+
+            # Calculate output: y_t = C_t^T * h_t
+            # y_t shape: (batch, d_inner)
+            y_t = tf.einsum('bdn,bn->bd', h_t, C_i)
+
+            return h_t, y_t
+
+        # Prepare inputs for tf.scan
+        # u shape: (batch, len, d_inner) -> (len, batch, d_inner)
+        scan_u = tf.transpose(u, [1, 0, 2])
+        # dB shape: (batch, len, d_inner, d_state) -> (len, batch, d_inner, d_state)
+        scan_dB = tf.transpose(dB, [1, 0, 2, 3])
+        # dA shape: (batch, len, d_inner, d_state) -> (len, batch, d_inner, d_state)
+        scan_dA = tf.transpose(dA, [1, 0, 2, 3])
+        # C shape: (batch, len, d_state) -> (len, batch, d_state)
+        scan_C = tf.transpose(C, [1, 0, 2])
+
+        # Run the scan
+        # y shape: (len, batch, d_inner)
+        _, y = tf.scan(
+            fn=scan_fn,
+            elems=(scan_u, scan_dB, scan_dA, scan_C),
+            initializer=h
+        )
+
+        # Transpose back to (batch, len, d_inner)
+        y = tf.transpose(y, [1, 0, 2])
+
+        # Add skip connection D * u
+        y = y + u * D
+
+        return y
+
+    def call(self, inputs, training=False):
+        # --- Pre-LN and Residual Connection Setup ---
+        residual = inputs
+        x = self.layernorm(inputs)
+
+        # --- Input Projection and Convolution ---
+        # x shape: (batch, seq_len, d_inner * 2)
+        x = self.in_proj(x)
+
+        # Apply SiLU activation and GLU gating
+        x, gate = tf.split(x, num_or_size_splits=2, axis=-1)
+        x = tf.nn.silu(x) * gate
+
+        # Apply 1D convolution
+        x = self.conv1d(x)
+
+        # --- Simplified Selective Scan ---
+        # Project x to get dt, B, C
+        dt = self.dt_proj(x)  # (batch, len, d_inner)
+        B_C = self.x_proj(x)  # (batch, len, d_state * 2)
+        B, C = tf.split(B_C, num_or_size_splits=2, axis=-1)  # (batch, len, d_state) each
+
+        # A is a fixed matrix, we use exp(A_log) for stability
+        A = -tf.exp(tf.cast(self.A_log, x.dtype))
+
+        # Run the selective scan
+        y = self._selective_scan(u=x, delta=dt, A=A, B=B, C=C, D=self.D)
+
+        # --- Output Projection and Dropout ---
+        output = self.out_proj(y)
+        output = self.dropout(output, training=training)
+
+        # --- Gated Residual Connection ---
+        return self.gated_merge([residual, output])
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "d_model": self.d_model,
+            "d_state": self.d_state,
+            "d_conv": self.d_conv,
+            "expand": self.expand,
+            "dropout_rate": self.dropout_rate,
+        })
+        return config
+
+
+# Block 3: Cellular Automata - Voxel - Simulation Attention - Mimetic 
+# A wild card: Captures a full range of token - to - token relationships.
+# Strategically placed after layer that encode short - range relationships
+# well, so as to make the gradient landscape favor this focus on longer 
+# range / higher order relationships, since it is deeper in the stack 
+# of layers.
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='DynamicVoxelAttentionLayer')
+class DynamicVoxelAttentionLayer(tf.keras.layers.Layer):
+    """
+    Hybrid Voxel Attention with dynamic scaling and linear complexity.
+    (Corrected version to output a sequence-compatible shape).
+
+    This layer treats the input sequence as one dimension of a 3D voxel grid,
+    allowing the Cellular Automaton to perform a spatial, linear-complexity
+    form of attention. The output is a sequence of the same length.
+
+    Key Features:
+    - **Batchable:** Can process sequences of different lengths in the same batch.
+    - **Linear Complexity:** O(n) with respect to sequence length.
+    - **Sequence Output:** Outputs a tensor of shape (batch, seq_len, d_model).
+    - **Preserves Sequence:** The sequence dimension is maintained throughout the process.
+    """
+
+    def __init__(self,
+                 d_model,  # Renamed from output_dim for consistency
+                 max_voxel_grid_size=64,  # This is now the size of the "scratch space"
+                 ca_steps=5,
+                 ca_kernel_size=(3, 3, 3),
+                 interaction_kernel_size=(3, 3, 3),
+                 kernel_initializer='glorot_uniform',
+                 gate_locked=False,
+                 **kwargs):
+        super().__init__(**kwargs)
+        self.d_model = d_model
+        self.max_voxel_grid_size = max_voxel_grid_size
+        self.ca_steps = ca_steps
+        self.gate_locked = gate_locked
+        self.ca_kernel_size = ca_kernel_size
+        self.interaction_kernel_size = interaction_kernel_size
+        self.kernel_initializer = tf.keras.initializers.get(kernel_initializer)
+        self._has_been_configured = False
+
+    def build(self, input_shape):
+        input_dim = input_shape[-1]
+
+        # --- Gating Weights (now for the original input_dim) ---
+        self.gate_k = self.add_weight(name='gate_k', shape=(input_dim,), initializer='zeros', trainable=True)
+        self.gate_q = self.add_weight(name='gate_q', shape=(input_dim,), initializer='zeros', trainable=True)
+        self.gate_v = self.add_weight(name='gate_v', shape=(input_dim,), initializer='zeros', trainable=True)
+
+        # --- Dense Projections (now from input_dim to d_model) ---
+        self.dense_k = tf.keras.layers.Dense(self.d_model, kernel_initializer=self.kernel_initializer)
+        self.dense_q = tf.keras.layers.Dense(self.d_model, kernel_initializer=self.kernel_initializer)
+        self.dense_v = tf.keras.layers.Dense(self.d_model, kernel_initializer=self.kernel_initializer)
+
+        # --- CA Components (now operate on d_model channels) ---
+        self.ca_conv_qk = tf.keras.layers.Conv3D(filters=self.d_model, kernel_size=self.ca_kernel_size, padding='same',
+                                                 kernel_initializer=self.kernel_initializer, name='ca_conv_qk')
+        self.layer_norm_qk = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.ca_conv_v = tf.keras.layers.Conv3D(filters=self.d_model, kernel_size=self.ca_kernel_size, padding='same',
+                                                kernel_initializer=self.kernel_initializer, name='ca_conv_v')
+        self.layer_norm_v = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+
+        # --- Interaction Layer Components ---
+        self.interaction_conv = tf.keras.layers.Conv3D(filters=self.d_model, kernel_size=self.interaction_kernel_size,
+                                                       padding='same', kernel_initializer=self.kernel_initializer,
+                                                       name='interaction_conv')
+        self.layer_norm_interaction = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+
+        # --- Output Projection (now for the final residual) ---
+        self.output_projection = tf.keras.layers.Dense(self.d_model, kernel_initializer=self.kernel_initializer)
+        super().build(input_shape)
+
+    def _run_ca(self, voxel, conv_layer, norm_layer):
+        """A helper function to run the CA simulation."""
+        result = voxel
+        for _ in range(self.ca_steps):
+            conv_update = conv_layer(result)
+            normalized_update = norm_layer(conv_update)
+            result = tf.tanh(result + normalized_update)
+        return result
+
+    def call(self, inputs):
+        if not self._has_been_configured and self.gate_locked:
+            for gate in [self.gate_k, self.gate_q, self.gate_v]:
+                gate.assign(tf.ones_like(gate) * 5.0)
+                gate.trainable = False
+            self.trainable = False
+            self._has_been_configured = True
+
+        batch_size = tf.shape(inputs)[0]
+        seq_len = tf.shape(inputs)[1]
+
+        # 1. Project inputs to Q, K, V spaces and apply gating
+        q = self.dense_q(inputs) * tf.nn.sigmoid(self.gate_q)
+        k = self.dense_k(inputs) * tf.nn.sigmoid(self.gate_k)
+        v = self.dense_v(inputs) * tf.nn.sigmoid(self.gate_v)
+        # Shape: (batch_size, seq_len, d_model)
+
+        # 2. Reshape into a 3D grid, using the sequence as the 'depth' dimension.
+        # This is the key fix. We are no longer collapsing the sequence.
+        voxel_3d = tf.reshape(q, [batch_size, seq_len, 1, 1, self.d_model])
+        # Shape: (batch_size, seq_len, 1, 1, d_model)
+
+        # 3. Pad the other two dimensions to the maximum size to create a "scratch space"
+        paddings = [[0, 0],
+                    [0, 0], # No padding on sequence dimension
+                    [0, self.max_voxel_grid_size - 1],
+                    [0, self.max_voxel_grid_size - 1],
+                    [0, 0]]
+        voxel_padded = tf.pad(voxel_3d, paddings)
+        # Shape: (batch_size, seq_len, max_voxel_grid_size, max_voxel_grid_size, d_model)
+
+        # 4. Run CA on the grid. The 3x3x3 kernel now mixes information along the sequence axis.
+        # Complexity is O(seq_len * max_grid_size^2), which is O(seq_len).
+        q_ca = self._run_ca(voxel_padded, self.ca_conv_qk, self.layer_norm_qk)
+        k_ca = self._run_ca(voxel_padded, self.ca_conv_qk, self.layer_norm_qk)
+        v_ca = self._run_ca(voxel_padded, self.ca_conv_v, self.layer_norm_v)
+
+        # 5. Interaction
+        attention_map_voxel = q_ca * k_ca
+        # We use addition instead of concat to keep the channel dimension consistent
+        interaction_input = attention_map_voxel + v_ca
+        interaction_output = self.interaction_conv(interaction_input)
+        normalized_interaction = self.layer_norm_interaction(interaction_output)
+
+        final_voxel = tf.tanh(v_ca + normalized_interaction)
+        # Shape: (batch_size, seq_len, max_voxel_grid_size, max_voxel_grid_size, d_model)
+
+        # 6. Collapse the "scratch space" dimensions to get back to a sequence
+        output_sequence = tf.reduce_mean(final_voxel, axis=[2, 3])
+        # Shape: (batch_size, seq_len, d_model)
+
+        # 7. Add residual connection from the original input
+        # Note: This assumes inputs already have d_model dimensions.
+        # If not, you would project inputs first.
+        output = inputs + output_sequence
+
+        return output
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "d_model": self.d_model,
+            "max_voxel_grid_size": self.max_voxel_grid_size,
+            "ca_steps": self.ca_steps,
+            "ca_kernel_size": self.ca_kernel_size,
+            "interaction_kernel_size": self.interaction_kernel_size,
+            "kernel_initializer": tf.keras.initializers.serialize(self.kernel_initializer),
+            "gate_locked": self.gate_locked,
+        })
+        return config
+
+
+# Block object that applies layernormalization, dropout, and merging of inputs and outputs
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='VoxelBlock')
+class VoxelBlock(tf.keras.layers.Layer):
+    """
+    A Transformer-style block that wraps the DynamicVoxelAttentionLayer.
+    It uses Pre-Layer Normalization and a Gated Residual Connection.
+    """
+
+    def __init__(self, d_model, dropout_rate, max_voxel_grid_size=64, ca_steps=5, **kwargs):
+        super().__init__(**kwargs)
+        self.d_model = d_model
+        self.dropout_rate = dropout_rate
+        self.max_voxel_grid_size = max_voxel_grid_size
+        self.ca_steps = ca_steps
+
+        # --- Normalization and Dropout ---
+        self.layernorm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.dropout = tf.keras.layers.Dropout(dropout_rate)
+
+        # --- Core Attention Layer ---
+        self.attention = DynamicVoxelAttentionLayer(
+            d_model=self.d_model,
+            max_voxel_grid_size=self.max_voxel_grid_size,
+            ca_steps=self.ca_steps,
+            name="dynamic_voxel_attention"
+        )
+
+        # --- Gated Merge for Residual Connection ---
+        self.gated_merge = GatedMergeLayer(d_model)
+
+    def call(self, inputs, training=False):
+        # --- Attention Sub-layer with Pre-LN and Gated Stream Merging ---
+        residual = inputs
+        norm_x = self.layernorm(inputs)
+
+        attn_output = self.attention(norm_x)
+        attn_output = self.dropout(attn_output, training=training)
+
+        # Merge the original input and the attention output
+        return self.gated_merge([residual, attn_output])
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "d_model": self.d_model,
+            "dropout_rate": self.dropout_rate,
+            "max_voxel_grid_size": self.max_voxel_grid_size,
+            "ca_steps": self.ca_steps,
+        })
+        return config
+
+
+## Block 4: Linformer:
+# Strong at capturing long - range token - to - token relationships, strategically the last layer.
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='LinformerAttention')
+class LinformerAttention(tf.keras.layers.Layer):
+    """
+    Implements the Linformer attention mechanism for linear complexity.
+
+    This layer projects the Key (K) and Value (V) matrices along the sequence
+    dimension to a fixed size `k_proj`. The attention is then computed between
+    the original Query (Q) and the projected K/V, resulting in an O(n) complexity
+    with respect to sequence length.
+
+    Args:
+        d_model (int): The dimension of the input embeddings (e.g., 512, 768).
+        k_proj (int): The low-rank dimension to project K and V to. This is the
+                      key hyperparameter controlling the efficiency/accuracy trade-off.
+                      Must be less than the sequence length.
+        kernel_initializer (str, optional): Initializer for the dense layers.
+                                            Defaults to 'glorot_uniform'.
+    """
+
+    def __init__(self, d_model, k_proj, kernel_initializer='glorot_uniform', **kwargs):
+        super().__init__(**kwargs)
+        self.d_model = d_model
+        self.k_proj = k_proj
+        self.kernel_initializer = tf.keras.initializers.get(kernel_initializer)
+
+        # Standard Q, K, V projections
+        self.q_dense = tf.keras.layers.Dense(d_model, kernel_initializer=self.kernel_initializer)
+        self.k_dense = tf.keras.layers.Dense(d_model, kernel_initializer=self.kernel_initializer)
+        self.v_dense = tf.keras.layers.Dense(d_model, kernel_initializer=self.kernel_initializer)
+
+        # The core of Linformer: Low-rank projections for K and V.
+        # These layers project the SEQUENCE_LENGTH dimension.
+        self.k_projection = tf.keras.layers.Dense(k_proj, kernel_initializer=self.kernel_initializer)
+        self.v_projection = tf.keras.layers.Dense(k_proj, kernel_initializer=self.kernel_initializer)
+
+        # Final output projection to stabilize training
+        self.output_dense = tf.keras.layers.Dense(d_model, kernel_initializer=self.kernel_initializer)
+
+    def call(self, inputs):
+        # inputs shape: (batch_size, sequence_length, d_model)
+        batch_size = tf.shape(inputs)[0]
+        seq_len = tf.shape(inputs)[1]
+
+        # 1. Generate Q, K, V from the input
+        q = self.q_dense(inputs)  # (batch_size, sequence_length, d_model)
+        k = self.k_dense(inputs)  # (batch_size, sequence_length, d_model)
+        v = self.v_dense(inputs)  # (batch_size, sequence_length, d_model)
+
+        # 2. Project K and V to the low-rank dimension `k_proj`
+        # The original paper uses E @ K^T, where E is (k_proj, seq_len).
+        # To implement this with a Dense layer, we transpose K and V,
+        # apply the Dense layer to the sequence dimension, and transpose back.
+        # K shape: (batch, seq_len, d_model) -> (batch, d_model, seq_len)
+        k_transposed = tf.transpose(k, perm=[0, 2, 1])
+        # k_proj_transposed shape: (batch, d_model, k_proj)
+        k_proj_transposed = self.k_projection(k_transposed)
+        # k_proj shape: (batch, k_proj, d_model)
+        k_proj = tf.transpose(k_proj_transposed, perm=[0, 2, 1])
+
+        # V shape: (batch, seq_len, d_model) -> (batch, d_model, seq_len)
+        v_transposed = tf.transpose(v, perm=[0, 2, 1])
+        # v_proj_transposed shape: (batch, d_model, k_proj)
+        v_proj_transposed = self.v_projection(v_transposed)
+        # v_proj shape: (batch, k_proj, d_model)
+        v_proj = tf.transpose(v_proj_transposed, perm=[0, 2, 1])
+
+        # 3. Compute Scaled Dot-Product Attention
+        # q shape: (batch_size, sequence_length, d_model)
+        # k_proj shape: (batch_size, k_proj, d_model)
+        # scores shape: (batch_size, sequence_length, k_proj)
+        scores = tf.matmul(q, k_proj, transpose_b=True)
+
+        # Scale scores
+        scaled_scores = scores / tf.math.sqrt(tf.cast(self.d_model, tf.float32))
+
+        # Attention weights
+        attention_weights = tf.nn.softmax(scaled_scores, axis=-1)
+
+        # 4. Apply attention weights to the projected Value
+        # attention_weights shape: (batch_size, sequence_length, k_proj)
+        # v_proj shape: (batch_size, k_proj, d_model)
+        # context shape: (batch_size, sequence_length, d_model)
+        context_vector = tf.matmul(attention_weights, v_proj)
+
+        # 5. Final linear projection
+        output = self.output_dense(context_vector)
+
+        return output
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "d_model": self.d_model,
+            "k_proj": self.k_proj,
+            "kernel_initializer": tf.keras.initializers.serialize(self.kernel_initializer),
+        })
+        return config
+
+
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='LinformerBlock')
+class LinformerBlock(tf.keras.layers.Layer):
+    """
+    A Transformer Block using Pre-Layer Normalization and the LinformerAttention layer.
+    This version uses a GATING mechanism for stream merging.
+    """
+
+    def __init__(self, d_model, k_proj, dff, dropout_rate=0.1, ffn_dropout_rate=0.1, **kwargs):
+        super().__init__(**kwargs)
+        self.d_model = d_model
+        self.k_proj = k_proj
+        self.dff = dff
+        self.dropout_rate = dropout_rate
+        self.ffn_dropout_rate = ffn_dropout_rate
+
+        # --- Attention Sub-layer ---
+        self.attention = LinformerAttention(
+            d_model=d_model,
+            k_proj=k_proj,
+            name="linformer_attention"
+        )
+        self.dropout1 = tf.keras.layers.Dropout(dropout_rate)
+        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+
+        # --- Stream Merging Layer (GATING) ---
+        # This layer generates a gate to control the flow of information
+        # between the original input and the attention output.
+        self.gate = tf.keras.layers.Dense(
+            d_model,
+            activation='sigmoid',  # The gate values will be between 0 and 1
+            name="stream_gate"
+        )
+
+        # --- Feed-Forward Network (FFN) Sub-layer ---
+        self.ffn = tf.keras.Sequential([
+            tf.keras.layers.Dense(dff, activation='relu'),  # (batch, seq_len, dff)
+            tf.keras.layers.Dense(d_model)  # (batch, seq_len, d_model)
+        ], name="feed_forward_network")
+        self.dropout2 = tf.keras.layers.Dropout(ffn_dropout_rate)
+        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+
+    def call(self, inputs, training=False):
+        # --- Attention Sub-layer with Pre-LN and Gated Stream Merging ---
+        # 1. Normalize inputs
+        norm_x = self.layernorm1(inputs)
+        # 2. Apply attention
+        attn_output = self.attention(norm_x)
+        # 3. Apply dropout
+        attn_output = self.dropout1(attn_output, training=training)
+
+        # 4. GATE the original input and the attention output
+        # Generate the gate from the normalized input
+        gate_values = self.gate(norm_x)
+        # Blend the two streams using the gate
+        merged_output = gate_values * inputs + (1.0 - gate_values) * attn_output
+
+        # --- Feed-Forward Sub-layer with Pre-LN and Residual ---
+        # 1. Normalize the output of the merged stream
+        norm_merged = self.layernorm2(merged_output)
+        # 2. Apply FFN
+        ffn_output = self.ffn(norm_merged)
+        # 3. Apply dropout
+        ffn_output = self.dropout2(ffn_output, training=training)
+        # 4. Residual connection
+        final_output = merged_output + ffn_output
+
+        return final_output
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "d_model": self.d_model,
+            "k_proj": self.k_proj,
+            "dff": self.dff,
+            "dropout_rate": self.dropout_rate,
+            "ffn_dropout_rate": self.ffn_dropout_rate,
+        })
         return config
