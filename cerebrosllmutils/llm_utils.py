@@ -1002,23 +1002,29 @@ class MambaBlock(tf.keras.layers.Layer):
         # dB shape: (batch, len, d_inner, d_state)
         dB = tf.einsum('bld,bln->bldn', delta, B)
 
+        # --- CORRECTION: Create a matching initializer tuple ---
         # Initial state
         # h shape: (batch, d_inner, d_state)
-        h = tf.zeros((batch_size, self.d_inner, self.d_state), dtype=u.dtype)
+        h_initial = tf.zeros((batch_size, self.d_inner, self.d_state), dtype=u.dtype)
 
-        def scan_fn(prev_h, current_inputs):
-            # prev_h: (batch, d_inner, d_state)
+        # Initial output
+        # y_initial shape: (batch, d_inner)
+        y_initial = tf.zeros((batch_size, self.d_inner), dtype=u.dtype)
+
+        def scan_fn(prev_state, current_inputs):
+            # prev_state is now a tuple: (prev_h, prev_y)
+            prev_h, _ = prev_state
             # current_inputs: tuple of (u_i, dB_i, dA_i, C_i)
             u_i, dB_i, dA_i, C_i = current_inputs
 
             # Update state: h_t = dA_t * h_{t-1} + dB_t * u_t
-            # Note: u_i is broadcasted to match dB_i shape for the multiplication
             h_t = dA_i * prev_h + dB_i * u_i[:, :, tf.newaxis]
 
             # Calculate output: y_t = C_t^T * h_t
             # y_t shape: (batch, d_inner)
             y_t = tf.einsum('bdn,bn->bd', h_t, C_i)
 
+            # Return a tuple to match the new initializer structure
             return h_t, y_t
 
         # Prepare inputs for tf.scan
@@ -1031,12 +1037,12 @@ class MambaBlock(tf.keras.layers.Layer):
         # C shape: (batch, len, d_state) -> (len, batch, d_state)
         scan_C = tf.transpose(C, [1, 0, 2])
 
-        # Run the scan
+        # Run the scan with the corrected initializer
         # y shape: (len, batch, d_inner)
         _, y = tf.scan(
             fn=scan_fn,
             elems=(scan_u, scan_dB, scan_dA, scan_C),
-            initializer=h
+            initializer=(h_initial, y_initial)  # <-- Pass the tuple here
         )
 
         # Transpose back to (batch, len, d_inner)
