@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "281-fix-misspelling-in-llm-from-scratch-jupyter" ]
+    branches: [ "main", "288-implement-multi-linear-attention-full-model-llm-ablation" ]
 
 
 permissions:
