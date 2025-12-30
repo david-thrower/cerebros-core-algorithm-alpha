@@ -936,13 +936,16 @@ class MambaBlock(tf.keras.layers.Layer):
         self.in_proj = tf.keras.layers.Dense(self.d_inner * 2, use_bias=False)
 
         # 1D Convolution for local processing
+        # --- CORRECTION: The filters and groups should be d_inner, not d_inner * 2 ---
+        # This is because the convolution operates on the tensor AFTER the GLU split,
+        # which has d_inner channels.
         self.conv1d = tf.keras.layers.Conv1D(
-            filters=self.d_inner * 2,
+            filters=self.d_inner,
             kernel_size=self.d_conv,
             padding='causal',
-            groups=self.d_inner * 2,
+            groups=self.d_inner,
             use_bias=False,
-            activation='silu'  # Use SiLU activation directly in the conv layer
+            activation='silu'
         )
 
         # Selective SSM parameters (A, B, C, D)
@@ -970,6 +973,12 @@ class MambaBlock(tf.keras.layers.Layer):
 
         # --- Gated Merge for Residual Connection ---
         self.gated_merge = GatedMergeLayer(d_model)
+
+    def build(self, input_shape):
+        # Adding a build method to silence the UserWarning and follow best practices.
+        # All sub-layers (Dense, Conv1D, etc.) are built automatically by Keras,
+        # so we just need to call the superclass's build method.
+        super().build(input_shape)
 
     def _selective_scan(self, u, delta, A, B, C, D):
         """
