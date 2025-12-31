@@ -376,7 +376,7 @@ for i, weight in enumerate(cerebros_base_model.trainable_weights):
 
 if all_weights_valid:
     print("!!! SUCCESS: All trainable weights have the expected Keras 3 type. !!!")
-    print(f"Total trainable params: {len(model.trainable_weights)}")
+    print(f"Total trainable params: {len(cerebros_base_model.trainable_weights)}")
 else:
     print("--- End of Inspection ---")
 
