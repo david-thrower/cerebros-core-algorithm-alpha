@@ -11,15 +11,28 @@ import pendulum
 
 from transformers import AutoTokenizer
 from sklearn.model_selection import train_test_split
+
+# Cerebros NAS components
 from cerebros.units.units import DenseUnit
 from cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search\
     import SimpleCerebrosRandomSearch
-from cerebrosllmutils.llm_utils import (prepare_data,
-                                       InterleavedRoPE,
-                                       Perplexity,
-                                       CerebrosNotGPTConfig,
-                                       CerebrosNotGPT,
-                                       WarmupCosineDecayRestarts)
+
+# LLM Components
+from cerebrosllmutils.llm_utils import (
+    prepare_data,
+    InterleavedRoPE,
+    Perplexity,
+    GatedMergeLayer,
+    ChunkedAttentionBlock,
+    MambaBlock,
+    VoxelBlock,
+    LinformerBlock,
+    AdapterBlock,
+    CerebrosNotGPTConfig,
+    CerebrosNotGPT,
+    WarmupCosineDecayRestarts
+)
+
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component\
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 
@@ -187,6 +200,33 @@ EMBEDDING_DIM = int(EMBEDDING_N * 2)
 # Size of the projection layer bet
 PROJECTION_N = 1 # Punitive increase of ram, leaving this as 1 until we are running on HPC
 
+##### Attention blocks' and attention mimetic blocks' constants: #######
+
+# --- SingleHeadChunkedAttention Block Constants ---
+K_PROJ_CHUNKED = 5
+DFF_CHUNKED = EMBEDDING_DIM # Can be tuned independently, but likely to coincide.
+DROPOUT_RATE_CHUNKED = 0.1
+
+# --- MAMBA Block Constants ---
+MAMBA_D_STATE = 12
+MAMBA_D_CONV = 4
+MAMBA_EXPAND = 2
+MAMBA_DROPOUT = 0.05
+
+# --- VoxelAttentionLayer Constants ---
+VOXEL_MAX_GRID_SIZE = 64
+VOXEL_CA_STEPS = 5
+VOXEL_DROPOUT = 0.1
+
+# --- Linformer Block Constants (Adjusted for tiny model) ---
+LINFORMER_K_PROJ = 16
+LINFORMER_DFF = 64
+LINFORMER_DROPOUT = 0.05
+LINFORMER_FFN_DROPOUT = 0.05
+
+# --- Adapter Block Constants ---
+ADAPTER_DROPOUT = 0.1
+
 ## Get training data:
 
 non_instruct_samples = bible[:PHASE_I_A_SAMPLES_TO_CREATE]
@@ -228,33 +268,93 @@ phase_i_b_train_samples, phase_i_b_val_samples = train_test_split(
 
 ####### Text embedding base model #####################
 
+# 1. Input Layer
 inp = tf.keras.layers.Input(shape=(MAX_SEQ_LENGTH,), dtype=tf.int32)
 
+# 2. Embedding & Initial Processing
 embedded = tf.keras.layers.Embedding(
     input_dim=VOCABULARY_SIZE,
     output_dim=EMBEDDING_DIM,
     input_length=MAX_SEQ_LENGTH,
-    mask_zero=False)(inp)
+    mask_zero=False,
+    name="base_embedding"
+)(inp)
 
+# iRoPE Stream
 position_embedding = InterleavedRoPE(
     dim=EMBEDDING_DIM,
     max_seq_len=MAX_SEQ_LENGTH,
-    # initializer="uniform",
+    name="interleaved_rope"
 )(embedded)
 
-# As an FYI, we tried an add layer both with and without
-# LayerNorm ... Counterintuitively, adding LayerNorm degraded
-# accuracy. Just an FYI for anyone trying to apply conventional
-# wisdom, to save you the time ...
-x = tf.keras.layers.Concatenate()([embedded, position_embedding])
-x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT)(x)  # AI suggested 0.4
-flattened = tf.keras.layers.Flatten()(x)
-projected = tf.keras.layers.Dense(EMBEDDING_DIM * PROJECTION_N)(flattened)  # Dimensionality reduction
+# Skip Connection Stream is the `embedded` tensor itself
 
+# Stream Merging: Use a GatedMergeLayer for optimal combination
+initial_merge = GatedMergeLayer(d_model=EMBEDDING_DIM, name="initial_stream_merge")
+x = initial_merge([embedded, position_embedding])
+x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT, name="initial_dropout")(x)
+
+# 3. Core Attention/Processing Stack (Sequential Order)
+
+# --- Block 1: SingleHeadChunkedAttention ---
+x = ChunkedAttentionBlock(
+    d_model=EMBEDDING_DIM,
+    k_proj=K_PROJ_CHUNKED,
+    dff=DFF_CHUNKED,
+    dropout_rate=DROPOUT_RATE_CHUNKED,
+    name="chunked_attention_block"
+)(x)
+
+# --- Block 2: MAMBA Layer ---
+x = MambaBlock(
+    d_model=EMBEDDING_DIM,
+    d_state=MAMBA_D_STATE,
+    d_conv=MAMBA_D_CONV,
+    expand=MAMBA_EXPAND,
+    dropout_rate=MAMBA_DROPOUT,
+    name="mamba_block"
+)(x)
+
+# --- Block 3: VoxelAttentionLayer ---
+x = VoxelBlock(
+    d_model=EMBEDDING_DIM,
+    dropout_rate=VOXEL_DROPOUT,
+    max_voxel_grid_size=VOXEL_MAX_GRID_SIZE,
+    ca_steps=VOXEL_CA_STEPS,
+    name="voxel_block"
+)(x)
+
+
+# --- Block 4: Linformer Layer ---
+x = LinformerBlock(
+    d_model=EMBEDDING_DIM,
+    k_proj=LINFORMER_K_PROJ,
+    dff=LINFORMER_DFF,
+    dropout_rate=LINFORMER_DROPOUT,
+    ffn_dropout_rate=LINFORMER_FFN_DROPOUT,
+    name="linformer_block"
+)(x)
+
+
+# 4. Adapter Block
+# Reduces dimension from (BATCH, SEQ_LEN, EMBEDDING_DIM) to (BATCH, SEQ_LEN)
+# using the new custom AdapterBlock layer.
+flattened_output = AdapterBlock(
+    d_model=EMBEDDING_DIM,
+    dropout_rate=ADAPTER_DROPOUT,
+    name="adapter_block"
+)(x)
+
+
+# 5. Final Model Assembly
 cerebros_base_model = tf.keras.Model(
     inputs=inp,
-    outputs=projected  # Output enhanced embeddings now
+    outputs=flattened_output, # Output shape is now (BATCH_SIZE, MAX_SEQ_LENGTH)
+    name="cerebros_base_model"
 )
+
+# Display the model summary to verify the architecture
+cerebros_base_model.summary()
 
 ######## Cerebros Neural Architecture Search #######
 
