@@ -244,7 +244,7 @@ X_train, X_test, y_train, y_test = \
 print("Sanity check for correct preprocessing:")
 print(f"Shape of X_train: {len(X_train[0])}")
 print(f"Shape of y_train: {len(y_train[0])}")
-print(f"Shape of X_test: {lec(X_test[0])}")
+print(f"Shape of X_test: {len(X_test[0])}")
 print(f"Shape of y_test: {len(y_test[0])}")
 
 x_train_tf = tf.constant(X_train, tf.int32)
