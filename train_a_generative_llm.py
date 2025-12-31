@@ -356,6 +356,54 @@ cerebros_base_model = tf.keras.Model(
 # Display the model summary to verify the architecture
 cerebros_base_model.summary()
 
+# DEBUG <--------------<<<<       ###################
+
+cerebros_base_model.compile()
+
+print("\n--- Inspecting Model Trainable Weights for Errors ---")
+
+found_error = False
+for i, weight in enumerate(model.trainable_weights):
+    # Check if the weight is a tf.Variable, which is the expected type
+    if not isinstance(weight, tf.Variable):
+        print(f"\n!!! CRITICAL ERROR FOUND !!!")
+        print(f"!!! The trainable_weights list contains a non-Tensor object at index {i}.")
+        print(f"!!! Expected Type: tf.Variable")
+        print(f"!!! Actual Type:   {type(weight)}")
+        print(f"!!! Object Value:  {weight}")
+
+        # Now, let's find which layer this object belongs to
+        print("\n--- Tracing the object back to its source layer ---")
+        for layer in model.layers:
+            # We need to check the trainable_weights of each layer
+            # and any of its sub-layers recursively
+            layers_to_check = [layer]
+            while layers_to_check:
+                current_layer = layers_to_check.pop()
+                if weight in current_layer.trainable_weights:
+                    print(f"!!! The problematic object belongs to layer: {current_layer.name} ({type(current_layer)})")
+                    found_error = True
+                    break
+                # Add sub-layers to the list to check
+                if hasattr(current_layer, 'layers') and current_layer.layers:
+                    layers_to_check.extend(current_layer.layers)
+
+            if found_error:
+                break
+
+        # We found the problem, so we can stop looking
+        break
+
+if not found_error:
+    print("All trainable weights are of the correct type (tf.Variable). The error may be more subtle.")
+
+print("--- End of Inspection ---\n")
+
+# End Dubug
+
+
+
+
 ######## Cerebros Neural Architecture Search #######
 
 #
