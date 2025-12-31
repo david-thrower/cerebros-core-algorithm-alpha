@@ -1109,87 +1109,66 @@ class MambaBlock(tf.keras.layers.Layer):
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='DynamicVoxelAttentionLayer')
 class DynamicVoxelAttentionLayer(tf.keras.layers.Layer):
     """
-    Hybrid Voxel Attention with dynamic scaling and linear complexity.
-    (Corrected version to output a sequence-compatible shape).
+    A Voxel Attention layer that preserves the sequence dimension for output,
+    using gradient checkpointing to ensure stable training.
 
-    This layer treats the input sequence as one dimension of a 3D voxel grid,
-    allowing the Cellular Automaton to perform a spatial, linear-complexity
-    form of attention. The output is a sequence of the same length.
+    This layer is designed to be a drop-in replacement for other attention
+    blocks, outputting a tensor of shape (batch, seq_len, d_model).
 
-    Key Features:
-    - **Batchable:** Can process sequences of different lengths in the same batch.
-    - **Linear Complexity:** O(n) with respect to sequence length.
-    - **Sequence Output:** Outputs a tensor of shape (batch, seq_len, d_model).
-    - **Preserves Sequence:** The sequence dimension is maintained throughout the process.
+    It treats the sequence as the 'depth' of a voxel grid and uses a
+    padded "scratch space" for the CA simulation, ensuring linear complexity.
+    Gradient checkpointing is used to guarantee gradient flow through the
+    complex, stateful CA loop.
     """
-
     def __init__(self,
-                 d_model,  # Renamed from output_dim for consistency
-                 max_voxel_grid_size=64,  # This is now the size of the "scratch space"
+                 d_model,  # The input and output dimension
+                 max_voxel_grid_size=64,  # Size of the "scratch space"
                  ca_steps=5,
                  ca_kernel_size=(3, 3, 3),
-                 interaction_kernel_size=(3, 3, 3),
                  kernel_initializer='glorot_uniform',
-                 gate_locked=False,
+                 gate_locked=False, # Kept for compatibility, though not used in this version
                  **kwargs):
         super().__init__(**kwargs)
         self.d_model = d_model
         self.max_voxel_grid_size = max_voxel_grid_size
         self.ca_steps = ca_steps
-        self.gate_locked = gate_locked
         self.ca_kernel_size = ca_kernel_size
-        self.interaction_kernel_size = interaction_kernel_size
         self.kernel_initializer = tf.keras.initializers.get(kernel_initializer)
-        self._has_been_configured = False
+        self.gate_locked = gate_locked # Kept for config compatibility
 
-    def build(self, input_shape):
-        input_dim = input_shape[-1]
+        # --- Gating Weights ---
+        # These are applied to the input stream, so their shape matches d_model
+        self.gate_k = self.add_weight(name='gate_k', shape=(self.d_model,), initializer='zeros', trainable=True)
+        self.gate_q = self.add_weight(name='gate_q', shape=(self.d_model,), initializer='zeros', trainable=True)
+        self.gate_v = self.add_weight(name='gate_v', shape=(self.d_model,), initializer='zeros', trainable=True)
 
-        # --- Gating Weights (now for the original input_dim) ---
-        self.gate_k = self.add_weight(name='gate_k', shape=(input_dim,), initializer='zeros', trainable=True)
-        self.gate_q = self.add_weight(name='gate_q', shape=(input_dim,), initializer='zeros', trainable=True)
-        self.gate_v = self.add_weight(name='gate_v', shape=(input_dim,), initializer='zeros', trainable=True)
-
-        # --- Dense Projections (now from input_dim to d_model) ---
+        # --- Dense Projections (from d_model to d_model) ---
         self.dense_k = tf.keras.layers.Dense(self.d_model, kernel_initializer=self.kernel_initializer)
         self.dense_q = tf.keras.layers.Dense(self.d_model, kernel_initializer=self.kernel_initializer)
         self.dense_v = tf.keras.layers.Dense(self.d_model, kernel_initializer=self.kernel_initializer)
 
-        # --- CA Components (now operate on d_model channels) ---
-        self.ca_conv_qk = tf.keras.layers.Conv3D(filters=self.d_model, kernel_size=self.ca_kernel_size, padding='same',
-                                                 kernel_initializer=self.kernel_initializer, name='ca_conv_qk')
-        self.layer_norm_qk = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.ca_conv_v = tf.keras.layers.Conv3D(filters=self.d_model, kernel_size=self.ca_kernel_size, padding='same',
-                                                kernel_initializer=self.kernel_initializer, name='ca_conv_v')
-        self.layer_norm_v = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        # --- CA Components (operate on d_model channels) ---
+        self.ca_conv = tf.keras.layers.Conv3D(filters=self.d_model, kernel_size=self.ca_kernel_size, padding='same',
+                                              kernel_initializer=self.kernel_initializer, name='ca_conv')
+        self.layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
-        # --- Interaction Layer Components ---
-        self.interaction_conv = tf.keras.layers.Conv3D(filters=self.d_model, kernel_size=self.interaction_kernel_size,
-                                                       padding='same', kernel_initializer=self.kernel_initializer,
-                                                       name='interaction_conv')
-        self.layer_norm_interaction = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-
-        # --- Output Projection (now for the final residual) ---
-        self.output_projection = tf.keras.layers.Dense(self.d_model, kernel_initializer=self.kernel_initializer)
+    def build(self, input_shape):
+        # No additional weights to create beyond what's in __init__
         super().build(input_shape)
 
-    def _run_ca(self, voxel, conv_layer, norm_layer):
-        """A helper function to run the CA simulation."""
+    @tf.recompute_grad # Apply checkpointing to the entire CA simulation
+    def _run_ca_checkpointed(self, voxel):
+        """
+        A helper function to run the CA simulation, wrapped for checkpointing.
+        """
         result = voxel
         for _ in range(self.ca_steps):
-            conv_update = conv_layer(result)
-            normalized_update = norm_layer(conv_update)
+            conv_update = self.ca_conv(result)
+            normalized_update = self.layer_norm(conv_update)
             result = tf.tanh(result + normalized_update)
         return result
 
     def call(self, inputs):
-        if not self._has_been_configured and self.gate_locked:
-            for gate in [self.gate_k, self.gate_q, self.gate_v]:
-                gate.assign(tf.ones_like(gate) * 5.0)
-                gate.trainable = False
-            self.trainable = False
-            self._has_been_configured = True
-
         batch_size = tf.shape(inputs)[0]
         seq_len = tf.shape(inputs)[1]
 
@@ -1200,42 +1179,25 @@ class DynamicVoxelAttentionLayer(tf.keras.layers.Layer):
         # Shape: (batch_size, seq_len, d_model)
 
         # 2. Reshape into a 3D grid, using the sequence as the 'depth' dimension.
-        # This is the key fix. We are no longer collapsing the sequence.
-        voxel_3d = tf.reshape(q, [batch_size, seq_len, 1, 1, self.d_model])
+        # This preserves the sequence axis.
+        voxel_3d = tf.reshape(v, [batch_size, seq_len, 1, 1, self.d_model])
         # Shape: (batch_size, seq_len, 1, 1, d_model)
 
-        # 3. Pad the other two dimensions to the maximum size to create a "scratch space"
-        paddings = [[0, 0],
-                    [0, 0], # No padding on sequence dimension
-                    [0, self.max_voxel_grid_size - 1],
-                    [0, self.max_voxel_grid_size - 1],
-                    [0, 0]]
+        # 3. Pad the other two dimensions to create a "scratch space"
+        paddings = [[0, 0], [0, 0], [0, self.max_voxel_grid_size - 1], [0, self.max_voxel_grid_size - 1], [0, 0]]
         voxel_padded = tf.pad(voxel_3d, paddings)
         # Shape: (batch_size, seq_len, max_voxel_grid_size, max_voxel_grid_size, d_model)
 
-        # 4. Run CA on the grid. The 3x3x3 kernel now mixes information along the sequence axis.
-        # Complexity is O(seq_len * max_grid_size^2), which is O(seq_len).
-        q_ca = self._run_ca(voxel_padded, self.ca_conv_qk, self.layer_norm_qk)
-        k_ca = self._run_ca(voxel_padded, self.ca_conv_qk, self.layer_norm_qk)
-        v_ca = self._run_ca(voxel_padded, self.ca_conv_v, self.layer_norm_v)
-
-        # 5. Interaction
-        attention_map_voxel = q_ca * k_ca
-        # We use addition instead of concat to keep the channel dimension consistent
-        interaction_input = attention_map_voxel + v_ca
-        interaction_output = self.interaction_conv(interaction_input)
-        normalized_interaction = self.layer_norm_interaction(interaction_output)
-
-        final_voxel = tf.tanh(v_ca + normalized_interaction)
+        # 4. Run the CHECKPOINTED CA simulation on the grid.
+        # The 3x3x3 kernel now mixes information along the sequence axis.
+        v_ca = self._run_ca_checkpointed(voxel_padded)
         # Shape: (batch_size, seq_len, max_voxel_grid_size, max_voxel_grid_size, d_model)
 
-        # 6. Collapse the "scratch space" dimensions to get back to a sequence
-        output_sequence = tf.reduce_mean(final_voxel, axis=[2, 3])
+        # 5. Collapse the "scratch space" dimensions to get back to a sequence
+        output_sequence = tf.reduce_mean(v_ca, axis=[2, 3])
         # Shape: (batch_size, seq_len, d_model)
 
-        # 7. Add residual connection from the original input
-        # Note: This assumes inputs already have d_model dimensions.
-        # If not, you would project inputs first.
+        # 6. Add a residual connection from the original input stream
         output = inputs + output_sequence
 
         return output
@@ -1247,7 +1209,6 @@ class DynamicVoxelAttentionLayer(tf.keras.layers.Layer):
             "max_voxel_grid_size": self.max_voxel_grid_size,
             "ca_steps": self.ca_steps,
             "ca_kernel_size": self.ca_kernel_size,
-            "interaction_kernel_size": self.interaction_kernel_size,
             "kernel_initializer": tf.keras.initializers.serialize(self.kernel_initializer),
             "gate_locked": self.gate_locked,
         })
