@@ -1108,25 +1108,13 @@ class MambaBlock(tf.keras.layers.Layer):
 # of layers.
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='DynamicVoxelAttentionLayer')
 class DynamicVoxelAttentionLayer(tf.keras.layers.Layer):
-    """
-    A Voxel Attention layer that preserves the sequence dimension for output,
-    using gradient checkpointing to ensure stable training.
-
-    This layer is designed to be a drop-in replacement for other attention
-    blocks, outputting a tensor of shape (batch, seq_len, d_model).
-
-    It treats the sequence as the 'depth' of a voxel grid and uses a
-    padded "scratch space" for the CA simulation, ensuring linear complexity.
-    Gradient checkpointing is used to guarantee gradient flow through the
-    complex, stateful CA loop.
-    """
     def __init__(self,
-                 d_model,  # The input and output dimension
-                 max_voxel_grid_size=64,  # Size of the "scratch space"
+                 d_model,
+                 max_voxel_grid_size=64,
                  ca_steps=5,
                  ca_kernel_size=(3, 3, 3),
                  kernel_initializer='glorot_uniform',
-                 gate_locked=False, # Kept for compatibility, though not used in this version
+                 gate_locked=False,
                  **kwargs):
         super().__init__(**kwargs)
         self.d_model = d_model
@@ -1134,33 +1122,33 @@ class DynamicVoxelAttentionLayer(tf.keras.layers.Layer):
         self.ca_steps = ca_steps
         self.ca_kernel_size = ca_kernel_size
         self.kernel_initializer = tf.keras.initializers.get(kernel_initializer)
-        self.gate_locked = gate_locked # Kept for config compatibility
+        self.gate_locked = gate_locked
 
-        # --- Gating Weights ---
-        # These are applied to the input stream, so their shape matches d_model
+        # Gating weights
         self.gate_k = self.add_weight(name='gate_k', shape=(self.d_model,), initializer='zeros', trainable=True)
         self.gate_q = self.add_weight(name='gate_q', shape=(self.d_model,), initializer='zeros', trainable=True)
         self.gate_v = self.add_weight(name='gate_v', shape=(self.d_model,), initializer='zeros', trainable=True)
 
-        # --- Dense Projections (from d_model to d_model) ---
+        # Dense projections
         self.dense_k = tf.keras.layers.Dense(self.d_model, kernel_initializer=self.kernel_initializer)
         self.dense_q = tf.keras.layers.Dense(self.d_model, kernel_initializer=self.kernel_initializer)
         self.dense_v = tf.keras.layers.Dense(self.d_model, kernel_initializer=self.kernel_initializer)
 
-        # --- CA Components (operate on d_model channels) ---
-        self.ca_conv = tf.keras.layers.Conv3D(filters=self.d_model, kernel_size=self.ca_kernel_size, padding='same',
-                                              kernel_initializer=self.kernel_initializer, name='ca_conv')
+        # CA components
+        self.ca_conv = tf.keras.layers.Conv3D(
+            filters=self.d_model,
+            kernel_size=self.ca_kernel_size,
+            padding='same',
+            kernel_initializer=self.kernel_initializer,
+            name='ca_conv'
+        )
         self.layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
     def build(self, input_shape):
-        # No additional weights to create beyond what's in __init__
         super().build(input_shape)
 
-    @tf.recompute_grad # Apply checkpointing to the entire CA simulation
-    def _run_ca_checkpointed(self, voxel):
-        """
-        A helper function to run the CA simulation, wrapped for checkpointing.
-        """
+    def _run_ca(self, voxel):
+        """Run CA simulation without checkpointing (stable but memory-intensive)."""
         result = voxel
         for _ in range(self.ca_steps):
             conv_update = self.ca_conv(result)
@@ -1172,32 +1160,26 @@ class DynamicVoxelAttentionLayer(tf.keras.layers.Layer):
         batch_size = tf.shape(inputs)[0]
         seq_len = tf.shape(inputs)[1]
 
-        # 1. Project inputs to Q, K, V spaces and apply gating
+        # Project inputs and apply gating
         q = self.dense_q(inputs) * tf.nn.sigmoid(self.gate_q)
         k = self.dense_k(inputs) * tf.nn.sigmoid(self.gate_k)
         v = self.dense_v(inputs) * tf.nn.sigmoid(self.gate_v)
-        # Shape: (batch_size, seq_len, d_model)
 
-        # 2. Reshape into a 3D grid, using the sequence as the 'depth' dimension.
-        # This preserves the sequence axis.
+        # Reshape to 3D grid (sequence as depth)
         voxel_3d = tf.reshape(v, [batch_size, seq_len, 1, 1, self.d_model])
-        # Shape: (batch_size, seq_len, 1, 1, d_model)
 
-        # 3. Pad the other two dimensions to create a "scratch space"
-        paddings = [[0, 0], [0, 0], [0, self.max_voxel_grid_size - 1], [0, self.max_voxel_grid_size - 1], [0, 0]]
+        # Pad scratch space
+        paddings = [[0, 0], [0, 0],
+                    [0, self.max_voxel_grid_size - 1],
+                    [0, self.max_voxel_grid_size - 1],
+                    [0, 0]]
         voxel_padded = tf.pad(voxel_3d, paddings)
-        # Shape: (batch_size, seq_len, max_voxel_grid_size, max_voxel_grid_size, d_model)
 
-        # 4. Run the CHECKPOINTED CA simulation on the grid.
-        # The 3x3x3 kernel now mixes information along the sequence axis.
-        v_ca = self._run_ca_checkpointed(voxel_padded)
-        # Shape: (batch_size, seq_len, max_voxel_grid_size, max_voxel_grid_size, d_model)
+        # Run CA simulation
+        v_ca = self._run_ca(voxel_padded)
 
-        # 5. Collapse the "scratch space" dimensions to get back to a sequence
+        # Collapse scratch space and add residual
         output_sequence = tf.reduce_mean(v_ca, axis=[2, 3])
-        # Shape: (batch_size, seq_len, d_model)
-
-        # 6. Add a residual connection from the original input stream
         output = inputs + output_sequence
 
         return output
