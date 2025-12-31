@@ -242,10 +242,10 @@ X_train, X_test, y_train, y_test = \
         train_test_split(x, y, test_size=0.85, shuffle=False)
 
 print("Sanity check for correct preprocessing:")
-print("Shape of X_train: {X_train}")
-print("Shape of y_train: {y_train}")
-print("Shape of X_test: {X_test}")
-print("Shape of y_test: {y_test}")
+print(f"Shape of X_train: {X_train.shape}")
+print(f"Shape of y_train: {y_train.shape}")
+print(f"Shape of X_test: {X_test.shape}")
+print(f"Shape of y_test: {y_test.shape}")
 
 x_train_tf = tf.constant(X_train, tf.int32)
 y_train_tf = tf.constant(y_train, tf.float32)
