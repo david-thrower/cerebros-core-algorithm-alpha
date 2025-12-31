@@ -358,7 +358,7 @@ cerebros_base_model.summary()
 
 # DEBUG <--------------<<<<       ###################
 
-# cerebros_base_model.compile()
+cerebros_base_model.compile()
 
 print("--- Inspecting Model Trainable Weights (Corrected) ---")
 all_weights_valid = True
