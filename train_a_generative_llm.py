@@ -363,7 +363,7 @@ cerebros_base_model.compile()
 print("\n--- Inspecting Model Trainable Weights for Errors ---")
 
 found_error = False
-for i, weight in enumerate(model.trainable_weights):
+for i, weight in enumerate(cerebros_base_model.trainable_weights):
     # Check if the weight is a tf.Variable, which is the expected type
     if not isinstance(weight, tf.Variable):
         print(f"\n!!! CRITICAL ERROR FOUND !!!")
@@ -374,7 +374,7 @@ for i, weight in enumerate(model.trainable_weights):
 
         # Now, let's find which layer this object belongs to
         print("\n--- Tracing the object back to its source layer ---")
-        for layer in model.layers:
+        for layer in cerebros_base_model.layers:
             # We need to check the trainable_weights of each layer
             # and any of its sub-layers recursively
             layers_to_check = [layer]
