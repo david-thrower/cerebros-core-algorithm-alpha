@@ -214,8 +214,8 @@ MAMBA_EXPAND = 2
 MAMBA_DROPOUT = 0.05
 
 # --- VoxelAttentionLayer Constants ---
-VOXEL_MAX_GRID_SIZE = 64
-VOXEL_CA_STEPS = 5
+VOXEL_MAX_GRID_SIZE = 5
+VOXEL_CA_STEPS = 3
 VOXEL_DROPOUT = 0.1
 
 # --- Linformer Block Constants (Adjusted for tiny model) ---
