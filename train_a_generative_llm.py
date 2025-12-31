@@ -358,25 +358,22 @@ cerebros_base_model.summary()
 
 # DEBUG <--------------<<<<       ###################
 
-cerebros_base_model.compile()
+# cerebros_base_model.compile()
 
-# Assuming 'model' is your compiled Keras model
-print("--- Inspecting Model Trainable Weights (Keras 3 Compatible) ---")
+print("--- Inspecting Model Trainable Weights (Corrected) ---")
 all_weights_valid = True
 for i, weight in enumerate(cerebros_base_model.trainable_weights):
-    # In Keras 3, the standard weight type is keras.src.backend.Variable.
-    # This is the correct check to perform.
-    if not isinstance(weight, tf.Variable):
-        print(f"!!! WARNING: Found an unexpected weight type at index {i}.")
-        print(f"!!! Expected Type: keras.src.backend.Variable")
+    # The correct type in Keras 3 is keras.src.backend.Variable
+    if not isinstance(weight, keras.src.backend.Variable):
+        print(f"!!! CRITICAL ERROR: Found an unexpected weight type at index {i}.")
         print(f"!!! Actual Type:   {type(weight)}")
-        # all_weights_valid = False
-        # You could add tracing logic here if you truly find an invalid type
+        all_weights_valid = False
         break
 
 if all_weights_valid:
-    print("!!! SUCCESS: All trainable weights have the expected Keras 3 type. !!!")
-    print(f"Total trainable params: {len(cerebros_base_model.trainable_weights)}")
+    print("!!! SUCCESS: All trainable weights are valid Keras Variables. !!!")
+    # To get the parameter count, use model.count_params(), not len()
+    print(f"Total trainable params: {cerebros_base_model.count_params():,}")
 else:
     print("--- End of Inspection ---")
 
