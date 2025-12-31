@@ -364,7 +364,7 @@ print("--- Inspecting Model Trainable Weights (Corrected) ---")
 all_weights_valid = True
 for i, weight in enumerate(cerebros_base_model.trainable_weights):
     # The correct type in Keras 3 is keras.src.backend.Variable
-    if not isinstance(weight, tf.Variable):
+    if not isinstance(weight, tf.keras.Variable):
         print(f"!!! CRITICAL ERROR: Found an unexpected weight type at index {i}.")
         print(f"!!! Actual Type:   {type(weight)}")
         all_weights_valid = False
