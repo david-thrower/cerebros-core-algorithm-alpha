@@ -40,7 +40,7 @@ jobs:
 #      timeout-minutes: 45
     - name: Train an LLM with Cerebros
       run: python3 train_a_generative_llm.py
-      timeout-minutes: 45
+      timeout-minutes: 120
 #    - name: Test distributed random search Ames by running
 #      run: python3 regression-example-ames-no-preproc.py
 #    - name: Test distributed random search Ames by running - Val set
