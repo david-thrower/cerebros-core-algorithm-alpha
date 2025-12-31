@@ -245,7 +245,7 @@ print("Sanity check for correct preprocessing:")
 print("Shape of X_train: {X_train}")
 print("Shape of y_train: {y_train}")
 print("Shape of X_test: {X_test}")
-prine("Shape of y_test: {y_test}")
+print("Shape of y_test: {y_test}")
 
 x_train_tf = tf.constant(X_train, tf.int32)
 y_train_tf = tf.constant(y_train, tf.float32)
