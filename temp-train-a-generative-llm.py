@@ -52,6 +52,7 @@ MAMBA_D_CONV = 4
 MAMBA_EXPAND = 2
 MAMBA_DROPOUT = 0.05
 
+
 # --- VoxelAttentionLayer Constants ---
 VOXEL_MAX_GRID_SIZE = 64
 VOXEL_CA_STEPS = 5
@@ -137,29 +138,6 @@ x = LinformerBlock(
     ffn_dropout_rate=LINFORMER_FFN_DROPOUT,
     name="linformer_block"
 )(x)
-
-# # 4. Adapter Block (Re-optimized)
-# # Reduces dimension from (BATCH, SEQ_LEN, EMBEDDING_DIM) to (BATCH, SEQ_LEN)
-# # This design uses a per-token gating mechanism to create a scalar output for each token.
-# # It maintains O(n) complexity.
-#
-# x = tf.keras.layers.LayerNormalization(epsilon=1e-6, name="adapter_pre_norm")(x)
-# x = tf.keras.layers.Dropout(ADAPTER_DROPOUT, name="adapter_pre_dropout")(x)
-#
-# # Step 1: Create a learned scalar gate for each token in the sequence.
-# # The gate determines how much of the token's information is passed through.
-# # Shape: (BATCH_SIZE, SEQUENCE_LENGTH, 1)
-# token_gates = tf.keras.layers.Dense(1, activation='sigmoid', name="adapter_token_gates")(x)
-#
-# # Step 2: Apply the gate to the original input sequence.
-# # This modulates the features of each token based on its learned gate value.
-# # Shape: (BATCH_SIZE, SEQUENCE_LENGTH, EMBEDDING_DIM)
-# gated_sequence = x * token_gates
-#
-# # Step 3: Reduce the feature dimension for each token to a single scalar.
-# # We sum the gated features across the embedding dimension. This is a linear operation.
-# # Shape: (BATCH_SIZE, SEQUENCE_LENGTH)
-# flattened_output = tf.reduce_sum(gated_sequence, axis=-1)
 
 
 # 4. Adapter Block
