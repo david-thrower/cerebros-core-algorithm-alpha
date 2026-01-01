@@ -21,7 +21,7 @@ from cerebros.simplecerebrosrandomsearch.simple_cerebros_random_search\
 from cerebrosllmutils.llm_utils import (
     prepare_data,
     InterleavedRoPE,
-    Perplexity,
+    SparsePerplexity,
     GatedMergeLayer,
     ChunkedAttentionBlock,
     MambaBlock,
@@ -409,7 +409,7 @@ PROJECT_NAME = f'{TIME}_cerebros_not-gpt'
 meta_trial_number = 42  # irrelevant unless in distributed training
 
 # Custom metric: Perplexity:
-perplexity_metric = Perplexity()
+sparse_perplexity_metric = SparsePerplexity
 
 cerebros_automl = SimpleCerebrosRandomSearch(
     unit_type=DenseUnit,
@@ -447,7 +447,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     learning_rate=learning_rate,
     loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
     metrics=[tf.keras.metrics.SparseCategoricalAccuracy(),
-             perplexity_metric, # Need to fix... 
+             sparse_perplexity_metric, 
              # tf.keras.metrics.Accuracy()
              ],
     epochs=epochs,
