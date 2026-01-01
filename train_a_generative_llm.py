@@ -249,9 +249,9 @@ print(f"Labels: {y_train[:5]}")
 
 print("\n\n\nSanity check for correct preprocessing:")
 print(f"Shape of X_train: {len(X_train[0])}")
-print(f"Shape of y_train: {len(y_train[0])}")
+print(f"Shape of y_train: {len(y_train)}")
 print(f"Shape of X_test: {len(X_test[0])}")
-print(f"Shape of y_test: {len(y_test[0])}")
+print(f"Shape of y_test: {len(y_test)}")
 
 raise Exception("Debug")
 
