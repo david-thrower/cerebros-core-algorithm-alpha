@@ -126,7 +126,7 @@ p_lateral_connection = 0.24927354102044022
 num_lateral_connection_tries_per_unit = 32
 
 # The learning rate for Srage I-a
-learning_rate = 0.001 # 0.003025583248301791
+learning_rate = 0.003025583248301791
 
 # Number of epochs for Training Stage I-a
 epochs = 41
@@ -157,7 +157,7 @@ maximum_neurons_per_unit = 2
 ## Training Stage I-b parameters: ###
 
 # LR Scheduler for training stage I-b
-INITIAL_LR_STAGE_I_B = 0.001 # 0.0039295722955565125
+INITIAL_LR_STAGE_I_B = 0.0039295722955565125
 
 # A fixed number for the initial warmup
 WARMUP_EPOCHS_STAGE_I_B = 7
@@ -203,24 +203,24 @@ PROJECTION_N = 1 # Punitive increase of ram, leaving this as 1 until we are runn
 ##### Attention blocks' and attention mimetic blocks' constants: #######
 
 # --- SingleHeadChunkedAttention Block Constants ---
-K_PROJ_CHUNKED = 8
+K_PROJ_CHUNKED = 5
 DFF_CHUNKED = EMBEDDING_DIM # Can be tuned independently, but likely to coincide.
-DROPOUT_RATE_CHUNKED = 0.05
+DROPOUT_RATE_CHUNKED = 0.1
 
 # --- MAMBA Block Constants ---
-MAMBA_D_STATE = 8
-MAMBA_D_CONV = 3
+MAMBA_D_STATE = 12
+MAMBA_D_CONV = 4
 MAMBA_EXPAND = 2
 MAMBA_DROPOUT = 0.05
 
 # --- VoxelAttentionLayer Constants ---
-VOXEL_MAX_GRID_SIZE = 8
+VOXEL_MAX_GRID_SIZE = 5
 VOXEL_CA_STEPS = 3
 VOXEL_DROPOUT = 0.1
 
 # --- Linformer Block Constants (Adjusted for tiny model) ---
-LINFORMER_K_PROJ = 8
-LINFORMER_DFF = 32
+LINFORMER_K_PROJ = 16
+LINFORMER_DFF = 64
 LINFORMER_DROPOUT = 0.05
 LINFORMER_FFN_DROPOUT = 0.05
 
