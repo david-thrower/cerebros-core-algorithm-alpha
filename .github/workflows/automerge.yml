@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "289-try-sparse-categorical-crossentropy-on-288-composite-llm-model-using" ]
+    branches: [ "main", "290-patch-to-289-fix-voxel-gradient-issues" ]
 
 
 permissions:
