@@ -289,8 +289,11 @@ class Perplexity(tf.keras.metrics.Metric):
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='SparsePerplexity')
 class SparsePerplexity(tf.keras.metrics.Metric):
     """
-    Computes perplexity, defined as e^(sparse categorical crossentropy).
-    Assumes y_true are integer labels (not one-hot encoded).
+    Computes perplexity for a batch of next-token predictions.
+    
+    Expects:
+        y_true: (Batch_Size,) - Integer labels (the actual next token).
+        y_pred: (Batch_Size, Vocab_Size) - Logits/Probabilities for the next token.
     """
 
     def __init__(self, name='perplexity', **kwargs):
@@ -299,35 +302,41 @@ class SparsePerplexity(tf.keras.metrics.Metric):
         self.count = self.add_weight(name='count', initializer='zeros')
 
     def update_state(self, y_true, y_pred, sample_weight=None):
+        # y_true shape: (Batch_Size,)
+        # y_pred shape: (Batch_Size, Vocab_Size)
+        
         # Calculate sparse categorical crossentropy
-        # This function expects y_true to be integers and y_pred to be probabilities/logits
-        crossentropy = tf.keras.losses.sparse_categorical_crossentropy(y_true, y_pred)
-
-        # Apply sample weighting if provided
+        # from_logits=True is safer for raw model outputs. 
+        # If your final layer is Softmax, change to False.
+        crossentropy = tf.keras.losses.sparse_categorical_crossentropy(
+            y_true, 
+            y_pred, 
+            from_logits=True
+        )
+        
+        # Handle sample weighting
         if sample_weight is not None:
-            # Ensure sample_weight is float32 for multiplication
             sample_weight = tf.cast(sample_weight, tf.float32)
             crossentropy = crossentropy * sample_weight
-            # If sample_weight is used, we sum the weights to get the correct average
             batch_weight_sum = tf.reduce_sum(sample_weight)
         else:
-            # If no sample_weight, the count is the batch size
+            # Count is the Batch Size
             batch_weight_sum = tf.cast(tf.shape(y_true)[0], dtype=tf.float32)
 
-        # Update the running sum of crossentropy and the count of samples
+        # Update the running sum of crossentropy
         self.total_crossentropy.assign_add(tf.reduce_sum(crossentropy))
+        
+        # Update the running count
         self.count.assign_add(batch_weight_sum)
 
     def result(self):
         # Compute the average crossentropy
-        # Avoid division by zero
         average_crossentropy = tf.math.divide_no_nan(self.total_crossentropy, self.count)
-
+        
         # Compute perplexity as e^(average crossentropy)
         return tf.exp(average_crossentropy)
 
     def reset_state(self):
-        # Reset the state variables
         self.total_crossentropy.assign(0.0)
         self.count.assign(0.0)
 
