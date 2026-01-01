@@ -844,9 +844,9 @@ phase_i_b_val_dataset = \
         sample_expansion_batch_size=PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE,
         model_batch_size=batch_size)
 
-phase_i_b_loss = tf.keras.losses.CategoricalCrossentropy()
-phase_i_b_categorical_accuracy = tf.keras.metrics.CategoricalAccuracy()
-phase_i_b_perplexity = Perplexity(name="perplexity_phase_i_b")
+phase_i_b_loss = tf.keras.losses.SparseCategoricalCrossentropy()
+phase_i_b_categorical_accuracy = tf.keras.metrics.SparseCategoricalAccuracy()
+phase_i_b_perplexity = SparsePerplexity(name="perplexity_phase_i_b")
 
 
 # Create the schedule instance
