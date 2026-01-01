@@ -425,7 +425,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     minimum_neurons_per_unit=minimum_neurons_per_unit,
     maximum_neurons_per_unit=maximum_neurons_per_unit,
     activation=activation,
-    final_activation='softmax',
+    final_activation=None,
     number_of_architecture_moities_to_try=moities_to_try,
     number_of_tries_per_architecture_moity=tries_per_moity,
     minimum_skip_connection_depth=1,
@@ -487,7 +487,7 @@ PADDING_TOKEN = tokenizer.pad_token_id
 
 input_ids = tokenizer(
     text,
-    add_special_tokens=False
+    add_special_tokens=FaFlse
 )['input_ids']
 current_tokens = input_ids.copy()
 
