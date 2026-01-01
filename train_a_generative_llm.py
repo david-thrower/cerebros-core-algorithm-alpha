@@ -244,7 +244,7 @@ X_train, X_test, y_train, y_test = \
 print("Debug info")
 
 print(f"Data: {X_train[:5]}")
-print("Labels: {y_train[:5]}")
+print(f"Labels: {y_train[:5]}")
 
 
 print("\n\n\nSanity check for correct preprocessing:")
