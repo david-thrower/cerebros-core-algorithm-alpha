@@ -1155,7 +1155,7 @@ class DynamicVoxelAttentionLayer(tf.keras.layers.Layer):
         self.kernel_initializer = tf.keras.initializers.get(kernel_initializer)
         self.gate_locked = gate_locked
 
-        # Gating weights
+        # Gating weights for Q, K, V
         self.gate_k = self.add_weight(name='gate_k', shape=(self.d_model,), initializer='zeros', trainable=True)
         self.gate_q = self.add_weight(name='gate_q', shape=(self.d_model,), initializer='zeros', trainable=True)
         self.gate_v = self.add_weight(name='gate_v', shape=(self.d_model,), initializer='zeros', trainable=True)
@@ -1165,55 +1165,98 @@ class DynamicVoxelAttentionLayer(tf.keras.layers.Layer):
         self.dense_q = tf.keras.layers.Dense(self.d_model, kernel_initializer=self.kernel_initializer)
         self.dense_v = tf.keras.layers.Dense(self.d_model, kernel_initializer=self.kernel_initializer)
 
-        # CA components
-        self.ca_conv = tf.keras.layers.Conv3D(
+        # CA components - separate convolutions for different roles
+        self.ca_qk_conv = tf.keras.layers.Conv3D(
             filters=self.d_model,
             kernel_size=self.ca_kernel_size,
             padding='same',
             kernel_initializer=self.kernel_initializer,
-            name='ca_conv'
+            name='ca_qk_conv'
         )
+        self.ca_v_conv = tf.keras.layers.Conv3D(
+            filters=self.d_model,
+            kernel_size=self.ca_kernel_size,
+            padding='same',
+            kernel_initializer=self.kernel_initializer,
+            name='ca_v_conv'
+        )
+        self.ca_attention_conv = tf.keras.layers.Conv3D(
+            filters=self.d_model,
+            kernel_size=self.ca_kernel_size,
+            padding='same',
+            kernel_initializer=self.kernel_initializer,
+            name='ca_attention_conv'
+        )
+        
         self.layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
     def build(self, input_shape):
         super().build(input_shape)
 
-    def _run_ca(self, voxel):
-        """Run CA simulation without checkpointing (stable but memory-intensive)."""
-        result = voxel
+    def _run_ca_attention(self, q_voxel, k_voxel, v_voxel):
+        """
+        Run CA simulation that approximates attention without explicit matmul.
+        The CA dynamics themselves compute the attention-like interactions.
+        """
+        # Combine Q and K to create attention-like interactions
+        qk_interaction = q_voxel * k_voxel  # Element-wise interaction in voxel space
+        
+        # Normalize the interaction
+        qk_normalized = self.layer_norm(qk_interaction)
+        
+        # Use CA to propagate attention information
+        attention_voxel = qk_normalized * v_voxel
+        
+        result = attention_voxel
         for _ in range(self.ca_steps):
-            conv_update = self.ca_conv(result)
-            normalized_update = self.layer_norm(conv_update)
-            result = tf.tanh(result + normalized_update)
+            # QK interaction update
+            qk_update = self.ca_qk_conv(result)
+            
+            # V update influenced by QK
+            v_update = self.ca_v_conv(result)
+            
+            # Combined attention update
+            attention_update = self.ca_attention_conv(result)
+            
+            # Apply tanh nonlinearity and residual connection
+            result = tf.tanh(result + qk_update + v_update + attention_update)
+            
         return result
 
     def call(self, inputs):
         batch_size = tf.shape(inputs)[0]
         seq_len = tf.shape(inputs)[1]
 
-        # Project inputs and apply gating
+        # 1. Project inputs and apply gating for Q, K, and V
         q = self.dense_q(inputs) * tf.nn.sigmoid(self.gate_q)
         k = self.dense_k(inputs) * tf.nn.sigmoid(self.gate_k)
         v = self.dense_v(inputs) * tf.nn.sigmoid(self.gate_v)
 
-        # Reshape to 3D grid (sequence as depth)
-        voxel_3d = tf.reshape(v, [batch_size, seq_len, 1, 1, self.d_model])
+        # 2. Reshape all three to 3D grid (sequence as depth)
+        q_voxel_3d = tf.reshape(q, [batch_size, seq_len, 1, 1, self.d_model])
+        k_voxel_3d = tf.reshape(k, [batch_size, seq_len, 1, 1, self.d_model])
+        v_voxel_3d = tf.reshape(v, [batch_size, seq_len, 1, 1, self.d_model])
 
-        # Pad scratch space
+        # 3. Pad scratch space for CA simulation
         paddings = [[0, 0], [0, 0],
                     [0, self.max_voxel_grid_size - 1],
                     [0, self.max_voxel_grid_size - 1],
                     [0, 0]]
-        voxel_padded = tf.pad(voxel_3d, paddings)
+        
+        q_padded = tf.pad(q_voxel_3d, paddings)
+        k_padded = tf.pad(k_voxel_3d, paddings)
+        v_padded = tf.pad(v_voxel_3d, paddings)
 
-        # Run CA simulation
-        v_ca = self._run_ca(voxel_padded)
+        # 4. Run the Cellular Automata simulation that approximates attention
+        # This is where the attention is compressed into CA dynamics
+        attention_voxel = self._run_ca_attention(q_padded, k_padded, v_padded)
 
-        # Collapse scratch space and add residual
-        output_sequence = tf.reduce_mean(v_ca, axis=[2, 3])
-        output = inputs + output_sequence
+        # 5. Collapse the 3D voxels back to 2D sequences
+        # The reduce_mean merges the spatial dimensions, returning to (batch, seq, d_model)
+        attention_output = tf.reduce_mean(attention_voxel, axis=[2, 3])
 
-        return output
+        # 6. Return the attention output
+        return attention_output
 
     def get_config(self):
         config = super().get_config()
