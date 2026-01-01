@@ -409,7 +409,7 @@ PROJECT_NAME = f'{TIME}_cerebros_not-gpt'
 meta_trial_number = 42  # irrelevant unless in distributed training
 
 # Custom metric: Perplexity:
-sparse_perplexity_metric = SparsePerplexity
+sparse_perplexity_metric = SparsePerplexity()
 
 cerebros_automl = SimpleCerebrosRandomSearch(
     unit_type=DenseUnit,
