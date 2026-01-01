@@ -445,7 +445,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     p_lateral_connection_decay=zero_95_exp_decay,
     num_lateral_connection_tries_per_unit=num_lateral_connection_tries_per_unit,
     learning_rate=learning_rate,
-    loss=tf.keras.losses.CategoricalCrossentropy(from_logits=True),
+    loss=tf.keras.losses.SparseCategoricalCrossentropy(),
     metrics=[tf.keras.metrics.SparseCategoricalAccuracy(),
              sparse_perplexity_metric, 
              # tf.keras.metrics.Accuracy()
