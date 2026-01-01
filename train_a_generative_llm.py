@@ -241,11 +241,19 @@ x, y, vocab_size = prepare_data(data_0=non_instruct_samples, tokenizer_0=tokeniz
 X_train, X_test, y_train, y_test = \
         train_test_split(x, y, test_size=0.85, shuffle=False)
 
-print("Sanity check for correct preprocessing:")
+print("Debug info")
+
+print(f"Data: {X_train[:5]}")
+print("Labels: {y_train[:5]}")
+
+
+print("\n\n\nSanity check for correct preprocessing:")
 print(f"Shape of X_train: {len(X_train[0])}")
 print(f"Shape of y_train: {len(y_train[0])}")
 print(f"Shape of X_test: {len(X_test[0])}")
 print(f"Shape of y_test: {len(y_test[0])}")
+
+raise Exception("Debug")
 
 x_train_tf = tf.constant(X_train, tf.int32)
 y_train_tf = tf.constant(y_train, tf.float32)
