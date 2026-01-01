@@ -253,8 +253,6 @@ print(f"Shape of y_train: {len(y_train)}")
 print(f"Shape of X_test: {len(X_test[0])}")
 print(f"Shape of y_test: {len(y_test)}")
 
-raise Exception("Debug")
-
 x_train_tf = tf.constant(X_train, tf.int32)
 y_train_tf = tf.constant(y_train, tf.float32)
         
