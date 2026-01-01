@@ -487,7 +487,7 @@ PADDING_TOKEN = tokenizer.pad_token_id
 
 input_ids = tokenizer(
     text,
-    add_special_tokens=FaFlse
+    add_special_tokens=False
 )['input_ids']
 current_tokens = input_ids.copy()
 
