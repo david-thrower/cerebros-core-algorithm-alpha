@@ -286,6 +286,52 @@ class Perplexity(tf.keras.metrics.Metric):
         self.count.assign(0.0)
 
 
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='SparsePerplexity')
+class SparsePerplexity(tf.keras.metrics.Metric):
+    """
+    Computes perplexity, defined as e^(sparse categorical crossentropy).
+    Assumes y_true are integer labels (not one-hot encoded).
+    """
+
+    def __init__(self, name='perplexity', **kwargs):
+        super().__init__(name=name, **kwargs)
+        self.total_crossentropy = self.add_weight(name='total_crossentropy', initializer='zeros')
+        self.count = self.add_weight(name='count', initializer='zeros')
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        # Calculate sparse categorical crossentropy
+        # This function expects y_true to be integers and y_pred to be probabilities/logits
+        crossentropy = tf.keras.losses.sparse_categorical_crossentropy(y_true, y_pred)
+
+        # Apply sample weighting if provided
+        if sample_weight is not None:
+            # Ensure sample_weight is float32 for multiplication
+            sample_weight = tf.cast(sample_weight, tf.float32)
+            crossentropy = crossentropy * sample_weight
+            # If sample_weight is used, we sum the weights to get the correct average
+            batch_weight_sum = tf.reduce_sum(sample_weight)
+        else:
+            # If no sample_weight, the count is the batch size
+            batch_weight_sum = tf.cast(tf.shape(y_true)[0], dtype=tf.float32)
+
+        # Update the running sum of crossentropy and the count of samples
+        self.total_crossentropy.assign_add(tf.reduce_sum(crossentropy))
+        self.count.assign_add(batch_weight_sum)
+
+    def result(self):
+        # Compute the average crossentropy
+        # Avoid division by zero
+        average_crossentropy = tf.math.divide_no_nan(self.total_crossentropy, self.count)
+
+        # Compute perplexity as e^(average crossentropy)
+        return tf.exp(average_crossentropy)
+
+    def reset_state(self):
+        # Reset the state variables
+        self.total_crossentropy.assign(0.0)
+        self.count.assign(0.0)
+
+
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPTConfig')
 class CerebrosNotGPTConfig:
     def __init__(self, max_sequence_length=1536, padding_token=None):
