@@ -103,7 +103,7 @@ tries_per_moity = 1 # ++ Modest ++ Accuracy, quadratic increase in computation t
 
 # Main tunable hyperparameters:
 
-POSITIONAL_EMBEDDING_DROPOUT = 0.7651951380000674
+POSITIONAL_EMBEDDING_DROPOUT = 0.05 # 0.7651951380000674
 activation = 'softplus'
 
 # Directly proportional to the connectivity density between the Input layer
