@@ -45,7 +45,7 @@ from vanilladatasets.web_english_bible import samples as bible
 # environment.
 
 # Samples to use for the neural architecture seaerch stage
-PHASE_I_A_SAMPLES_TO_CREATE = 20
+PHASE_I_A_SAMPLES_TO_CREATE = 10
 
 # Samples to use for the main training stage
 PHASE_I_B_SAMPLES_TO_CREATE = 20
