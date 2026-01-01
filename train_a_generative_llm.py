@@ -255,15 +255,15 @@ print(f"Shape of y_test: {len(y_test)}")
 
 x_train_tf = tf.constant(X_train, tf.int32)
 print(x_train_tf)
-y_train_tf = tf.constant(y_train, tf.float32)
+y_train_tf = tf.constant(y_train, tf.int32)
 print(y_train_tf)
 
 x_train_packaged = [x_train_tf]
 y_train_packaged = [y_train_tf]
         
 x_test_tf = tf.constant(X_test, tf.int32)
-y_test_tf = tf.constant(y_test, tf.float32)
-        
+y_test_tf = tf.constant(y_test, tf.int32)
+
 x_test_packaged = [x_test_tf] 
 y_test_packaged = [y_test_tf]
 
@@ -819,7 +819,8 @@ def create_dataset(raw_text_samples, tokenizer, sample_expansion_batch_size=50, 
         # )
         output_signature=(
             (tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),),  # A tuple containing ONE TensorSpec
-            tf.TensorSpec(shape=(generator_0.vocabulary_size,), dtype=tf.float32)  # A single TensorSpec
+            tf.TensorSpec(shape=(), dtype=tf.int32)
+            # tf.TensorSpec(shape=(generator_0.vocabulary_size,), dtype=tf.float32)  # A single TensorSpec
         )
     )
 
