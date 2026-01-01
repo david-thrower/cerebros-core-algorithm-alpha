@@ -14,54 +14,52 @@ def prepare_data(
         data_0: List[str],
         tokenizer_0: Any,
         max_seq_length: int = 1024,
-        prompt_length: int = 1) -> Tuple[List[List[int]], List[List[int]], int]:
+        prompt_length: int = 1) -> Tuple[List[List[int]], List[int], int]:
     """
-    Prepares tokenized input sequences and corresponding labels for training the Cerebros
-    [not so] large language model.
+    Prepares tokenized input sequences and integer labels for next-token prediction.
 
-    This function takes raw text data, tokenizes it, and applies a sliding window approach to
-    generate input-label pairs for next-token prediction tasks. It assumes that each sample may
-    contain a special token `</prompt>` which separates the prompt from the completion. If this
-    token is not present, the sample is treated as a non-instruct example and a default prompt
-    length (1 token) is used.
+    This function tokenizes input texts and applies a sliding window to generate
+    (input, label) pairs. For each token in a sequence, the input consists of all
+    preceding tokens, and the label is the integer ID of the current token.
 
-    For each token after the prompt (up to the first padding token), it creates an input sequence
-    consisting of all tokens up to (but not including) that token, and sets the label as a one-hot
-    encoded vector of the target token. A final sample is added where the label is the pad token,
-    indicating the end of the sequence.
+    The sliding window for each sample stops after it has generated a label that
+    matches the tokenizer's ``pad_token_id``. This teaches the model to predict
+    this specific token to signal the end of a generated sequence.
 
-    Parameters:
-    -----------
-    data_0 : list of str
-        List of input text samples to be processed.
-    max_seq_length : int, optional: default = 1024
-        Maximum sequence length for input tensors. Sequences longer than this will be truncated,
-        and shorter ones will be padded. Defaults to `MAX_SEQ_LENGTH`.
-    prompt_length: int, optional: Default = 1
-        Rarely changed, deprecated (for R and D use), to be removed: The number of tokens fed to
-        the model at training before the model is expected to start predicting the next token.
-    tokenizer : a transformers.Tokenizer
+    Parameters
+    ----------
+    data_0 : List[str]
+        Raw text samples to be processed.
+    tokenizer_0 : Any
+        A ``transformers``-style tokenizer (must provide ``pad_token_id`` and
+        ``encode``).
+    max_seq_length : int, default 1024
+        Length to which all input sequences are padded or truncated.
+    prompt_length : int, default 1
+        Number of tokens treated as the prompt when the special ``</prompt>``
+        token is absent.
 
-    Returns:
-    --------
-    tuple:
-        - all_input_ids (2d list of int): Tuple[List[List[int]]] Token IDs for each input sequence, shaped
-          [num_samples, max_seq_length].
-        - all_labels (2d list of int): Tuple[List[List[int]]] One-hot encoded labels for next-token prediction,
-          shaped [num_samples, vocab_size].
-        - vocab_size (int): Size of the tokenizer's vocabulary, used for label dimensions.
+    Returns
+    -------
+    Tuple[List[List[int]], List[int], int]
+        * ``all_input_ids`` – list of padded input sequences, shape
+          ``(NUM_EXPANDED_SAMPLES, max_seq_length)``.
+        * ``all_labels`` – list of integer token IDs for the next token,
+          shape ``(NUM_EXPANDED_SAMPLES,)``.
+        * ``vocab_size`` – size of the tokenizer vocabulary.
 
-    Notes:
-    ------
-    - Special tokens like `</prompt>` are handled manually; no automatic special token insertion.
-    - Padding is done using the tokenizer's pad token ID to MAX_SEQ_LENGTH.
-    - The function assumes global variables `tokenizer`, `MAX_SEQ_LENGTH`, `PROMPT_LENGTH`, and
-      `vocab_size` are defined in the scope where this function is called.
+    Notes
+    -----
+    * The tokenizer's ``pad_token_id`` is used for two purposes:
+      1. To pad the input sequences to ``max_seq_length``.
+      2. To act as the special label that terminates the sliding window for a
+         sample, teaching the model when to stop generating text.
+    * Labels are returned as plain integers, not one-hot encoded vectors.
     """
+    all_input_ids: List[List[int]] = []
+    all_labels: List[int] = []
 
-    all_input_ids = []
-    all_labels = []
-
+    # This token is used for both sequence padding and as the termination label.
     pad_token_id = tokenizer_0.pad_token_id
 
     # Tokenize all data at once for efficiency
@@ -70,12 +68,18 @@ def prepare_data(
         max_length=max_seq_length,
         padding='max_length',
         truncation=True,
-        add_special_tokens=False  # We'll handle special tokens manually
+        add_special_tokens=False
     )
     vocab_size = len(tokenizer_0)
 
     # Get the token ID for </prompt>
-    end_prompt_token_id = tokenizer_0.encode("</prompt>", add_special_tokens=False)[0]
+    try:
+        end_prompt_token_id = tokenizer_0.encode("</prompt>", add_special_tokens=False)[0]
+    except IndexError:
+        warn("Tokenizer does not seem to have a token for '</prompt>'. "
+             "Function will rely on prompt_length for all samples.")
+        # Set to a value that will not be found in the sequence
+        end_prompt_token_id = -1
 
     # Process each sample
     for sample_tokens in tokenized_data['input_ids']:
@@ -84,57 +88,29 @@ def prepare_data(
             end_prompt_index = sample_tokens.index(end_prompt_token_id)
         except ValueError:
             # If </prompt> not found, treat sample as a non-instruct sample
-            end_prompt_index = (
-                    prompt_length - 1)  # int(np.ceil(len(sample_tokens) * (1/3)))  # 0 ## 1. Give it a fair starting place to predict the next word 2. reduce the number of expanded samples
+            end_prompt_index = prompt_length - 1
 
-        # Find first pad token after </prompt>
-        first_pad_index = None
+        # Apply sliding window from after the prompt to the end of the sequence.
+        # The loop will break when the label is the pad token.
         for i in range(end_prompt_index + 1, len(sample_tokens)):
-            if sample_tokens[i] == pad_token_id:
-                first_pad_index = i
-                break
-
-        # If no pad token found, use the end of sequence
-        if first_pad_index is None:
-            first_pad_index = len(sample_tokens)
-
-        # Apply sliding window from after </prompt> to first pad token
-        # Start from end_prompt_index + 1 (first token to predict)
-        # End at first_pad_index - 1 (last token to predict)
-        for i in range(end_prompt_index + 1, first_pad_index):
-            # Input: from start up to (but not including) token i
+            # Input: tokens up to (but not including) position i
             input_ids = sample_tokens[:i]
 
-            # Pad or truncate to max_seq_length
+            # Pad or truncate to max_seq_length using the pad token
             if len(input_ids) > max_seq_length:
                 input_ids = input_ids[:max_seq_length]
             else:
                 input_ids = input_ids + [pad_token_id] * (max_seq_length - len(input_ids))
 
-            # Label: one-hot encoding of token at position i
-            next_token = sample_tokens[i]
-            label = [0] * vocab_size
-            label[next_token] = 1
+            # Label: integer token ID at position i
+            label = sample_tokens[i]
 
             all_input_ids.append(input_ids)
             all_labels.append(label)
 
-        # Add final sample with pad token as label to indicate termination
-        if first_pad_index < len(sample_tokens):  # Only if there's actually a pad token
-            input_ids = sample_tokens[:first_pad_index]
-
-            # Pad or truncate to max_seq_length
-            if len(input_ids) > max_seq_length:
-                input_ids = input_ids[:max_seq_length]
-            else:
-                input_ids = input_ids + [pad_token_id] * (max_seq_length - len(input_ids))
-
-            # Label: one-hot encoding of pad token
-            label = [0] * vocab_size
-            label[pad_token_id] = 1
-
-            all_input_ids.append(input_ids)
-            all_labels.append(label)
+            # Stop after the first occurrence of the pad token label
+            if label == pad_token_id:
+                break
 
     return all_input_ids, all_labels, vocab_size
 
