@@ -1424,6 +1424,8 @@ class LinformerAttention(tf.keras.layers.Layer):
         return config
 
 
+# Block object that applies LayerNorm, Dropout, and a gated skip connection 
+# between the input and the attention output:
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='LinformerBlock')
 class LinformerBlock(tf.keras.layers.Layer):
     """
@@ -1449,13 +1451,8 @@ class LinformerBlock(tf.keras.layers.Layer):
         self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
         # --- Stream Merging Layer (GATING) ---
-        # This layer generates a gate to control the flow of information
-        # between the original input and the attention output.
-        self.gate = tf.keras.layers.Dense(
-            d_model,
-            activation='sigmoid',  # The gate values will be between 0 and 1
-            name="stream_gate"
-        )
+        # *** CHANGE: Use the standard GatedMergeLayer for consistency ***
+        self.gate = GatedMergeLayer(d_model)
 
         # --- Feed-Forward Network (FFN) Sub-layer ---
         self.ffn = tf.keras.Sequential([
@@ -1474,11 +1471,9 @@ class LinformerBlock(tf.keras.layers.Layer):
         # 3. Apply dropout
         attn_output = self.dropout1(attn_output, training=training)
 
-        # 4. GATE the original input and the attention output
-        # Generate the gate from the normalized input
-        gate_values = self.gate(norm_x)
-        # Blend the two streams using the gate
-        merged_output = gate_values * inputs + (1.0 - gate_values) * attn_output
+        # 4. *** CHANGE: GATE the original input and the attention output using the standard layer ***
+        # This replaces the old manual gating logic.
+        merged_output = self.gate([inputs, attn_output])
 
         # --- Feed-Forward Sub-layer with Pre-LN and Residual ---
         # 1. Normalize the output of the merged stream
