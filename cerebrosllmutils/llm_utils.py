@@ -485,9 +485,8 @@ class CerebrosNotGPT(tf.keras.Model):
 
             # Convert to tensor and get model prediction
             input_tensor = tf.constant([input_tokens], dtype=tf.int32)
-            probs_nested = self.model(input_tensor)
-            probs = probs_nested[0]  # Already softmax probabilities (NOT logits as comment says)
-            logits = tf.math.log(probs + 10 ** -20)  # Convert to logits for penalty application
+            logits_nested = self.model(input_tensor)
+            logits = logits_nested[0]  # Model outputs logits
 
             if do_sample:
                 # Apply repetition/frequency/presence penalties to logits
