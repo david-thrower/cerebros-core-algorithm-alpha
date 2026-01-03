@@ -103,7 +103,7 @@ tries_per_moity = 1 # ++ Modest ++ Accuracy, quadratic increase in computation t
 
 # Main tunable hyperparameters:
 
-POSITIONAL_EMBEDDING_DROPOUT = 0.7651951380000674
+POSITIONAL_EMBEDDING_DROPOUT = 0.05 # 0.7651951380000674
 activation = 'softplus'
 
 # Directly proportional to the connectivity density between the Input layer
@@ -445,7 +445,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     p_lateral_connection_decay=zero_95_exp_decay,
     num_lateral_connection_tries_per_unit=num_lateral_connection_tries_per_unit,
     learning_rate=learning_rate,
-    loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
     metrics=[tf.keras.metrics.SparseCategoricalAccuracy(),
              sparse_perplexity_metric, 
              # tf.keras.metrics.Accuracy()
@@ -845,7 +845,7 @@ phase_i_b_val_dataset = \
         sample_expansion_batch_size=PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE,
         model_batch_size=batch_size)
 
-phase_i_b_loss = tf.keras.losses.SparseCategoricalCrossentropy()
+phase_i_b_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 phase_i_b_categorical_accuracy = tf.keras.metrics.SparseCategoricalAccuracy()
 phase_i_b_perplexity = SparsePerplexity(name="perplexity_phase_i_b")
 
