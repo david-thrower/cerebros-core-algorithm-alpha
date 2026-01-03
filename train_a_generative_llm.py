@@ -715,7 +715,7 @@ for sample in prompt_samples:
     test_text(
             test_prompt=sample,
             max_new_tokens=MAX_NEW_TOKENS,
-            result_cutoff=15,
+            result_cutoff=999,
             trial_id=trial_number,
             test_sample_number=counter,
             result_0=phase_i_a_result)
