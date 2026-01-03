@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "290-patch-to-289-fix-voxel-gradient-issues" ]
+    branches: [ "main", "291-from-290-fix-gating-on-linformer-block" ]
 
 
 permissions:
