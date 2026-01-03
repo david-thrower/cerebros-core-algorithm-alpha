@@ -696,37 +696,38 @@ class WarmupCosineDecayRestarts(tf.keras.optimizers.schedules.LearningRateSchedu
 
 
 # Gating merge layer
-
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='GatedMergeLayer')
 class GatedMergeLayer(tf.keras.layers.Layer):
     """
     Merges two input streams using a learned gating mechanism.
-
-    The gate is computed from the first input stream and determines the
-    proportion of each stream in the final output.
-    output = gate * input_1 + (1 - gate) * input_2
-
-    Args:
-        d_model (int): The feature dimension of the input streams.
+    This version is numerically stable to prevent NaN values.
     """
     def __init__(self, d_model, **kwargs):
         super().__init__(**kwargs)
         self.d_model = d_model
-        # A dense layer to generate the gate values (between 0 and 1)
-        self.gate_dense = tf.keras.layers.Dense(d_model, activation='sigmoid')
+        # Initialize gate to start near 0.5 (pass-through)
+        self.gate_dense = tf.keras.layers.Dense(
+            d_model,
+            activation='sigmoid',
+            bias_initializer=tf.keras.initializers.Constant(0.0)
+        )
 
     def call(self, inputs):
         input_1, input_2 = inputs
-        # Generate gate from the first input
         gate_values = self.gate_dense(input_1)
-        # Blend the two streams
-        return gate_values * input_1 + (1.0 - gate_values) * input_2
+
+        # Add epsilon to prevent exact 0/1 values and numerical instability
+        gate_values = tf.clip_by_value(gate_values, 1e-7, 1 - 1e-7)
+
+        # Use tf.add for numerical stability
+        return tf.add(
+            tf.multiply(gate_values, input_1),
+            tf.multiply(1.0 - gate_values, input_2)
+        )
 
     def get_config(self):
         config = super().get_config()
-        config.update({
-            "d_model": self.d_model,
-        })
+        config.update({"d_model": self.d_model})
         return config
 
 
@@ -1472,7 +1473,6 @@ class LinformerBlock(tf.keras.layers.Layer):
         attn_output = self.dropout1(attn_output, training=training)
 
         # 4. *** CHANGE: GATE the original input and the attention output using the standard layer ***
-        # This replaces the old manual gating logic.
         merged_output = self.gate([inputs, attn_output])
 
         # --- Feed-Forward Sub-layer with Pre-LN and Residual ---
