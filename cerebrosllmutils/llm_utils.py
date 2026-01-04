@@ -844,7 +844,7 @@ class ManifoldHyperConnect(tf.keras.layers.Layer):
 
         # 5. Raw mixing matrix W (unconstrained)
         # Initialize close to identity to preserve residual behavior at the start.
-        eye_init = tf.eye(self.num_streams, dtype=np.float32)
+        eye_init = tf.eye(self.num_streams, dtype=tf.float32)
         self.W = self.add_weight(
             name="W_raw",
             shape=(self.num_streams, self.num_streams),
