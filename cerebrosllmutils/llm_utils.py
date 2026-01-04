@@ -886,12 +886,11 @@ class ManifoldHyperConnect(tf.keras.layers.Layer):
         return projected
 
     def call(self, inputs):
-        # NOTE: The dynamic build logic has been removed.
-        # Keras's Functional API will call the build() method once with
-        # symbolic input shapes before the first call() to create weights.
-        # The call() method should only perform computation. This prevents
-        # "already initialized" errors.
-
+        """
+        inputs: list/tuple of length num_streams, each tensor with shape:
+            [B, ..., D] where D may differ if projections are used
+        Returns: single tensor [B, ..., D_target] or list of such tensors
+        """
         if not isinstance(inputs, (list, tuple)):
             raise ValueError(
                 "ManifoldHyperConnect expects a list/tuple of tensors as input"
@@ -901,36 +900,40 @@ class ManifoldHyperConnect(tf.keras.layers.Layer):
                 f"Expected {self.num_streams} input streams, got {len(inputs)}"
             )
 
+        # Step 1: Optionally project to common last dimension
         streams = self._maybe_project(inputs)
-        streams = tf.stack(streams, axis=0)  # (num_streams, B, ...)
 
-        W_proj = self._sinkhorn(self.W)  # (num_streams, num_streams)
+        # Step 2: Stack along new axis 0: shape (S, B, T, D) e.g. (2, B, 40, 12)
+        streams = tf.stack(streams, axis=0)
 
-        # Broadcasting logic
-        W_expanded = W_proj
+        # Step 3: Compute manifold-constrained mixing matrix (S_out, S_in) = (2, 2)
+        W_proj = self._sinkhorn(self.W)
 
-    # Stack along new axis 0: shape (S, B, T, D) = (2, ?, 40, 12)
-    streams = tf.stack(streams, axis=0)
+        # Step 4: FIXED broadcasting for rank-4+ tensors
+        # W_proj: (S_out, S_in) = (2, 2)
+        # streams: (S_in, B, T, D) = (2, B, 40, 12)
     
-    # Compute manifold-constrained mixing matrix: (S_out, S_in) = (2, 2)
-    W_proj = self._sinkhorn(self.W)
+        # Expand W_proj to (1, S_out, S_in, 1, 1) for broadcasting
+        W_broadcast = W_proj[None, :, :, None, None]  # (1, 2, 2, 1, 1)
     
-    # CORRECT broadcasting: W_proj[None, :, None, None] * streams[None, :, :, :]
-    # W_proj becomes (1, 2, 2, 1, 1)
-    # streams becomes (1, 2, ?, 40, 12) via broadcasting
-    W_broadcast = W_proj[None, :, :, None, None]  # (1, S_out, S_in, 1, 1)
-    streams_broadcast = streams[None, :, None, :, :]  # (1, S_in, 1, ?, D)
+        # Expand streams to align: (1, S_in, 1, B, T, D) via slicing
+        # streams[None, :, None, :, :, :] but more explicit:
+        streams_broadcast = streams[None, :, None, :, :]  # (1, 2, 1, B, 40, 12)
     
-    # Elementwise multiply: (1, 2, 2, ?, 12) -> sum over axis=2 (S_in)
-    mixed = tf.reduce_sum(W_broadcast * streams_broadcast, axis=2)
-    # mixed: (2, ?, 40, 12) = (S_out, B, T, D)
-    
-    if self.return_streams:
-        outputs = tf.unstack(mixed, axis=0)
-        return outputs
-    else:
-        out = tf.reduce_sum(mixed, axis=0)  # (?, 40, 12)
-        return out
+        # Elementwise multiply: (1, 2, 2, B, 40, 12)
+        # Sum over axis=2 (S_in dimension): (1, 2, B, 40, 12)
+        mixed = tf.reduce_sum(W_broadcast * streams_broadcast, axis=2)
+        # mixed: (2, B, 40, 12) = (S_out, B, T, D)
+
+        # Step 5: Return single merged tensor or list of mixed streams
+        if self.return_streams:
+            # Unstack along stream dimension: list of (B, T, D) tensors
+            outputs = tf.unstack(mixed, axis=0)
+            return outputs
+        else:
+            # Sum across output streams: single (B, T, D) tensor
+            out = tf.reduce_sum(mixed, axis=0)
+            return out
 
     def get_config(self):
         config = super().get_config()
