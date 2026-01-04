@@ -518,20 +518,31 @@ class CerebrosNotGPT(tf.keras.Model):
                     # Subtract penalties from logits
                     logits = logits - penalties
 
-                # Apply repetition penalty (standard approach)
+                # Apply repetition penalty
                 if repetition_penalty is not None and repetition_penalty != 1.0:
-                    # Collect unique tokens that have appeared
-                    unique_tokens = list(set(current_tokens))
                     vocab_size = tf.shape(logits)[0]
 
-                    for token_id in unique_tokens:
-                        if token_id < vocab_size:
-                            # Divide logits of repeated tokens by penalty
-                            logits = tf.tensor_scatter_nd_update(
-                                logits,
-                                [[token_id]],
-                                [logits[token_id] / repetition_penalty]
-                            )
+                    # int32 tensor of unique token ids
+                    token_ids = tf.unique(tf.cast(current_tokens, tf.int32)).y
+                    token_ids = tf.boolean_mask(token_ids, token_ids < vocab_size)
+
+                    # gather logits for those tokens
+                    selected_logits = tf.gather(logits, token_ids)
+
+                    # apply penalty: divide positive, multiply negative
+                    pos = selected_logits > 0
+                    new_selected_logits = tf.where(
+                        pos,
+                        selected_logits / repetition_penalty,
+                        selected_logits * repetition_penalty,
+                    )
+
+                    # scatter back in one shot
+                    logits = tf.tensor_scatter_nd_update(
+                        logits,
+                        indices=tf.expand_dims(token_ids, axis=1),
+                        updates=new_selected_logits,
+                    )
 
                 # Apply temperature
                 if temperature != 1.0:
