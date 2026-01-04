@@ -885,6 +885,26 @@ class ManifoldHyperConnect(tf.keras.layers.Layer):
             projected.append(proj(x))
         return projected
 
+
+    # streams_stacked: (S_in, B, T, D) = (2, B, 40, 12)
+    # W_proj: (S_out, S_in) = (2, 2)
+
+    # Explicit matmul over stream dimension: out[i] = sum_j W[i,j] * streams[j]
+    def _mix_streams(self, W_proj, streams_stacked):
+        """Mix streams using explicit loop - guaranteed correct shapes"""
+        S_out, S_in = W_proj.shape
+        assert S_in == self.num_streams
+    
+        mixed_streams = []
+        for i in range(S_out):
+            stream_i = tf.zeros_like(streams_stacked[0])  # (B, T, D)
+            for j in range(S_in):
+                stream_i += W_proj[i, j] * streams_stacked[j]
+            mixed_streams.append(stream_i)
+    
+        mixed_stacked = tf.stack(mixed_streams, axis=0)  # (S_out, B, T, D)
+        return mixed_stacked
+
     def call(self, inputs):
         """
         inputs: list/tuple of length num_streams, each tensor with shape:
@@ -922,7 +942,8 @@ class ManifoldHyperConnect(tf.keras.layers.Layer):
     
         # Elementwise multiply: (1, 2, 2, B, 40, 12)
         # Sum over axis=2 (S_in dimension): (1, 2, B, 40, 12)
-        mixed = tf.reduce_sum(W_broadcast * streams_broadcast, axis=2)
+        mixed = self._mix_streams(W_proj, streams_stacked)
+        # mixed = tf.reduce_sum(W_broadcast * streams_broadcast, axis=2)
         # mixed: (2, B, 40, 12) = (S_out, B, T, D)
 
         # Step 5: Return single merged tensor or list of mixed streams
