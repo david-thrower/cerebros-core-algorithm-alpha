@@ -1110,7 +1110,7 @@ class ChunkedAttentionBlock(tf.keras.layers.Layer):
         # --- Stream Merging Layer (GATING) ---
         # This layer generates a gate to control the flow of information
         # between the original input and the attention output.
-        self.gate = ManifoldHyperConnect(num_streams=2)
+        self.gate = ManifoldHyperConnect()
 
         # --- Feed-Forward Network (FFN) Sub-layer ---
         self.ffn = tf.keras.Sequential([
@@ -1230,7 +1230,7 @@ class MambaBlock(tf.keras.layers.Layer):
         self.out_proj = tf.keras.layers.Dense(self.d_model, use_bias=False)
 
         # --- Gated Merge for Residual Connection ---
-        self.gated_merge = ManifoldHyperConnect(num_streams=2)
+        self.gated_merge = ManifoldHyperConnect()
 
     def build(self, input_shape):
         # Adding a build method to silence the UserWarning and follow best practices.
@@ -1526,7 +1526,7 @@ class VoxelBlock(tf.keras.layers.Layer):
         )
 
         # --- Gated Merge for Residual Connection ---
-        self.gated_merge = ManifoldHyperConnect(num_streams=2)
+        self.gated_merge = ManifoldHyperConnect()
 
     def call(self, inputs, training=False):
         # --- Attention Sub-layer with Pre-LN and Gated Stream Merging ---
@@ -1679,7 +1679,7 @@ class LinformerBlock(tf.keras.layers.Layer):
 
         # --- Stream Merging Layer (GATING) ---
         # *** CHANGE: Use the standard ManifoldHyperConnect for consistency ***
-        self.gate = ManifoldHyperConnect(num_streams=2)
+        self.gate = ManifoldHyperConnect()
 
         # --- Feed-Forward Network (FFN) Sub-layer ---
         self.ffn = tf.keras.Sequential([
