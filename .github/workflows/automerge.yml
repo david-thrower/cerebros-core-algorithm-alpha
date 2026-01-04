@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "293-from-289-retrofit-generate-loop-for-logits" ]
+    branches: [ "main", "289-try-sparse-categorical-crossentropy-on-288-composite-llm-model-using" ]
 
 
 permissions:
