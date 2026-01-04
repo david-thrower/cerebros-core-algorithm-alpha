@@ -741,6 +741,202 @@ class GatedMergeLayer(tf.keras.layers.Layer):
         return config
 
 
+# Manifold Hyperconnectivity Layer
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='ManifoldHyperConnect')
+class ManifoldHyperConnect(tf.keras.layers.Layer):
+    """
+    Manifold-constrained hyper-connection mixer with optional automatic
+    dimension matching.
+
+    - Takes a list/tuple of tensors with shapes (B, ..., D_i). If the 
+      non-batch shapes do not match, each input is projected to a common 
+      last dimension before mixing.
+
+    Args:
+        num_streams: Number of input streams. If None, it is inferred 
+            from the inputs in the first call.
+        sinkhorn_iters: Number of Sinkhorn normalization iterations.
+        temperature: Temperature for the logits before Sinkhorn.
+        epsilon: Small constant for numerical stability in Sinkhorn.
+        return_streams: If True, returns a list of mixed streams;
+            otherwise returns a single merged tensor.
+        target_dim: If None, when shapes differ, uses max(last_dim)
+            across inputs as target; if int, always project to this dim.
+    """
+
+    def __init__(
+        self,
+        num_streams=None,
+        sinkhorn_iters=5,
+        temperature=1.0,
+        epsilon=1e-6,
+        return_streams=False,
+        target_dim=None,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        # Allow None for dynamic detection
+        self.num_streams = None if num_streams is None else int(num_streams)
+        self.sinkhorn_iters = int(sinkhorn_iters)
+        self.temperature = float(temperature)
+        self.epsilon = float(epsilon)
+        self.return_streams = bool(return_streams)
+        self.target_dim = None if target_dim is None else int(target_dim)
+
+    def build(self, input_shape):
+        # 1. Infer num_streams if not provided
+        if self.num_streams is None:
+            if not isinstance(input_shape, (list, tuple)):
+                raise ValueError(
+                    "ManifoldHyperConnect expects a list/tuple of input shapes; "
+                    f"got {input_shape}"
+                )
+            self.num_streams = len(input_shape)
+
+        # 2. Validation
+        if not isinstance(input_shape, (list, tuple)):
+            raise ValueError(
+                "ManifoldHyperConnect expects a list/tuple of input shapes; "
+                f"got {input_shape}"
+            )
+        if len(input_shape) != self.num_streams:
+            raise ValueError(
+                f"Expected {self.num_streams} input streams, got {len(input_shape)}"
+            )
+
+        # 3. Determine shapes and projection needs
+        non_batch_shapes = [tf.TensorShape(s)[1:] for s in input_shape]
+        same_shape = all(s == non_batch_shapes[0] for s in non_batch_shapes)
+
+        self.use_projection = False
+        inferred_target_dim = None
+        last_dims = [s[-1] for s in non_batch_shapes]
+
+        if self.target_dim is not None:
+            self.use_projection = True
+            inferred_target_dim = self.target_dim
+        else:
+            if not same_shape:
+                if any(d is None for d in last_dims):
+                    raise ValueError(
+                        "Cannot infer target_dim because some last dimensions are "
+                        "unknown and target_dim is None. Please set target_dim "
+                        "explicitly."
+                    )
+                inferred_target_dim = int(max(last_dims))
+                self.use_projection = True
+            else:
+                inferred_target_dim = last_dims[0]
+
+        self.effective_target_dim = inferred_target_dim
+
+        # 4. Create projection layers if needed
+        if self.use_projection:
+            self.projections = []
+            for i, shape in enumerate(non_batch_shapes):
+                # Note: We use tf.keras.layers.Dense here
+                proj = tf.keras.layers.Dense(
+                    self.effective_target_dim, name=f"proj_{i}"
+                )
+                self.projections.append(proj)
+        else:
+            self.projections = None
+
+        # 5. Raw mixing matrix W (unconstrained)
+        # Initialize close to identity to preserve residual behavior at the start.
+        eye_init = tf.eye(self.num_streams)
+        self.W = self.add_weight(
+            name="W_raw",
+            shape=(self.num_streams, self.num_streams),
+            initializer=tf.keras.initializers.Constant(eye_init),
+            trainable=True,
+        )
+
+        super().build(input_shape)
+
+    def _sinkhorn(self, logits):
+        """
+        Approximate projection to a doubly stochastic matrix via
+        Sinkhorn normalization on exp(logits / temperature).
+        """
+        x = logits / self.temperature
+        x = tf.nn.softmax(x, axis=-1)
+
+        for _ in range(self.sinkhorn_iters):
+            row_sums = tf.reduce_sum(x, axis=-1, keepdims=True) + self.epsilon
+            x = x / row_sums
+            col_sums = tf.reduce_sum(x, axis=0, keepdims=True) + self.epsilon
+            x = x / col_sums
+
+        return x
+
+    def _maybe_project(self, inputs):
+        """
+        Optionally project each input to effective_target_dim on the last axis.
+        """
+        if not self.use_projection:
+            return inputs
+
+        projected = []
+        for x, proj in zip(inputs, self.projections):
+            projected.append(proj(x))
+        return projected
+
+    def call(self, inputs):
+        # Handle auto-detection of num_streams on first call
+        if not self.built:
+            # If build hasn't been called yet, we trigger it here.
+            # We need the shapes of the inputs.
+            # Note: In eager mode, inputs are tensors. 
+            # We can construct a list of shapes.
+            input_shapes = [x.shape for x in inputs]
+            self.build(input_shapes)
+
+        if not isinstance(inputs, (list, tuple)):
+            raise ValueError(
+                "ManifoldHyperConnect expects a list/tuple of tensors as input"
+            )
+        if len(inputs) != self.num_streams:
+            raise ValueError(
+                f"Expected {self.num_streams} input streams, got {len(inputs)}"
+            )
+
+        streams = self._maybe_project(inputs)
+        streams = tf.stack(streams, axis=0)  # (num_streams, B, ...)
+
+        W_proj = self._sinkhorn(self.W)  # (num_streams, num_streams)
+
+        # Broadcasting logic
+        W_expanded = W_proj
+        while len(W_expanded.shape) < len(streams.shape):
+            W_expanded = tf.expand_dims(W_expanded, -1)
+        
+        streams_expanded = tf.expand_dims(streams, axis=0)
+
+        mixed = tf.reduce_sum(W_expanded * streams_expanded, axis=1)
+
+        if self.return_streams:
+            outputs = tf.unstack(mixed, axis=0)
+            return outputs
+        else:
+            out = tf.reduce_sum(mixed, axis=0)
+            return out
+
+    def get_config(self):
+        config = super().get_config()
+        config.update(
+            {
+                "num_streams": self.num_streams,
+                "sinkhorn_iters": self.sinkhorn_iters,
+                "temperature": self.temperature,
+                "epsilon": self.epsilon,
+                "return_streams": self.return_streams,
+                "target_dim": self.target_dim,
+            }
+        )
+        return config
+
+
 ## Attention Block 1: Chunked Attention (Big - Bird - Like)
 # Captures short and mid range token to token relationships
 # effectively. Is very computationally efficient.
@@ -894,7 +1090,7 @@ class ChunkedAttentionBlock(tf.keras.layers.Layer):
         # --- Stream Merging Layer (GATING) ---
         # This layer generates a gate to control the flow of information
         # between the original input and the attention output.
-        self.gate = GatedMergeLayer(d_model)
+        self.gate = ManifoldHyperConnect(d_model)
 
         # --- Feed-Forward Network (FFN) Sub-layer ---
         self.ffn = tf.keras.Sequential([
@@ -1014,7 +1210,7 @@ class MambaBlock(tf.keras.layers.Layer):
         self.out_proj = tf.keras.layers.Dense(self.d_model, use_bias=False)
 
         # --- Gated Merge for Residual Connection ---
-        self.gated_merge = GatedMergeLayer(d_model)
+        self.gated_merge = ManifoldHyperConnect(d_model)
 
     def build(self, input_shape):
         # Adding a build method to silence the UserWarning and follow best practices.
@@ -1310,7 +1506,7 @@ class VoxelBlock(tf.keras.layers.Layer):
         )
 
         # --- Gated Merge for Residual Connection ---
-        self.gated_merge = GatedMergeLayer(d_model)
+        self.gated_merge = ManifoldHyperConnect(d_model)
 
     def call(self, inputs, training=False):
         # --- Attention Sub-layer with Pre-LN and Gated Stream Merging ---
@@ -1462,8 +1658,8 @@ class LinformerBlock(tf.keras.layers.Layer):
         self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
         # --- Stream Merging Layer (GATING) ---
-        # *** CHANGE: Use the standard GatedMergeLayer for consistency ***
-        self.gate = GatedMergeLayer(d_model)
+        # *** CHANGE: Use the standard ManifoldHyperConnect for consistency ***
+        self.gate = ManifoldHyperConnect(d_model)
 
         # --- Feed-Forward Network (FFN) Sub-layer ---
         self.ffn = tf.keras.Sequential([
