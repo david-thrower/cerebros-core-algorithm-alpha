@@ -885,7 +885,6 @@ class ManifoldHyperConnect(tf.keras.layers.Layer):
             projected.append(proj(x))
         return projected
 
-
     def call(self, inputs):
         # NOTE: The dynamic build logic has been removed.
         # Keras's Functional API will call the build() method once with
@@ -909,19 +908,29 @@ class ManifoldHyperConnect(tf.keras.layers.Layer):
 
         # Broadcasting logic
         W_expanded = W_proj
-        while len(W_expanded.shape) < len(streams.shape):
-            W_expanded = tf.expand_dims(W_expanded, -1)
-        
-        streams_expanded = tf.expand_dims(streams, axis=0)
 
-        mixed = tf.reduce_sum(W_expanded * streams_expanded, axis=1)
-
-        if self.return_streams:
-            outputs = tf.unstack(mixed, axis=0)
-            return outputs
-        else:
-            out = tf.reduce_sum(mixed, axis=0)
-            return out
+    # Stack along new axis 0: shape (S, B, T, D) = (2, ?, 40, 12)
+    streams = tf.stack(streams, axis=0)
+    
+    # Compute manifold-constrained mixing matrix: (S_out, S_in) = (2, 2)
+    W_proj = self._sinkhorn(self.W)
+    
+    # CORRECT broadcasting: W_proj[None, :, None, None] * streams[None, :, :, :]
+    # W_proj becomes (1, 2, 2, 1, 1)
+    # streams becomes (1, 2, ?, 40, 12) via broadcasting
+    W_broadcast = W_proj[None, :, :, None, None]  # (1, S_out, S_in, 1, 1)
+    streams_broadcast = streams[None, :, None, :, :]  # (1, S_in, 1, ?, D)
+    
+    # Elementwise multiply: (1, 2, 2, ?, 12) -> sum over axis=2 (S_in)
+    mixed = tf.reduce_sum(W_broadcast * streams_broadcast, axis=2)
+    # mixed: (2, ?, 40, 12) = (S_out, B, T, D)
+    
+    if self.return_streams:
+        outputs = tf.unstack(mixed, axis=0)
+        return outputs
+    else:
+        out = tf.reduce_sum(mixed, axis=0)  # (?, 40, 12)
+        return out
 
     def get_config(self):
         config = super().get_config()
