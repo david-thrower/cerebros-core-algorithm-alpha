@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "294-possible-bug-revise-logic-for-repetition-penalty-in-generate-loop" ]
+    branches: [ "main", "289-try-sparse-categorical-crossentropy-on-288-composite-llm-model-using" ]
 
 
 permissions:
