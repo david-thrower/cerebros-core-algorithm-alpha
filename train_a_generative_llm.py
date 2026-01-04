@@ -678,6 +678,15 @@ def test_text(test_prompt: str, max_new_tokens: int, result_cutoff: float, trial
                 'repetition_penalty': None,
                 'presence_penalty': 0.7,
                 'frequency_penalty': 0.7
+            },
+            {
+                'max_new_tokens': max_new_tokens,
+                'temperature': 0.8,
+                'top_k': 75,
+                'top_p': 0.99,
+                'repetition_penalty': 1.4,
+                'presence_penalty': None,
+                'frequency_penalty': None
             }
         ]
         # Default cases, no params
