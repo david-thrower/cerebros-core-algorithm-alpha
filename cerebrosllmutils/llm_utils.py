@@ -924,27 +924,13 @@ class ManifoldHyperConnect(tf.keras.layers.Layer):
         streams = self._maybe_project(inputs)
 
         # Step 2: Stack along new axis 0: shape (S, B, T, D) e.g. (2, B, 40, 12)
-        streams = tf.stack(streams, axis=0)
+        streams_stacked = tf.stack(streams, axis=0)
 
         # Step 3: Compute manifold-constrained mixing matrix (S_out, S_in) = (2, 2)
         W_proj = self._sinkhorn(self.W)
 
-        # Step 4: FIXED broadcasting for rank-4+ tensors
-        # W_proj: (S_out, S_in) = (2, 2)
-        # streams: (S_in, B, T, D) = (2, B, 40, 12)
-    
-        # Expand W_proj to (1, S_out, S_in, 1, 1) for broadcasting
-        W_broadcast = W_proj[None, :, :, None, None]  # (1, 2, 2, 1, 1)
-    
-        # Expand streams to align: (1, S_in, 1, B, T, D) via slicing
-        # streams[None, :, None, :, :, :] but more explicit:
-        streams_broadcast = streams[None, :, None, :, :]  # (1, 2, 1, B, 40, 12)
-    
-        # Elementwise multiply: (1, 2, 2, B, 40, 12)
-        # Sum over axis=2 (S_in dimension): (1, 2, B, 40, 12)
+        # Step 4: Use explicit mixing (guaranteed correct shapes)
         mixed = self._mix_streams(W_proj, streams_stacked)
-        # mixed = tf.reduce_sum(W_broadcast * streams_broadcast, axis=2)
-        # mixed: (2, B, 40, 12) = (S_out, B, T, D)
 
         # Step 5: Return single merged tensor or list of mixed streams
         if self.return_streams:
