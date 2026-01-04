@@ -882,15 +882,13 @@ class ManifoldHyperConnect(tf.keras.layers.Layer):
             projected.append(proj(x))
         return projected
 
+
     def call(self, inputs):
-        # Handle auto-detection of num_streams on first call
-        if not self.built:
-            # If build hasn't been called yet, we trigger it here.
-            # We need the shapes of the inputs.
-            # Note: In eager mode, inputs are tensors. 
-            # We can construct a list of shapes.
-            input_shapes = [x.shape for x in inputs]
-            self.build(input_shapes)
+        # NOTE: The dynamic build logic has been removed.
+        # Keras's Functional API will call the build() method once with
+        # symbolic input shapes before the first call() to create weights.
+        # The call() method should only perform computation. This prevents
+        # "already initialized" errors.
 
         if not isinstance(inputs, (list, tuple)):
             raise ValueError(
