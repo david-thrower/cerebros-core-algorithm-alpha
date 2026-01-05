@@ -720,7 +720,8 @@ class DenseUnit(Unit,
                 unprocessed_merged_nn_layer_input = CerebrosManifoldHyperConnect(name=f"{self.name}_mhc_{rn_2}")(materialized_predecessor_units)
             else:
                 raise ValueError("The only supported arguments for "
-                                 "merging_strategy are 'concatenate', "mhc", and add")
+                                 "merging_strategy are 'concatenate', 'mhc', "
+                                 "and add")
 
             if self.bnorm_or_dropout == "bnorm":
                 # rn_3 = int(np.round(np.random.random(1)[0]*10**12))
