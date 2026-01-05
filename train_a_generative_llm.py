@@ -457,7 +457,8 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     gradient_accumulation_steps=gradient_accumulation_steps,
     meta_trial_number=meta_trial_number,
     base_models=[cerebros_base_model],
-    train_data_dtype=tf.int32)  # Changed from tf.string to tf.int32
+    train_data_dtype=tf.int32,
+    merging_strategy="mhc")
 
 cerebros_t0 = time.time()
 phase_i_a_result_0 = cerebros_automl.run_random_search()
