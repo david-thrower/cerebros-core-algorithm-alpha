@@ -10,6 +10,217 @@ from cerebros.denseautomlstructuralcomponent.\
     simple_sigmoid, \
     DenseAutoMlStructuralComponent, DenseLateralConnectivity
 
+@tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='CerebrosManifoldHyperConnect')
+class CerebrosManifoldHyperConnect(tf.keras.layers.Layer):
+    """
+    Manifold-constrained hyper-connection mixer with optional automatic
+    dimension matching.
+
+    - Takes a list/tuple of tensors with shapes (B, ..., D_i). If the 
+      non-batch shapes do not match, each input is projected to a common 
+      last dimension before mixing.
+
+    Args:
+        num_streams: Number of input streams. If None, it is inferred 
+            from the inputs in the first call.
+        sinkhorn_iters: Number of Sinkhorn normalization iterations.
+        temperature: Temperature for the logits before Sinkhorn.
+        epsilon: Small constant for numerical stability in Sinkhorn.
+        return_streams: If True, returns a list of mixed streams;
+            otherwise returns a single merged tensor.
+        target_dim: If None, when shapes differ, uses max(last_dim)
+            across inputs as target; if int, always project to this dim.
+    """
+
+    def __init__(
+        self,
+        num_streams=None,
+        sinkhorn_iters=5,
+        temperature=1.0,
+        epsilon=1e-6,
+        return_streams=False,
+        target_dim=None,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        # Allow None for dynamic detection
+        self.num_streams = None if num_streams is None else int(num_streams)
+        self.sinkhorn_iters = int(sinkhorn_iters)
+        self.temperature = float(temperature)
+        self.epsilon = float(epsilon)
+        self.return_streams = bool(return_streams)
+        self.target_dim = None if target_dim is None else int(target_dim)
+
+    def build(self, input_shape):
+        # 1. Infer num_streams if not provided
+        if self.num_streams is None:
+            if not isinstance(input_shape, (list, tuple)):
+                raise ValueError(
+                    "ManifoldHyperConnect expects a list/tuple of input shapes; "
+                    f"got {input_shape}"
+                )
+            self.num_streams = len(input_shape)
+
+        # 2. Validation
+        if not isinstance(input_shape, (list, tuple)):
+            raise ValueError(
+                "ManifoldHyperConnect expects a list/tuple of input shapes; "
+                f"got {input_shape}"
+            )
+        if len(input_shape) != self.num_streams:
+            raise ValueError(
+                f"Expected {self.num_streams} input streams, got {len(input_shape)}"
+            )
+
+        # 3. Determine shapes and projection needs
+        non_batch_shapes = [tf.TensorShape(s)[1:] for s in input_shape]
+        same_shape = all(s == non_batch_shapes[0] for s in non_batch_shapes)
+
+        self.use_projection = False
+        inferred_target_dim = None
+        last_dims = [s[-1] for s in non_batch_shapes]
+
+        if self.target_dim is not None:
+            self.use_projection = True
+            inferred_target_dim = self.target_dim
+        else:
+            if not same_shape:
+                if any(d is None for d in last_dims):
+                    raise ValueError(
+                        "Cannot infer target_dim because some last dimensions are "
+                        "unknown and target_dim is None. Please set target_dim "
+                        "explicitly."
+                    )
+                inferred_target_dim = int(max(last_dims))
+                self.use_projection = True
+            else:
+                inferred_target_dim = last_dims[0]
+
+        self.effective_target_dim = inferred_target_dim
+
+        # 4. Create projection layers if needed
+        if self.use_projection:
+            self.projections = []
+            for i, shape in enumerate(non_batch_shapes):
+                # Note: We use tf.keras.layers.Dense here
+                proj = tf.keras.layers.Dense(
+                    self.effective_target_dim, name=f"proj_{i}"
+                )
+                self.projections.append(proj)
+        else:
+            self.projections = None
+
+        # 5. Raw mixing matrix W (unconstrained)
+        # Initialize close to identity to preserve residual behavior at the start.
+        eye_init = np.eye(self.num_streams, dtype="float32")
+        self.W = self.add_weight(
+            name="W_raw",
+            shape=(self.num_streams, self.num_streams),
+            initializer=tf.keras.initializers.Constant(eye_init),
+            trainable=True,
+        )
+
+        super().build(input_shape)
+
+    def _sinkhorn(self, logits):
+        """
+        Approximate projection to a doubly stochastic matrix via
+        Sinkhorn normalization on exp(logits / temperature).
+        """
+        x = logits / self.temperature
+        x = tf.nn.softmax(x, axis=-1)
+
+        for _ in range(self.sinkhorn_iters):
+            row_sums = tf.reduce_sum(x, axis=-1, keepdims=True) + self.epsilon
+            x = x / row_sums
+            col_sums = tf.reduce_sum(x, axis=0, keepdims=True) + self.epsilon
+            x = x / col_sums
+
+        return x
+
+    def _maybe_project(self, inputs):
+        """
+        Optionally project each input to effective_target_dim on the last axis.
+        """
+        if not self.use_projection:
+            return inputs
+
+        projected = []
+        for x, proj in zip(inputs, self.projections):
+            projected.append(proj(x))
+        return projected
+
+
+    # streams_stacked: (S_in, B, T, D) = (2, B, 40, 12)
+    # W_proj: (S_out, S_in) = (2, 2)
+
+    # Explicit matmul over stream dimension: out[i] = sum_j W[i,j] * streams[j]
+    def _mix_streams(self, W_proj, streams_stacked):
+        """Mix streams using explicit loop - guaranteed correct shapes"""
+        S_out, S_in = W_proj.shape
+        assert S_in == self.num_streams
+    
+        mixed_streams = []
+        for i in range(S_out):
+            stream_i = tf.zeros_like(streams_stacked[0])  # (B, T, D)
+            for j in range(S_in):
+                stream_i += W_proj[i, j] * streams_stacked[j]
+            mixed_streams.append(stream_i)
+    
+        mixed_stacked = tf.stack(mixed_streams, axis=0)  # (S_out, B, T, D)
+        return mixed_stacked
+
+    def call(self, inputs):
+        """
+        inputs: list/tuple of length num_streams, each tensor with shape:
+            [B, ..., D] where D may differ if projections are used
+        Returns: single tensor [B, ..., D_target] or list of such tensors
+        """
+        if not isinstance(inputs, (list, tuple)):
+            raise ValueError(
+                "ManifoldHyperConnect expects a list/tuple of tensors as input"
+            )
+        if len(inputs) != self.num_streams:
+            raise ValueError(
+                f"Expected {self.num_streams} input streams, got {len(inputs)}"
+            )
+
+        # Step 1: Optionally project to common last dimension
+        streams = self._maybe_project(inputs)
+
+        # Step 2: Stack along new axis 0: shape (S, B, T, D) e.g. (2, B, 40, 12)
+        streams_stacked = tf.stack(streams, axis=0)
+
+        # Step 3: Compute manifold-constrained mixing matrix (S_out, S_in) = (2, 2)
+        W_proj = self._sinkhorn(self.W)
+
+        # Step 4: Use explicit mixing (guaranteed correct shapes)
+        mixed = self._mix_streams(W_proj, streams_stacked)
+
+        # Step 5: Return single merged tensor or list of mixed streams
+        if self.return_streams:
+            # Unstack along stream dimension: list of (B, T, D) tensors
+            outputs = tf.unstack(mixed, axis=0)
+            return outputs
+        else:
+            # Sum across output streams: single (B, T, D) tensor
+            out = tf.reduce_sum(mixed, axis=0)
+            return out
+
+    def get_config(self):
+        config = super().get_config()
+        config.update(
+            {
+                "num_streams": self.num_streams,
+                "sinkhorn_iters": self.sinkhorn_iters,
+                "temperature": self.temperature,
+                "epsilon": self.epsilon,
+                "return_streams": self.return_streams,
+                "target_dim": self.target_dim,
+            }
+        )
+        return config
+
 
 class Unit(NeuralNetworkFutureComponent):
     def __init__(self,
@@ -505,9 +716,11 @@ class DenseUnit(Unit,
                 rn_2 = ''
                 unprocessed_merged_nn_layer_input = tf.keras.layers.Add(
                     name=f"{self.name}_add_{rn_2}")(materialized_predecessor_units)
+            elif self.merging_strategy == "mhc":
+                unprocessed_merged_nn_layer_input = CerebrosManifoldHyperConnect(name=f"{self.name}_mhc_{rn_2}")(materialized_predecessor_units)
             else:
                 raise ValueError("The only supported arguments for "
-                                 "merging_strategy are 'concatenate' and add")
+                                 "merging_strategy are 'concatenate', "mhc", and add")
 
             if self.bnorm_or_dropout == "bnorm":
                 # rn_3 = int(np.round(np.random.random(1)[0]*10**12))
