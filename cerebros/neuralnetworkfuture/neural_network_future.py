@@ -422,7 +422,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
                         m = "cat"
                     elif unit_0.merging_strategy == "add":
                         m = "add"
-                    elif unit_0.merging_strategy == "mhc"
+                    elif unit_0.merging_strategy == "mhc":
                         m = "mhs"
                     else:
                         raise ValueError("Only add, concat, and mhc are supported "
