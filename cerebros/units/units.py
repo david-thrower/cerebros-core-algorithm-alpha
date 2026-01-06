@@ -717,7 +717,9 @@ class DenseUnit(Unit,
                 unprocessed_merged_nn_layer_input = tf.keras.layers.Add(
                     name=f"{self.name}_add_{rn_2}")(materialized_predecessor_units)
             elif self.merging_strategy == "mhc":
-                unprocessed_merged_nn_layer_input = CerebrosManifoldHyperConnect(name=f"{self.name}_mhc_{rn_2}")(materialized_predecessor_units)
+                rn_2 = ''
+                unprocessed_merged_nn_layer_input =\
+                        CerebrosManifoldHyperConnect(name=f"{self.name}_mhc_{rn_2}")(materialized_predecessor_units)
             else:
                 raise ValueError("The only supported arguments for "
                                  "merging_strategy are 'concatenate', 'mhc', "
