@@ -209,6 +209,7 @@ class Level(NeuralNetworkFutureComponent,
                  predecessor_level_connection_affinity_factor_decay_main=zero_7_exp_decay,
                  seed=8675309,
                  train_data_dtype=float32,
+                 merging_strategy="concatenate",
                  *args,
                  **kwargs):
         # inbound_connections now kept at the DenseUnit level.
@@ -244,6 +245,7 @@ class Level(NeuralNetworkFutureComponent,
         self.successor_levels = []
         self.successor_connectivity_errors_2d = jnp.array([])
         self.train_data_dtype = train_data_dtype
+        self.merging_strategy = merging_strategy
 
     def set_possible_predecessor_connections(self):
         """
@@ -306,7 +308,8 @@ class Level(NeuralNetworkFutureComponent,
                   gate_activation_function=self.gate_activation_function,
                   p_lateral_connection=self.p_lateral_connection,
                   p_lateral_connection_decay=self.p_lateral_connection_decay,
-                  num_lateral_connection_tries_per_unit=self.num_lateral_connection_tries_per_unit)
+                  num_lateral_connection_tries_per_unit=self.num_lateral_connection_tries_per_unit,
+                  merging_strategy=self.merging_strategy)
         else:
             print(f"InputLevel.input_shapes {self.input_shapes}")
             unit_0 = \
@@ -495,6 +498,7 @@ class DenseLevel(Level,
            predecessor_level_connection_affinity_factor_main=predecessor_level_connection_affinity_factor_main,
            predecessor_level_connection_affinity_factor_main_rounding_rule=predecessor_level_connection_affinity_factor_main_rounding_rule,
            predecessor_level_connection_affinity_factor_decay_main=predecessor_level_connection_affinity_factor_decay_main,
+           merging_strategy=self.merging_strategy,
            seed=seed,
            *args,
            **kwargs)
