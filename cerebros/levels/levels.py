@@ -498,7 +498,6 @@ class DenseLevel(Level,
            predecessor_level_connection_affinity_factor_main=predecessor_level_connection_affinity_factor_main,
            predecessor_level_connection_affinity_factor_main_rounding_rule=predecessor_level_connection_affinity_factor_main_rounding_rule,
            predecessor_level_connection_affinity_factor_decay_main=predecessor_level_connection_affinity_factor_decay_main,
-           merging_strategy=self.merging_strategy,
            seed=seed,
            *args,
            **kwargs)
@@ -519,6 +518,7 @@ class DenseLevel(Level,
         self.merging_strategy = merging_strategy
         self.meta_predecessor_connectivity_level_number = jnp.array([])
         self.meta_predecessor_connectivity_unit_id = jnp.array([])
+        merging_strategy = self.merging_strategy
 
     def parse_meta_predecessor_connectivity(self):
         """The purpose of this class is to refactor the 6 - dimentional
@@ -721,6 +721,7 @@ class FinalDenseLevel(DenseLevel):
         activation = final_activation
         has_predecessors = True
         has_successors = False
+        merging_strategy=self.merging_strategy
 
         super().__init__(
                 level_prototype=level_prototype,
@@ -731,7 +732,6 @@ class FinalDenseLevel(DenseLevel):
                 trial_number=trial_number,
                 level_number=level_number,
                 activation=activation,
-                merging_strategy=merging_strategy,
                 minimum_skip_connection_depth=minimum_skip_connection_depth,
                 maximum_skip_connection_depth=maximum_skip_connection_depth,
                 predecessor_level_connection_affinity_factor_first=predecessor_level_connection_affinity_factor_first,
@@ -748,7 +748,7 @@ class FinalDenseLevel(DenseLevel):
                 num_lateral_connection_tries_per_unit=num_lateral_connection_tries_per_unit,
                 *args,
                 **kwargs)
-
+        
     def parse_final_units(self):
         for i in np.arange(len(self.output_shapes)):
             i_int = int(i)
