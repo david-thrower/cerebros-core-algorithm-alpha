@@ -518,7 +518,7 @@ class DenseLevel(Level,
         self.merging_strategy = merging_strategy
         self.meta_predecessor_connectivity_level_number = jnp.array([])
         self.meta_predecessor_connectivity_unit_id = jnp.array([])
-        merging_strategy = self.merging_strategy
+        self.merging_strategy = merging_strategy
 
     def parse_meta_predecessor_connectivity(self):
         """The purpose of this class is to refactor the 6 - dimentional
@@ -721,7 +721,7 @@ class FinalDenseLevel(DenseLevel):
         activation = final_activation
         has_predecessors = True
         has_successors = False
-        merging_strategy=self.merging_strategy
+        self.merging_strategy=merging_strategy
 
         super().__init__(
                 level_prototype=level_prototype,
