@@ -149,7 +149,7 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
                 # seed=8675309
 
                 level = DenseLevel(
-                                   merging_strategy='concatenate',
+                                   merging_strategy=self.merging_strategy,
                                    level_prototype=v,
                                    predecessor_levels=levels[:k1],
                                    has_predecessors="yes",
@@ -422,8 +422,10 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
                         m = "cat"
                     elif unit_0.merging_strategy == "add":
                         m = "add"
+                    elif unit_0.merging_strategy == "mhc"
+                        m = "mhs"
                     else:
-                        raise ValueError("Only add and concat are supported "
+                        raise ValueError("Only add, concat, and mhc are supported "
                                          "as merging_strategy at this time.")
                     merger = f"{unit_0.name}_{m}_{int(np.round(np.random.random(1)[0]*10**12))}"
                     net.add_node(i, label=merger, shape='square')
