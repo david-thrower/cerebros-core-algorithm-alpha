@@ -892,18 +892,19 @@ class ManifoldHyperConnect(tf.keras.layers.Layer):
     # Explicit matmul over stream dimension: out[i] = sum_j W[i,j] * streams[j]
     def _mix_streams(self, W_proj, streams_stacked):
         """Mix streams using explicit loop - guaranteed correct shapes"""
-        S_out, S_in = W_proj.shape
-        assert S_in == self.num_streams
+        # S_out, S_in = W_proj.shape
+        # assert S_in == self.num_streams
     
         mixed_streams = []
-        for i in range(S_out):
-            stream_i = tf.zeros_like(streams_stacked[0])  # (B, T, D)
-            for j in range(S_in):
-                stream_i += W_proj[i, j] * streams_stacked[j]
-            mixed_streams.append(stream_i)
+        # for i in range(S_out):
+        #     stream_i = tf.zeros_like(streams_stacked[0])  # (B, T, D)
+        #     for j in range(S_in):
+        #         stream_i += W_proj[i, j] * streams_stacked[j]
+        #     mixed_streams.append(stream_i)
     
-        mixed_stacked = tf.stack(mixed_streams, axis=0)  # (S_out, B, T, D)
-        return mixed_stacked
+        # mixed_stacked = tf.stack(mixed_streams, axis=0)  # (S_out, B, T, D)
+        # return mixed_stacked
+        return tf.einsum('ij,jbtd->ibtd', W_proj, streams_stacked)
 
     def call(self, inputs):
         """
