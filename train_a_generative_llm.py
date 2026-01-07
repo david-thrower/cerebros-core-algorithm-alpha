@@ -23,6 +23,7 @@ from cerebrosllmutils.llm_utils import (
     InterleavedRoPE,
     SparsePerplexity,
     GatedMergeLayer,
+    ManifoldHyperConnect,
     ChunkedAttentionBlock,
     MambaBlock,
     VoxelBlock,
@@ -303,7 +304,10 @@ position_embedding = InterleavedRoPE(
 # Skip Connection Stream is the `embedded` tensor itself
 
 # Stream Merging: Use a GatedMergeLayer for optimal combination
-initial_merge = GatedMergeLayer(d_model=EMBEDDING_DIM, name="initial_stream_merge")
+
+# initial_merge = GatedMergeLayer(d_model=EMBEDDING_DIM, name="initial_stream_merge")
+initial_merge = ManifoldHyperConnect(name="initial_stream_merge_mhc")
+
 x = initial_merge([embedded, position_embedding])
 x = tf.keras.layers.Dropout(POSITIONAL_EMBEDDING_DROPOUT, name="initial_dropout")(x)
 
