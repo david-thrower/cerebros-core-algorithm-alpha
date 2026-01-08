@@ -1519,8 +1519,16 @@ class DynamicVoxelAttentionLayer(tf.keras.layers.Layer):
         return result
 
     def call(self, inputs):
-        batch_size = tf.shape(inputs)[0]
-        seq_len = tf.shape(inputs)[1]
+        # Use static shape if possible, fallback to dynamic
+        input_shape = tf.shape(inputs)
+        batch_size = input_shape[0]
+        
+        # PREFER STATIC SHAPE for sequence length to prevent XLA retracing
+        # If inputs are padded correctly, this will be a constant integer (e.g., 1024)
+        seq_len = tf.compat.dimension_value(inputs.shape[1])
+        if seq_len is None:
+            seq_len = input_shape[1] # Fallback to dynamic only if necessary
+
 
         # 1. Project inputs and apply gating for Q, K, and V
         q = self.dense_q(inputs) * tf.nn.sigmoid(self.gate_q)
