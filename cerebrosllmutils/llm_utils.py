@@ -132,8 +132,6 @@ class RotaryEmbedding(tf.keras.layers.Layer):
         # *** No calculation or storage of inv_freq here or in build ***
 
     def build(self, input_shape):
-        # Build should primarily be for creating trainable weights, which we don't have.
-        # Call super().build() for Keras compatibility.
         super().build(input_shape)
 
     def call(self, x):  # Removed seq_len argument, calculate from x
@@ -234,6 +232,9 @@ class InterleavedRoPE(tf.keras.layers.Layer):
         # Ensure the name is consistent if needed for saving/loading
         self.rotary_emb = RotaryEmbedding(dim, max_seq_len, name="rotary_embedding")
 
+    def build(self, input_shape):
+        super().build(input_shape)
+
     def call(self, x):
         # Get sin and cos from the RotaryEmbedding layer's call method
         # *** Pass only 'x'. RotaryEmbedding calculates seq_len internally. ***
@@ -269,24 +270,79 @@ class Perplexity(tf.keras.metrics.Metric):
         self.total_crossentropy = self.add_weight(name='total_crossentropy', initializer='zeros')
         self.count = self.add_weight(name='count', initializer='zeros')
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        # Calculate categorical crossentropy
-        crossentropy = tf.keras.losses.categorical_crossentropy(y_true, y_pred)
+    def build(self, input_shape):
+        super().build(input_shape)
 
-        # Update the running sum of crossentropy and the count of samples
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        crossentropy = tf.keras.losses.categorical_crossentropy(
+            y_true, y_pred
+        )
+        
+        # Apply sample weights if provided
+        if sample_weight is not None:
+            crossentropy = crossentropy * sample_weight
+            # Update count based on weights (sum of weights)
+            num_elements = tf.reduce_sum(sample_weight)
+        else:
+            # Use Keras backend for safer batch size retrieval
+            num_elements = tf.cast(tf.keras.backend.batch_size(y_true), tf.float32)
+
+        # Update the running sum of crossentropy
         self.total_crossentropy.assign_add(tf.reduce_sum(crossentropy))
-        self.count.assign_add(tf.cast(tf.shape(y_true)[0], dtype=tf.float32))
+        
+        # Update the count
+        self.count.assign_add(num_elements)
 
     def result(self):
         # Compute the average crossentropy
-        average_crossentropy = self.total_crossentropy / self.count
+        # Avoid division by zero with a small epsilon or tf.math.divide_no_nan
+        average_crossentropy = tf.math.divide_no_nan(self.total_crossentropy, self.count)
+        
         # Compute perplexity as e^(average crossentropy)
         return tf.exp(average_crossentropy)
 
-    def reset_state(self):
+    def reset_states(self):
         # Reset the state variables
-        self.total_crossentropy.assign(0.0)
-        self.count.assign(0.0)
+        # Use tf.cast to ensure the assignment type matches the variable type
+        self.total_crossentropy.assign(tf.cast(0.0, self.total_crossentropy.dtype))
+        self.count.assign(tf.cast(0.0, self.count.dtype))
+
+
+# @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='Perplexity')
+# class Perplexity(tf.keras.metrics.Metric):
+#     """
+#     Computes perplexity, defined as e^(categorical crossentropy).
+#     """
+
+#     def __init__(self, name='perplexity', **kwargs):
+#         super().__init__(name=name, **kwargs)
+#         self.total_crossentropy = self.add_weight(name='total_crossentropy', initializer='zeros')
+#         self.count = self.add_weight(name='count', initializer='zeros')
+
+#     def build(self, input_shape):
+#         # Add this to all build() methods missing it and add this boilerplate build to any layers missing a build()
+#         # input_dim = input_shape[-1] # Not strictly necessary if not used.
+#         # CRITICAL: Mark the layer as built.
+#         super().build(input_shape)
+
+#     def update_state(self, y_true, y_pred, sample_weight=None):
+#         # Calculate categorical crossentropy
+#         crossentropy = tf.keras.losses.categorical_crossentropy(y_true, y_pred)
+
+#         # Update the running sum of crossentropy and the count of samples
+#         self.total_crossentropy.assign_add(tf.reduce_sum(crossentropy))
+#         self.count.assign_add(tf.cast(tf.shape(y_true)[0], dtype=tf.float32))
+
+#     def result(self):
+#         # Compute the average crossentropy
+#         average_crossentropy = self.total_crossentropy / self.count
+#         # Compute perplexity as e^(average crossentropy)
+#         return tf.exp(average_crossentropy)
+
+#     def reset_state(self):
+#         # Reset the state variables
+#         self.total_crossentropy.assign(0.0)
+#         self.count.assign(0.0)
 
 
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='SparsePerplexity')
@@ -304,12 +360,14 @@ class SparsePerplexity(tf.keras.metrics.Metric):
         self.total_crossentropy = self.add_weight(name='total_crossentropy', initializer='zeros')
         self.count = self.add_weight(name='count', initializer='zeros')
 
+    def build(self, input_shape):
+        super().build(input_shape)
+
     def update_state(self, y_true, y_pred, sample_weight=None):
         # y_true shape: (Batch_Size,)
         # y_pred shape: (Batch_Size, Vocab_Size)
         
         # Calculate sparse categorical crossentropy
-        # from_logits=True is safer for raw model outputs. 
         # If your final layer is Softmax, change to False.
         crossentropy = tf.keras.losses.sparse_categorical_crossentropy(
             y_true, 
@@ -725,6 +783,9 @@ class GatedMergeLayer(tf.keras.layers.Layer):
             bias_initializer=tf.keras.initializers.Constant(0.0)
         )
 
+    def build(self, input_shape):
+        super().build(input_shape)
+
     def call(self, inputs):
         input_1, input_2 = inputs
         gate_values = self.gate_dense(input_1)
@@ -1121,6 +1182,9 @@ class ChunkedAttentionBlock(tf.keras.layers.Layer):
         self.dropout2 = tf.keras.layers.Dropout(dropout_rate)
         self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
+    def build(self, input_shape):
+        super().build(input_shape)
+
     def call(self, inputs, training=False):
         # --- Attention Sub-layer with Pre-LN and Gated Stream Merging ---
         # 1. Normalize inputs
@@ -1234,9 +1298,6 @@ class MambaBlock(tf.keras.layers.Layer):
         self.gated_merge = ManifoldHyperConnect()
 
     def build(self, input_shape):
-        # Adding a build method to silence the UserWarning and follow best practices.
-        # All sub-layers (Dense, Conv1D, etc.) are built automatically by Keras,
-        # so we just need to call the superclass's build method.
         super().build(input_shape)
 
     def _selective_scan(self, u, delta, A, B, C, D):
@@ -1529,6 +1590,9 @@ class VoxelBlock(tf.keras.layers.Layer):
         # --- Gated Merge for Residual Connection ---
         self.gated_merge = ManifoldHyperConnect()
 
+    def build(self, input_shape):
+        super().build(input_shape)
+
     def call(self, inputs, training=False):
         # --- Attention Sub-layer with Pre-LN and Gated Stream Merging ---
         residual = inputs
@@ -1590,6 +1654,9 @@ class LinformerAttention(tf.keras.layers.Layer):
 
         # Final output projection to stabilize training
         self.output_dense = tf.keras.layers.Dense(d_model, kernel_initializer=self.kernel_initializer)
+
+    def build(self, input_shape):
+        super().build(input_shape)
 
     def call(self, inputs):
         # inputs shape: (batch_size, sequence_length, d_model)
@@ -1690,6 +1757,9 @@ class LinformerBlock(tf.keras.layers.Layer):
         self.dropout2 = tf.keras.layers.Dropout(ffn_dropout_rate)
         self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
+    def build(self, input_shape):
+        super().build(input_shape)
+
     def call(self, inputs, training=False):
         # --- Attention Sub-layer with Pre-LN and Gated Stream Merging ---
         # 1. Normalize inputs
@@ -1746,6 +1816,9 @@ class AdapterBlock(tf.keras.layers.Layer):
         self.dropout = tf.keras.layers.Dropout(dropout_rate)
         # A dense layer to create a learned gate for each token
         self.token_gate_dense = tf.keras.layers.Dense(1, activation='sigmoid')
+
+    def build(self, input_shape):
+        super().build(input_shape)
 
     def call(self, inputs, training=False):
         # 1. Normalize and apply dropout to the input stream
