@@ -195,7 +195,7 @@ VOCABULARY_SIZE = len(tokenizer)
 # embedding output dim must be an even number
 # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-EMBEDDING_N = 5 # trial.suggest_int('embedding_n',6, 9) # 12
+EMBEDDING_N = 6 # trial.suggest_int('embedding_n',6, 9) # 12
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
 # Size of the projection layer bet
@@ -462,7 +462,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     meta_trial_number=meta_trial_number,
     base_models=[cerebros_base_model],
     train_data_dtype=tf.int32,
-    merging_strategy="mhc")
+    merging_strategy='concatenate') #"mhc")
 
 cerebros_t0 = time.time()
 phase_i_a_result_0 = cerebros_automl.run_random_search()
