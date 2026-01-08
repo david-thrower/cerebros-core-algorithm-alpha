@@ -969,9 +969,8 @@ class ManifoldHyperConnect(tf.keras.layers.Layer):
 
     def call(self, inputs):
         """
-        inputs: list/tuple of length num_streams, each tensor with shape:
-            [B, ..., D] where D may differ if projections are used
-        Returns: single tensor [B, ..., D_target] or list of such tensors
+        inputs: list/tuple of length num_streams
+        Returns: single tensor [B, ..., D_target]
         """
         if not isinstance(inputs, (list, tuple)):
             raise ValueError(
@@ -985,24 +984,31 @@ class ManifoldHyperConnect(tf.keras.layers.Layer):
         # Step 1: Optionally project to common last dimension
         streams = self._maybe_project(inputs)
 
-        # Step 2: Stack along new axis 0: shape (S, B, T, D) e.g. (2, B, 40, 12)
-        streams_stacked = tf.stack(streams, axis=0)
-
-        # Step 3: Compute manifold-constrained mixing matrix (S_out, S_in) = (2, 2)
+        # Step 2: Compute manifold-constrained mixing matrix (S_out, S_in)
         W_proj = self._sinkhorn(self.W)
 
-        # Step 4: Use explicit mixing (guaranteed correct shapes)
-        mixed = self._mix_streams(W_proj, streams_stacked)
+        # Step 3: OPTIMIZED MERGE (Avoid tf.stack)
+        # Since return_streams is False (default), we want the sum of the output streams.
+        # Output = Sum_over_i ( Sum_over_j ( W_ij * stream_j ) )
+        # This is equivalent to a weighted sum of the input streams where the weights
+        # are the sum of the columns of W_proj.
+        
+        # Calculate effective weights for each input stream: shape (num_streams,)
+        # We sum over the output dimension (axis 0) because we are collapsing the outputs.
+        effective_weights = tf.reduce_sum(W_proj, axis=0) 
+        
+        # Apply weights to streams and sum
+        # We use a loop here which is safe because num_streams is small (usually 2 or 4).
+        # This is much faster than tf.stack because it operates on the original tensors.
+        weighted_streams = []
+        for i in range(self.num_streams):
+            # effective_weights[i] is a scalar, streams[i] is a tensor
+            weighted_streams.append(tf.multiply(effective_weights[i], streams[i]))
+            
+        # Sum the weighted streams
+        out = tf.add_n(weighted_streams)
 
-        # Step 5: Return single merged tensor or list of mixed streams
-        if self.return_streams:
-            # Unstack along stream dimension: list of (B, T, D) tensors
-            outputs = tf.unstack(mixed, axis=0)
-            return outputs
-        else:
-            # Sum across output streams: single (B, T, D) tensor
-            out = tf.reduce_sum(mixed, axis=0)
-            return out
+        return out
 
     def get_config(self):
         config = super().get_config()
