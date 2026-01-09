@@ -11,13 +11,13 @@ answer = subprocess.run(f"mlflow server --host 127.0.0.1 --port {MLFLOW_PORT} &"
 print(answer.stdout)
 
 
-DATE_0 = "2026-01-08"
+DATE_0 = "2026-01-09"
 EXPERIMENT_NAME = "stacked-transformer-mmc"
 SAMPLE_SIZE_i_a = 300
 SAMPLE_SIZE_i_b = 600
 DATA_SET_NAME = "WEB-Bible"
-ADDITIONAL_METADATA = "2-levels"
-EXPERIMENT_ITERATION = "0001"
+ADDITIONAL_METADATA = "2-4-levels"
+EXPERIMENT_ITERATION = "0002"
 EXPERIMENT_NAME = f"{DATE_0}-{EXPERIMENT_NAME}--{ADDITIONAL_METADATA}--{DATA_SET_NAME}-" +\
                   "ia-{SAMPLE_SIZE_i_a}-ib-{SAMPLE_SIZE_i_b}--{EXPERIMENT_ITERATION}-a"
 
