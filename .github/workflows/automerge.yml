@@ -38,8 +38,8 @@ jobs:
 #    - name: Train Cerebros Composite LLM
 #      run: python3 temp-train-a-generative-llm.py
 #      timeout-minutes: 45
-    - name: Train an LLM with Cerebros
-      run: python3 train_a_generative_llm.py
+    - name: HPO on LLM with Cerebros
+      run: python3 llm_train_hpo_script.py # python3 train_a_generative_llm.py
       timeout-minutes: 120
 #    - name: Test distributed random search Ames by running
 #      run: python3 regression-example-ames-no-preproc.py
