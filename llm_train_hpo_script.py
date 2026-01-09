@@ -122,7 +122,7 @@ def objective(trial):
     phase_i_b_epochs = trial.suggest_int("phase_i_b_epochs", low=25, high=65)
     phase_i_b_gradient_accumulation_steps = trial.suggest_int("phase_i_b_gradient_accumulation_steps", low=2, high=15)
     phase_i_b_weight_decay = trial.suggest_float("phase_i_b_weight_decay", low=5e-3, high=6e-1, log=True)
-    STAGE_I_B_LEARN_RATE = trial.suggest_float(0.0001, 0.3, log=True)
+    STAGE_I_B_LEARN_RATE = trial.suggest_float("STAGE_I_B_LEARN_RATE", 0.0001, 0.3, log=True)
 
     # Tokenization & Embedding Params
     tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B"  # Fixed value
