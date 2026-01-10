@@ -19,8 +19,8 @@ PHASE_I_A_SAMPLES_TO_CREATE = 300
 PHASE_I_B_SAMPLES_TO_CREATE = 600
 
 DATA_SET_NAME = "WEB-Bible"
-ADDITIONAL_METADATA = "2-4-levels"
-EXPERIMENT_ITERATION = "0004"
+ADDITIONAL_METADATA = "2-3-levels"
+EXPERIMENT_ITERATION = "0005"
 EXPERIMENT_NAME = f"{DATE_0}-{EXPERIMENT_NAME}--{ADDITIONAL_METADATA}--{DATA_SET_NAME}-" +\
                   f"ia-{PHASE_I_A_SAMPLES_TO_CREATE}-ib-{PHASE_I_B_SAMPLES_TO_CREATE}--{EXPERIMENT_ITERATION}-a"
 
@@ -110,7 +110,7 @@ def objective(trial):
     batch_size = trial.suggest_categorical("batch_size", [10, 15, 20])
     gradient_accumulation_steps = trial.suggest_int("gradient_accumulation_steps", low=2, high=7)
     minimum_levels = 2
-    maximum_levels = trial.suggest_int("maximum_levels", low=minimum_levels, high=4)
+    maximum_levels = trial.suggest_int("maximum_levels", low=minimum_levels, high=3)
     minimum_units_per_level = 2
     maximum_units_per_level = trial.suggest_int("maximum_units_per_level", low=minimum_units_per_level, high=3)
     minimum_neurons_per_unit = 2
