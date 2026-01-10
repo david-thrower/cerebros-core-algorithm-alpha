@@ -81,10 +81,7 @@ def objective(trial):
     # environment.
 
     # Samples to use for the neural architecture seaerch stage
-    PHASE_I_A_SAMPLES_TO_CREATE = 10
 
-    # Samples to use for the main training stage
-    PHASE_I_B_SAMPLES_TO_CREATE = 20
     PHASE_I_B_VAL_SPLIT = 0.15
 
     PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE = 100
