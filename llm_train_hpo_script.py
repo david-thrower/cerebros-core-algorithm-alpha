@@ -13,13 +13,16 @@ print(answer.stdout)
 
 DATE_0 = "2026-01-09"
 EXPERIMENT_NAME = "stacked-transformer-mmc"
-SAMPLE_SIZE_i_a = 300
-SAMPLE_SIZE_i_b = 600
+
+PHASE_I_A_SAMPLES_TO_CREATE = 300
+# Samples to use for the main training stage
+PHASE_I_B_SAMPLES_TO_CREATE = 600
+
 DATA_SET_NAME = "WEB-Bible"
 ADDITIONAL_METADATA = "2-4-levels"
 EXPERIMENT_ITERATION = "0003"
 EXPERIMENT_NAME = f"{DATE_0}-{EXPERIMENT_NAME}--{ADDITIONAL_METADATA}--{DATA_SET_NAME}-" +\
-                  f"ia-{SAMPLE_SIZE_i_a}-ib-{SAMPLE_SIZE_i_b}--{EXPERIMENT_ITERATION}-a"
+                  f"ia-{PHASE_I_A_SAMPLES_TO_CREATE}-ib-{PHASE_I_B_SAMPLES_TO_CREATE}--{EXPERIMENT_ITERATION}-a"
 
 N_TRIALS = 40
 
