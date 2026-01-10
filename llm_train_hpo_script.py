@@ -97,32 +97,32 @@ def objective(trial):
 
     # General Model & Training Params
     POSITIONAL_EMBEDDING_DROPOUT = trial.suggest_float("POSITIONAL_EMBEDDING_DROPOUT", low=0.0, high=0.99)
-    activation = trial.suggest_categorical("activation", ['softplus', 'relu', 'gelu', 'swish'])
+    activation = trial.suggest_categorical("activation", ["softplus", 'relu']) # ['softplus', 'relu', 'gelu', 'swish'])
     predecessor_level_connection_affinity_factor_first = trial.suggest_float(
         "predecessor_level_connection_affinity_factor_first", low=0.3, high=35.0)
     predecessor_level_connection_affinity_factor_main = trial.suggest_float(
         "predecessor_level_connection_affinity_factor_main", low=0.3, high=35.0)
-    max_consecutive_lateral_connections = trial.suggest_int("max_consecutive_lateral_connections", low=3, high=25)
+    max_consecutive_lateral_connections = trial.suggest_int("max_consecutive_lateral_connections", low=3, high=13)
     p_lateral_connection = trial.suggest_float("p_lateral_connection", low=0.1, high=0.85)
     num_lateral_connection_tries_per_unit = trial.suggest_int("num_lateral_connection_tries_per_unit", low=1, high=35)
-    learning_rate = trial.suggest_float("learning_rate", low=1e-4, high=5e-2, log=True)
+    learning_rate = trial.suggest_float("learning_rate", low=10**-4, high=0.005, log=True)
     epochs = trial.suggest_int("epochs", low=1, high=100)
     batch_size = trial.suggest_categorical("batch_size", [10, 15, 20])
-    gradient_accumulation_steps = trial.suggest_int("gradient_accumulation_steps", low=2, high=15)
+    gradient_accumulation_steps = trial.suggest_int("gradient_accumulation_steps", low=2, high=7)
     minimum_levels = 2
     maximum_levels = trial.suggest_int("maximum_levels", low=minimum_levels, high=4)
     minimum_units_per_level = 2
-    maximum_units_per_level = trial.suggest_int("maximum_units_per_level", low=minimum_units_per_level, high=5)
+    maximum_units_per_level = trial.suggest_int("maximum_units_per_level", low=minimum_units_per_level, high=3)
     minimum_neurons_per_unit = 2
-    maximum_neurons_per_unit = trial.suggest_int("maximum_neurons_per_unit", low=minimum_neurons_per_unit, high=7)
+    maximum_neurons_per_unit = trial.suggest_int("maximum_neurons_per_unit", low=minimum_neurons_per_unit, high=5)
 
     # LR Scheduler & Stage I-b Params
     # WARMUP_STEPS = trial.suggest_int("WARMUP_STEPS", low=500, high=2700)
     # FIRST_DECAY_STEPS_STAGE_I_B = trial.suggest_int("FIRST_DECAY_STEPS_STAGE_I_B", low=1000, high=3000)
     phase_i_b_epochs = trial.suggest_int("phase_i_b_epochs", low=25, high=65)
-    phase_i_b_gradient_accumulation_steps = trial.suggest_int("phase_i_b_gradient_accumulation_steps", low=2, high=15)
+    phase_i_b_gradient_accumulation_steps = trial.suggest_int("phase_i_b_gradient_accumulation_steps", low=2, high=7)
     phase_i_b_weight_decay = trial.suggest_float("phase_i_b_weight_decay", low=5e-3, high=6e-1, log=True)
-    STAGE_I_B_LEARN_RATE = trial.suggest_float("STAGE_I_B_LEARN_RATE", 0.0001, 0.3, log=True)
+    STAGE_I_B_LEARN_RATE = trial.suggest_float("STAGE_I_B_LEARN_RATE", 0.0001, 0.005, log=True)
 
     # Tokenization & Embedding Params
     tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B"  # Fixed value
