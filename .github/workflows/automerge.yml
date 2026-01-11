@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "300-from-297-extend-manifold-hyperconnect-tocerebros-block" ]
+    branches: [ "main", "302-from-300-next--hpo--run" ]
 
 
 permissions:
