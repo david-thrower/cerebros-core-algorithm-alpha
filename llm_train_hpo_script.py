@@ -223,8 +223,10 @@ def objective(trial):
         "PROJECTION_N": PROJECTION_N,
         "STAGE_I_B_LEARN_RATE":STAGE_I_B_LEARN_RATE
     }
+   
 
     trial_num = trial.number
+    print(f"Params for Trial {trial_num}: {params}")
 
 
     with mlflow.start_run():
