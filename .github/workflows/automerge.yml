@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "302-from-300-next--hpo--run" ]
+    branches: [ "main", "303-from-302-2026-01-12--hpo-run" ]
 
 
 permissions:
