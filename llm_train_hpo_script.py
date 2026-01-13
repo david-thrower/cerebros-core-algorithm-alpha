@@ -858,6 +858,7 @@ def objective(trial):
                 result_0=result_phase_i_b)
             counter += 1
         mlflow.log_metric("stage_i_b_perplexity", result_phase_i_b)
+        return result_phase_i_b
 
 
 # study = optuna.create_study(direction='minimize')
