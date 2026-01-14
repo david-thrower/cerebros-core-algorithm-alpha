@@ -98,7 +98,7 @@ def objective(trial):
     # General Model & Training Params
     POSITIONAL_EMBEDDING_DROPOUT = trial.suggest_float("POSITIONAL_EMBEDDING_DROPOUT", low=0.0467, high=0.15)
     activation = "softplus" # trial.suggest_categorical("activation", ["softplus", 'relu']) # ['softplus', 'relu', 'gelu', 'swish'])
-    predecessor_level_connection_affinity_factor_first 28.2975136 # = trial.suggest_float(
+    predecessor_level_connection_affinity_factor_first = 28.2975136 # = trial.suggest_float(
     #     "predecessor_level_connection_affinity_factor_first", low=11.75, high=30.0)
     predecessor_level_connection_affinity_factor_main = 12.45 # trial.suggest_float(
     #     "predecessor_level_connection_affinity_factor_main", low=7, high=25)
