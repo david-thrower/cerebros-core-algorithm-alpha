@@ -96,19 +96,19 @@ def objective(trial):
     MAX_NEW_TOKENS = MAX_SEQ_LENGTH - GENERATION_PROMPT_LEN
 
     # General Model & Training Params
-    POSITIONAL_EMBEDDING_DROPOUT = trial.suggest_float("POSITIONAL_EMBEDDING_DROPOUT", low=0.0, high=0.4)
+    POSITIONAL_EMBEDDING_DROPOUT = trial.suggest_float("POSITIONAL_EMBEDDING_DROPOUT", low=0.0467, high=0.15)
     activation = "softplus" # trial.suggest_categorical("activation", ["softplus", 'relu']) # ['softplus', 'relu', 'gelu', 'swish'])
-    predecessor_level_connection_affinity_factor_first = trial.suggest_float(
-        "predecessor_level_connection_affinity_factor_first", low=11.75, high=30.0)
+    predecessor_level_connection_affinity_factor_first 28.2975136 # = trial.suggest_float(
+    #     "predecessor_level_connection_affinity_factor_first", low=11.75, high=30.0)
     predecessor_level_connection_affinity_factor_main = 12.45 # trial.suggest_float(
     #     "predecessor_level_connection_affinity_factor_main", low=7, high=25)
-    max_consecutive_lateral_connections = trial.suggest_int("max_consecutive_lateral_connections", low=6, high=9)
+    max_consecutive_lateral_connections = 9 # trial.suggest_int("max_consecutive_lateral_connections", low=6, high=9)
     p_lateral_connection = 0.628396083507019 # trial.suggest_float("p_lateral_connection", low=0.5089543226843299, high=0.6600677622410013)
-    num_lateral_connection_tries_per_unit = trial.suggest_int("num_lateral_connection_tries_per_unit", low=18, high=30)
+    num_lateral_connection_tries_per_unit = 24 # trial.suggest_int("num_lateral_connection_tries_per_unit", low=18, high=30)
     learning_rate = 0.000474 # trial.suggest_float("learning_rate", low=0.0004407017676344875, high=0.0006456391530117352)
-    epochs = trial.suggest_int("epochs", low=105, high=130)
+    epochs = 113 # trial.suggest_int("epochs", low=105, high=130)
     batch_size = 20 # trial.suggest_categorical("batch_size", [10, 15, 20])
-    gradient_accumulation_steps = trial.suggest_int("gradient_accumulation_steps", low=3, high=5)
+    gradient_accumulation_steps = 4 # trial.suggest_int("gradient_accumulation_steps", low=3, high=5)
     minimum_levels = 2
     maximum_levels = 2 # trial.suggest_int("maximum_levels", low=minimum_levels, high=3)
     minimum_units_per_level = 2
@@ -119,43 +119,43 @@ def objective(trial):
     # LR Scheduler & Stage I-b Params
     # WARMUP_STEPS = trial.suggest_int("WARMUP_STEPS", low=500, high=2700)
     # FIRST_DECAY_STEPS_STAGE_I_B = trial.suggest_int("FIRST_DECAY_STEPS_STAGE_I_B", low=1000, high=3000)
-    phase_i_b_epochs = trial.suggest_int("phase_i_b_epochs", low=39, high=100)
-    phase_i_b_gradient_accumulation_steps = trial.suggest_int("phase_i_b_gradient_accumulation_steps", low=2, high=7)
-    phase_i_b_weight_decay = trial.suggest_float("phase_i_b_weight_decay", low=0.0001, high=0.1, log=True)
-    STAGE_I_B_LEARN_RATE = trial.suggest_float("STAGE_I_B_LEARN_RATE", 0.0001, 0.0007)
+    phase_i_b_epochs = trial.suggest_int("phase_i_b_epochs", low=54, high=100)
+    phase_i_b_gradient_accumulation_steps = trial.suggest_int("phase_i_b_gradient_accumulation_steps", low=2, high=4)
+    phase_i_b_weight_decay = trial.suggest_float("phase_i_b_weight_decay", low=0.0007455880, high=0.0259, log=True)
+    STAGE_I_B_LEARN_RATE = 0.000685075852792669 # trial.suggest_float("STAGE_I_B_LEARN_RATE", 0.0001, 0.0007)
 
     # Tokenization & Embedding Params
     tokenizer_checkpoint = "HuggingFaceTB/SmolLM3-3B"  # Fixed value
-    EMBEDDING_N = trial.suggest_int("EMBEDDING_N", low=6, high=7)
+    EMBEDDING_N = 7 # trial.suggest_int("EMBEDDING_N", low=6, high=7)
 
     # --- Derived Parameters ---
     # These depend on other parameters and are calculated after suggestion.
     EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
     # Attention Block Constants
-    K_PROJ_CHUNKED = trial.suggest_categorical("K_PROJ_CHUNKED", [4, 5, 8, 10])
-    DFF_CHUNKED = trial.suggest_int("DFF_CHUNKED", low=8, high=14)
+    K_PROJ_CHUNKED = 5 # trial.suggest_categorical("K_PROJ_CHUNKED", [4, 5, 8, 10])
+    DFF_CHUNKED = 11 # trial.suggest_int("DFF_CHUNKED", low=8, high=14)
     DROPOUT_RATE_CHUNKED = 0.05258 # trial.suggest_float("DROPOUT_RATE_CHUNKED", low=0.0, high=0.3000892345724095)
 
     # Mamba Block Constants
-    MAMBA_D_STATE = trial.suggest_int("MAMBA_D_STATE", low=13, high=25)
-    MAMBA_D_CONV = trial.suggest_int("MAMBA_D_CONV", low=3, high=5)
-    MAMBA_EXPAND = trial.suggest_categorical("MAMBA_EXPAND", [2, 4])
+    MAMBA_D_STATE = 24 # trial.suggest_int("MAMBA_D_STATE", low=13, high=25)
+    MAMBA_D_CONV = 4 # trial.suggest_int("MAMBA_D_CONV", low=3, high=5)
+    MAMBA_EXPAND = 4 # trial.suggest_categorical("MAMBA_EXPAND", [2, 4])
     MAMBA_DROPOUT = 0.0765 # trial.suggest_float("MAMBA_DROPOUT", low=0.0, high=0.25)
 
     # VoxelAttentionLayer Constants
     VOXEL_MAX_GRID_SIZE = 7 # trial.suggest_int("VOXEL_MAX_GRID_SIZE", low=4, high=7)
     VOXEL_CA_STEPS = 2 # trial.suggest_int("VOXEL_CA_STEPS", low=2, high=3)
-    VOXEL_DROPOUT = trial.suggest_float("VOXEL_DROPOUT", low=0.0, high=0.4)
+    VOXEL_DROPOUT = trial.suggest_float("VOXEL_DROPOUT", low=0.0203562186, high=0.25)
 
     # Linformer Block Constants
     LINFORMER_K_PROJ = 11 # trial.suggest_int("LINFORMER_K_PROJ", low=8, high=14)
     LINFORMER_DFF = 42 # trial.suggest_int("LINFORMER_DFF", low=39, high=60)
-    LINFORMER_DROPOUT = trial.suggest_float("LINFORMER_DROPOUT", low=0.0, high=0.333511123637477)
-    LINFORMER_FFN_DROPOUT = trial.suggest_float("LINFORMER_FFN_DROPOUT", low=0.0, high=0.54)
+    LINFORMER_DROPOUT = trial.suggest_float("LINFORMER_DROPOUT", low=0.2039, high=0.3075)
+    LINFORMER_FFN_DROPOUT = 0.2505778 # trial.suggest_float("LINFORMER_FFN_DROPOUT", low=0.0, high=0.54)
 
     # Adapter Block Constants
-    ADAPTER_DROPOUT = trial.suggest_float("ADAPTER_DROPOUT", low=0.0, high=0.45)
+    ADAPTER_DROPOUT = 0.0903144117533307 # trial.suggest_float("ADAPTER_DROPOUT", low=0.0, high=0.45)
 
     # Tokenization
 
