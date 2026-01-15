@@ -98,7 +98,7 @@ EMBEDDING_N = 7  # trial.suggest_int("EMBEDDING_N", low=6, high=7)
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
 # Attention Block Constants
-K_PROJ_CHUNKED = 5
+K_PROJ_CHUNKED = 6 # 5 is the optimal for 40
 DFF_CHUNKED = 11
 DROPOUT_RATE_CHUNKED = 0.05258
 
