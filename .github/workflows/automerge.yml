@@ -6,7 +6,7 @@ name: Python application
 on:
   push:
 
-    branches: [ "main", "307-tiny-stories-96-seq-len-hpo-run-from-305" ]
+    branches: [ "main", "308-patch-fix-init-of-not-gpt-to-work-in-other-tf-versions" ]
 
 
 permissions:
