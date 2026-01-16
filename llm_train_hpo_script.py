@@ -173,7 +173,7 @@ def objective(trial):
 
     PROJECTION_N = 1
 
-    moities_to_try = 2
+    moities_to_try = 1
     tries_per_moity = 1
 
     # --- Assemble the final params dictionary for logging ---
