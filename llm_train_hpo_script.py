@@ -48,6 +48,7 @@ def objective(trial):
     import pendulum
 
     from transformers import AutoTokenizer
+    from datasets import load_dataset
     from sklearn.model_selection import train_test_split
 
     # Cerebros NAS components
@@ -75,7 +76,9 @@ def objective(trial):
     from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component \
         import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
 
-    from vanilladatasets.web_english_bible import samples as bible
+    # from vanilladatasets.web_english_bible import samples as bible
+    
+  
 
     # It is obvious that anything used for production we would train with a
     # dickens of a lot more than 10 and 20 samples... This script can be
@@ -231,10 +234,16 @@ def objective(trial):
 
     with mlflow.start_run():
         mlflow.log_params(params)
-        non_instruct_samples = bible[:PHASE_I_A_SAMPLES_TO_CREATE]
-        phase_i_b_samples = bible[PHASE_I_A_SAMPLES_TO_CREATE:PHASE_I_B_SAMPLES_TO_CREATE + PHASE_I_A_SAMPLES_TO_CREATE]
+        # Load the data
+
+        ds = load_dataset("david-thrower/tiny-stories-mini-96-seq-len-50000-samples")
+        ds_text_column = ds['train']['text']
+        x_list = list(ds_text_column)
+
+        non_instruct_samples = x_list[:PHASE_I_A_SAMPLES_TO_CREATE]
+        phase_i_b_samples = x_list[PHASE_I_A_SAMPLES_TO_CREATE:PHASE_I_B_SAMPLES_TO_CREATE + PHASE_I_A_SAMPLES_TO_CREATE]
         print(
-            f"Samples from KJV bible consisting of {len(non_instruct_samples)} look like this (sub-sample of 3): {non_instruct_samples[:3]}")
+            f"Samples from Tiny Stories consisting of {len(non_instruct_samples)} look like this (sub-sample of 3): {non_instruct_samples[:3]}")
 
         # Preprocess data for Stage I-a training
         x, y, vocab_size = prepare_data(data_0=non_instruct_samples, tokenizer_0=tokenizer,
