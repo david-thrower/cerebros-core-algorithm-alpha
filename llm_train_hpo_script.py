@@ -166,7 +166,7 @@ def objective(trial):
     # Step 1: Add special tokens
     special_tokens = {
         "additional_special_tokens": ["<prompt>", "</prompt>", "<response>", "</response>"]
-    }F
+    }
     tokenizer.add_special_tokens(special_tokens)
 
     VOCABULARY_SIZE = len(tokenizer)
