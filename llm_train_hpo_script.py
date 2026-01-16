@@ -14,9 +14,9 @@ print(answer.stdout)
 DATE_0 = "2026-01-16"
 EXPERIMENT_NAME = "stacked-transformer-mmc"
 
-PHASE_I_A_SAMPLES_TO_CREATE = 300
+PHASE_I_A_SAMPLES_TO_CREATE = 10
 # Samples to use for the main training stage
-PHASE_I_B_SAMPLES_TO_CREATE = 600
+PHASE_I_B_SAMPLES_TO_CREATE = 30
 
 DATA_SET_NAME = "tiny-stories-50k"
 ADDITIONAL_METADATA = "2-3-levels"
@@ -90,7 +90,7 @@ def objective(trial):
 
     PHASE_I_B_VAL_SPLIT = 0.15
 
-    PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE = 100
+    PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE = 10
 
     PROMPT_LENGTH = 1
     MAX_SEQ_LENGTH = 96
