@@ -14,9 +14,9 @@ print(answer.stdout)
 DATE_0 = "2026-01-16"
 EXPERIMENT_NAME = "stacked-transformer-mmc"
 
-PHASE_I_A_SAMPLES_TO_CREATE = 10
+PHASE_I_A_SAMPLES_TO_CREATE = 100
 # Samples to use for the main training stage
-PHASE_I_B_SAMPLES_TO_CREATE = 30
+PHASE_I_B_SAMPLES_TO_CREATE = 100
 
 DATA_SET_NAME = "tiny-stories-50k"
 ADDITIONAL_METADATA = "2-3-levels"
@@ -679,9 +679,9 @@ def objective(trial):
                         f"Trial #: {trial_id} Text Sample #: {test_sample_number} Perplexity: {result_0} GENERATE PARAMS: max_new_tokens={perm_0['max_new_tokens']} temperature={perm_0['temperature']}, top_k={perm_0['top_k']}, top_p={perm_0['top_p']}, repetition_penalty={perm_0['repetition_penalty']} presence_penalty={perm_0['presence_penalty']} frequency_penalty{perm_0['frequency_penalty']} PROMPT: '{test_prompt}' RESPONSE: '{response_0}'")
 
         prompt_samples = [
-            "I saw the sun and it was as shining on the",
-            "And God said, Let there be light: and there ",
-            "In the beginning God created the heavens"
+            "The next day, something unexpected happened. ",
+            "I have an idea, Ben. Let's build a house",
+            "The oyster and its friends decided to make a plan."
         ]
 
         counter = 0
