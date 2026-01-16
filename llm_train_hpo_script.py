@@ -689,7 +689,7 @@ def objective(trial):
             test_text(
                 test_prompt=sample,
                 max_new_tokens=MAX_NEW_TOKENS,
-                result_cutoff=999,
+                result_cutoff=999999,
                 trial_id=trial_num,
                 test_sample_number=counter,
                 result_0=phase_i_a_result)
@@ -859,7 +859,7 @@ def objective(trial):
             test_text(
                 test_prompt=sample,
                 max_new_tokens=MAX_NEW_TOKENS,
-                result_cutoff=35,
+                result_cutoff=99999999,
                 trial_id=trial_num,
                 test_sample_number=counter,
                 result_0=result_phase_i_b)
