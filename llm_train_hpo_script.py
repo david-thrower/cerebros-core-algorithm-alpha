@@ -107,7 +107,7 @@ def objective(trial):
     p_lateral_connection = 0.628396083507019
     num_lateral_connection_tries_per_unit = 24
     learning_rate = 0.000474
-    epochs = 113
+    epochs = 40
     batch_size = 20
     gradient_accumulation_steps = 4
     minimum_levels = 2
@@ -120,7 +120,7 @@ def objective(trial):
     # LR Scheduler & Stage I-b Params
     # WARMUP_STEPS = trial.suggest_int("WARMUP_STEPS", low=500, high=2700)
     # FIRST_DECAY_STEPS_STAGE_I_B = trial.suggest_int("FIRST_DECAY_STEPS_STAGE_I_B", low=1000, high=3000)
-    phase_i_b_epochs = trial.suggest_int("phase_i_b_epochs", low=54, high=100)
+    phase_i_b_epochs = 40 # trial.suggest_int("phase_i_b_epochs", low=54, high=100)
     phase_i_b_gradient_accumulation_steps = trial.suggest_int("phase_i_b_gradient_accumulation_steps", low=2, high=4)
     phase_i_b_weight_decay = trial.suggest_float("phase_i_b_weight_decay", low=0.0007455880, high=0.0259, log=True)
     STAGE_I_B_LEARN_RATE = 0.000685075852792669 # trial.suggest_float("STAGE_I_B_LEARN_RATE", 0.0001, 0.0007)
@@ -166,14 +166,14 @@ def objective(trial):
     # Step 1: Add special tokens
     special_tokens = {
         "additional_special_tokens": ["<prompt>", "</prompt>", "<response>", "</response>"]
-    }
+    }F
     tokenizer.add_special_tokens(special_tokens)
 
     VOCABULARY_SIZE = len(tokenizer)
 
     PROJECTION_N = 1
 
-    moities_to_try = 2
+    moities_to_try = 1
     tries_per_moity = 1
 
     # --- Assemble the final params dictionary for logging ---
