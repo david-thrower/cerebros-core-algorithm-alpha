@@ -405,7 +405,6 @@ class SparsePerplexity(tf.keras.metrics.Metric):
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPTConfig')
 class CerebrosNotGPTConfig:
     def __init__(self, max_sequence_length=1536, padding_token=None):
-        super().__init__()
         self.max_sequence_length = max_sequence_length
         self.padding_token = padding_token
 
@@ -423,6 +422,7 @@ class CerebrosNotGPTConfig:
 @tf.keras.utils.register_keras_serializable(package='cerebrosllmutils', name='CerebrosNotGPT')
 class CerebrosNotGPT(tf.keras.Model):
     def __init__(self, config: Any, model: Any = None, **kwargs):
+        super().__init__()
         # 1. Store the nested model argument.
         self.config = config
         self.model = model
