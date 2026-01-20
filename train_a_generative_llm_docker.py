@@ -60,7 +60,7 @@ if MLFLOW_PORT != 0:
         "--host 0.0.0.0 ",
         f"--port {str(MLFLOW_PORT)} ",
         f"--default-artifact-root  {str(mlflow_artifacts_path)} ",
-        f"--backend-store-uri {str(mlflow_backend_path)}"
+        f"--backend-store-uri {str(mlflow_backend_path)} &"
     ])
 
     answer = subprocess.run(cmd, shell=True)
