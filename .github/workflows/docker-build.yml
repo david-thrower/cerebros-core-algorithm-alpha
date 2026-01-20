@@ -21,7 +21,7 @@ jobs:
     # which has its own Python environment defined in the Dockerfile.
 
     - name: Build Docker Image
-      run: docker build -t cerebros-llm:test .
+      run: docker build -t davidt101/cerebros-llm:${{ github.run_number }} .
 
     - name: Run Smoke Test
       run: |
@@ -33,4 +33,4 @@ jobs:
           -e PHASE_I_B_SAMPLES_TO_CREATE=200 \
           -e PHASE_I_B_VAL_SPLIT=0.15 \
           -e MAX_SEQ_LENGTH=96 \
-          cerebros-llm:test
+          davidt101/cerebros-llm:${{ github.run_number }}
