@@ -4,7 +4,7 @@ pendulum==3.0.0
 # tensorflow==2.20.0
 numpy==2.3.5
 pandas==2.3.3
-# pyvis==0.3.2
+pyvis==0.3.2
 # plotly==5.20.0
 matplotlib==3.10.7
 # imageio==2.37.2
@@ -18,5 +18,5 @@ scikit-learn==1.8.0
 # tensorflow-hub==0.16.1
 transformers==4.57.3
 datasets==4.5.0
-# optuna==4.6.0
+optuna==4.6.0
 mlflow==3.8.1
