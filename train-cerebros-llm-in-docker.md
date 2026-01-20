@@ -18,6 +18,10 @@
   - Effect: The number of samples to use for the main training stage (Stage I-b). 	
   - Type: int
   - Default: 200
+- **PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE**:
+  - Effect: Number of samples expanded in memory. (Higher = more RAM pressure and faster training. Lower = less RAM pressure and a CPU bottleneck expanding the samples.)
+  - Type: Int
+  - Default: 100
 - **PHASE_I_B_VAL_SPLIT**
   - Effect: The fraction of the Stage I-b dataset to reserve for validation (e.g., 0.15 for 15%). 	
   - Type: float
@@ -46,6 +50,7 @@ docker run --gpus all -t \
   -e DATASET_TO_RUN="david-thrower/tiny-stories-mini-96-seq-len-50000-samples" \
   -e PHASE_I_A_SAMPLES_TO_CREATE=300 \
   -e PHASE_I_B_SAMPLES_TO_CREATE=200 \
+  -e PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE=100 \
   -e PHASE_I_B_VAL_SPLIT=0.15 \
   -e MAX_SEQ_LENGTH=96 \
   davidt101/cerebros-llm:latest

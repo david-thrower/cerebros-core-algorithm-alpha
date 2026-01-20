@@ -105,7 +105,7 @@ PHASE_I_B_VAL_SPLIT = float(getenv("PHASE_I_B_VAL_SPLIT", "0.15"))
 # depending on your RAM and GPU RAM.
 
 
-PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE = 100
+PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE = int(getenv("PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE", "100"))
 
 # How many tokens to provide before expecting the next token to be predicted.
 # It is recommended to keep this as 1. Raising it may reduce RAM pressure at
