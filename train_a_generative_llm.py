@@ -46,10 +46,10 @@ from vanilladatasets.web_english_bible import samples as bible
 # environment.
 
 # Samples to use for the neural architecture seaerch stage
-PHASE_I_A_SAMPLES_TO_CREATE = 10
+PHASE_I_A_SAMPLES_TO_CREATE = 300
 
 # Samples to use for the main training stage
-PHASE_I_B_SAMPLES_TO_CREATE = 20
+PHASE_I_B_SAMPLES_TO_CREATE = 200
 PHASE_I_B_VAL_SPLIT = 0.15
 
 # This is a single head model. It only returns the next token. For this reason,
@@ -71,7 +71,7 @@ PHASE_I_B_VAL_SPLIT = 0.15
 # depending on your RAM and GPU RAM.
 
 
-PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE = 10
+PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE = 100
 
 # How many tokens to provide before expecting the next token to be predicted. 
 # It is recommended to keep this as 1. Raising it may reduce RAM pressure at
@@ -86,7 +86,7 @@ PROMPT_LENGTH = 1
 # CPU requirement for Cerebros NotGPT. This is a subquadratic NLP
 # algo)
 
-MAX_SEQ_LENGTH = 40
+MAX_SEQ_LENGTH = 96
 
 #
 # Cerebros [non-HP-tunable] configurables (Parameters to Optimize continued)
@@ -94,7 +94,7 @@ MAX_SEQ_LENGTH = 40
 #
 
 # How many permutations of layers to try, basically.
-moities_to_try = 3 # ++ Accuracy, linear increase in computation time (Raise this before resorting to raising the next one)
+moities_to_try = 1 # ++ Accuracy, linear increase in computation time (Raise this before resorting to raising the next one)
 
 # How many different topologies between the same permutation of
 # layers to try, basically (Multiplies the number of models to be tried:
@@ -104,36 +104,36 @@ tries_per_moity = 1 # ++ Modest ++ Accuracy, quadratic increase in computation t
 
 # Main tunable hyperparameters:
 
-POSITIONAL_EMBEDDING_DROPOUT = 0.05 # 0.7651951380000674
+POSITIONAL_EMBEDDING_DROPOUT = 0.0819834183890946
 activation = 'softplus'
 
 # Directly proportional to the connectivity density between the Input layer
 # (output of the text embedding) and the first Dense layer.
-predecessor_level_connection_affinity_factor_first = 17.851026458010523
+predecessor_level_connection_affinity_factor_first = 28.2975136
 
 # Directly propertional to the connectivity density between hidden layers
 # and upstream layers.
-predecessor_level_connection_affinity_factor_main = 21.487301631581428
+predecessor_level_connection_affinity_factor_main = 12.45
 
 # Cerebros arranges a grid of Dense layers (Units) on rows (Levels). They connect both
 # laterally with Dense layers on the same row as well as verticly with layers on other
 # rows. A limit to the number of consecutive connections on the same row.
-max_consecutive_lateral_connections = 7
+max_consecutive_lateral_connections = 9
 
 # Basically the density of lateral comnnectiosn approximately
 # equals p_lateral_connection * num_lateral_connection_tries_per_unit
-p_lateral_connection = 0.24927354102044022
+p_lateral_connection = 0.628396083507019
 
-num_lateral_connection_tries_per_unit = 32
+num_lateral_connection_tries_per_unit = 24
 
 # The learning rate for Srage I-a
-learning_rate = 0.003025583248301791
+learning_rate = 0.000474
 
 # Number of epochs for Training Stage I-a
-epochs = 41
+epochs = 113
 
 # Batch size for both stages.
-batch_size = 5 # When training at scale, use a higher batch size.
+batch_size = 20 # When training at scale, use a higher batch size.
 
 # In the Neural architecture search, if set to 1, it will omit the gradient_accumulation_steps.
 # It allows '1' to be selected because we want to use it in hyperparameter tuning and not raise
@@ -151,25 +151,25 @@ maximum_units_per_level = 2
 
 # Number of units in each Dense layer:
 minimum_neurons_per_unit = 2
-maximum_neurons_per_unit = 2
+maximum_neurons_per_unit = 3
 
 
 
 ## Training Stage I-b parameters: ###
 
 # LR Scheduler for training stage I-b
-INITIAL_LR_STAGE_I_B = 0.0039295722955565125
+INITIAL_LR_STAGE_I_B = 0.000685075852792669
 
 # A fixed number for the initial warmup
 WARMUP_EPOCHS_STAGE_I_B = 7
 WARMUP_STEPS = 1140  # Generally between 500 and 2000
 FIRST_DECAY_STEPS_STAGE_I_B = 1900
 
-phase_i_b_epochs = 53
+phase_i_b_epochs = 97
 
-phase_i_b_gradient_accumulation_steps = 7
+phase_i_b_gradient_accumulation_steps = 4
 
-phase_i_b_weight_decay = 0.01647018768215773
+phase_i_b_weight_decay = 0.0032205875070735815
 
 ## Generation time configurables: ##########
 
@@ -195,7 +195,7 @@ VOCABULARY_SIZE = len(tokenizer)
 # embedding output dim must be an even number
 # Maximize EMBEDDING_N based on available RAM and CPU / GPU
     
-EMBEDDING_N = 6 # trial.suggest_int('embedding_n',6, 9) # 12
+EMBEDDING_N = 7
 EMBEDDING_DIM = int(EMBEDDING_N * 2)
 
 # Size of the projection layer bet
@@ -204,29 +204,29 @@ PROJECTION_N = 1 # Punitive increase of ram, leaving this as 1 until we are runn
 ##### Attention blocks' and attention mimetic blocks' constants: #######
 
 # --- SingleHeadChunkedAttention Block Constants ---
-K_PROJ_CHUNKED = 5
-DFF_CHUNKED = EMBEDDING_DIM # Can be tuned independently, but likely to coincide.
-DROPOUT_RATE_CHUNKED = 0.1
+K_PROJ_CHUNKED = 6
+DFF_CHUNKED = 11
+DROPOUT_RATE_CHUNKED = 0.05258
 
 # --- MAMBA Block Constants ---
-MAMBA_D_STATE = 12
+MAMBA_D_STATE = 24
 MAMBA_D_CONV = 4
-MAMBA_EXPAND = 2
-MAMBA_DROPOUT = 0.05
+MAMBA_EXPAND = 4
+MAMBA_DROPOUT = 0.0765
 
 # --- VoxelAttentionLayer Constants ---
-VOXEL_MAX_GRID_SIZE = 5
-VOXEL_CA_STEPS = 3
-VOXEL_DROPOUT = 0.1
+VOXEL_MAX_GRID_SIZE = 7
+VOXEL_CA_STEPS = 2
+VOXEL_DROPOUT = 0.03270228784722243
 
 # --- Linformer Block Constants (Adjusted for tiny model) ---
-LINFORMER_K_PROJ = 16
-LINFORMER_DFF = 64
-LINFORMER_DROPOUT = 0.05
-LINFORMER_FFN_DROPOUT = 0.05
+LINFORMER_K_PROJ = 11
+LINFORMER_DFF = 42
+LINFORMER_DROPOUT = 0.21111718785990585
+LINFORMER_FFN_DROPOUT = 0.2505778
 
 # --- Adapter Block Constants ---
-ADAPTER_DROPOUT = 0.1
+ADAPTER_DROPOUT = 0.0903144117533307
 
 ## Get training data:
 
