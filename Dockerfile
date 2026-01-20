@@ -22,6 +22,8 @@ RUN echo "##### END OF LIST OF EXISTING PYTHON PACKAGES #####"
 ## / debug
 
 RUN pip install --upgrade pip
-# RUN pip install "numpy==1.26.4" --no-deps
 RUN pip install --ignore-installed blinker --ignore-installed ml_dtypes -r docker-requirements.txt
-RUN python train_a_generative_llm.py
+
+EXPOSE 7777
+
+ENTRYPOINT ["python", "train_a_generative_llm_docker.py"]
