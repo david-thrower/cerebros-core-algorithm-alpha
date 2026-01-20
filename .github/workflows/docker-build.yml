@@ -25,7 +25,7 @@ jobs:
 
     - name: Run Smoke Test
       run: |
-        docker run --rm \
+        docker run -t \
           -v $(pwd)/artifacts:/opt/artifacts \
           -e MLFLOW_PORT=7777 \
           -e DATASET_TO_RUN="david-thrower/tiny-stories-mini-96-seq-len-50000-samples" \
