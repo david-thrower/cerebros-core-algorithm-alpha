@@ -56,16 +56,14 @@ if MLFLOW_PORT != 0:
     Path(mlflow_backend_path).mkdir(parents=True, exist_ok=True)
 
     cmd = "".join([
-        "mlflow", "server",
-        "--host", "0.0.0.0",
-        "--port", str(MLFLOW_PORT),
-        "--default-artifact-root", str(mlflow_artifacts_path),
-        "--backend-store-uri", str(mlflow_backend_path)
+        "mlflow server ",
+        "--host 0.0.0.0 ",
+        f"--port {str(MLFLOW_PORT)} ",
+        f"--default-artifact-root  {str(mlflow_artifacts_path)} ",
+        f"--backend-store-uri {str(mlflow_backend_path)}"
     ])
 
-    answer = subprocess.run(cmd",
-                            shell=True,
-    )
+    answer = subprocess.run(cmd, shell=True)
     time.sleep(10)
     print(answer.stdout)
 
