@@ -21,5 +21,6 @@ RUN echo "##### END OF LIST OF EXISTING PYTHON PACKAGES #####"
 
 ## / debug
 
+RUN pip install --upgrade pip
 RUN pip install --ignore-installed blinker --ignore-installed ml_dtypes -r docker-requirements.txt
 RUN python train_a_generative_llm.py
