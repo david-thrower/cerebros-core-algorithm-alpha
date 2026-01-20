@@ -12,7 +12,6 @@ WORKDIR /opt/cerebros-core-algorithm-alpha
 RUN git fetch
 RUN git checkout 309-from-307-dockerize-the-best-run-from-hpo-study
 RUN git pull origin 309-from-307-dockerize-the-best-run-from-hpo-study
-RUN pip install -r docker-requirements.txt
 
 ## Debug
 run echo "##### LIST OF EXISTING PYTHON PACKAGES #####"
@@ -22,5 +21,5 @@ RUN echo "##### END OF LIST OF EXISTING PYTHON PACKAGES #####"
 
 ## / debug
 
-
+RUN pip install -r docker-requirements.txt
 RUN python train_a_generative_llm.py
