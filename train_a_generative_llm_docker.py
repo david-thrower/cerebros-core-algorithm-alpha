@@ -745,9 +745,9 @@ def test_text(test_prompt: str, max_new_tokens: int, result_cutoff: float, trial
 
 
 prompt_samples = [
-    "I saw the sun and it was as shining on the",
-    "And God said, Let there be light: and there ",
-    "In the beginning God created the heavens"
+    "The next day, something unexpected happened. The bird changed into a big, scary",
+    "I have an idea, Ben. Let's build a",
+    '"Yes, we do," Mia says.'
 ]
 
 counter = 0
