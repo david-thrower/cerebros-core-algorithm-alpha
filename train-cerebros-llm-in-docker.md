@@ -33,10 +33,10 @@
 
 ## Dataset Selection / format for DATASET_TO_RUN
 
-# 1. Is a huggingface dataset name in the format "username/repo", example: "HuggingFaceTB/smoltalk2"
-# 2. Has a key ['train']['text']
-# 3. The key duck types as a List[str]
-# 4. The samples tokenize consistent with the MAX_SEQUENCE_LENGTH
+1. Is a huggingface dataset name in the format "username/repo", example: "HuggingFaceTB/smoltalk2"
+2. Has a key ['train']['text']
+3. The key duck types as a List[str]
+4. The samples tokenize consistent with the MAX_SEQUENCE_LENGTH
 
 
 # Example use
