@@ -130,7 +130,7 @@ if MLFLOW_PORT != 0:
 
     # Debug
     print(f"cmd: {cmd}")
-    / Debug
+    # / Debug
 
     answer = subprocess.run(cmd, shell=True)
     time.sleep(30)
