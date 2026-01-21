@@ -12,15 +12,6 @@ WORKDIR /opt/cerebros-core-algorithm-alpha
 RUN git fetch
 RUN git checkout 309-from-307-dockerize-the-best-run-from-hpo-study
 RUN git pull origin 309-from-307-dockerize-the-best-run-from-hpo-study
-
-## Debug
-run echo "##### LIST OF EXISTING PYTHON PACKAGES #####"
-RUN pip list
-
-RUN echo "##### END OF LIST OF EXISTING PYTHON PACKAGES #####"
-
-## / debug
-
 RUN pip install --upgrade pip
 RUN pip install --ignore-installed blinker --ignore-installed ml_dtypes -r docker-requirements.txt
 
