@@ -48,10 +48,6 @@ ARTIFACTS_FOLDER = "/opt/artifacts"
 
 OWNER = getenv("OWNER", "cerebros")
 
-#### Delete this ##################################################
-ARTIFACTS_FOLDER = "./sorta-devnull"
-########################################################
-
 
 # Create the directory if it doesn't exist
 Path(ARTIFACTS_FOLDER).mkdir(parents=True, exist_ok=True)
