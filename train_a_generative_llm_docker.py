@@ -284,6 +284,56 @@ LINFORMER_FFN_DROPOUT = 0.2505778
 # --- Adapter Block Constants ---
 ADAPTER_DROPOUT = 0.0903144117533307
 
+
+# Package Parameters for logging
+
+PARAMS = {
+    "POSITIONAL_EMBEDDING_DROPOUT": POSITIONAL_EMBEDDING_DROPOUT,
+    "activation": activation,
+    "predecessor_level_connection_affinity_factor_first": predecessor_level_connection_affinity_factor_first,
+    "predecessor_level_connection_affinity_factor_main": predecessor_level_connection_affinity_factor_main,
+    "max_consecutive_lateral_connections": max_consecutive_lateral_connections,
+    "p_lateral_connection": p_lateral_connection,
+    "num_lateral_connection_tries_per_unit": num_lateral_connection_tries_per_unit,
+    "learning_rate": learning_rate,
+    "epochs": epochs,
+    "batch_size": batch_size,
+    "gradient_accumulation_steps": gradient_accumulation_steps,
+    "minimum_levels": minimum_levels,
+    "maximum_levels": maximum_levels,
+    "minimum_units_per_level": minimum_units_per_level,  # Fixed
+    "maximum_units_per_level": maximum_units_per_level,
+    "minimum_neurons_per_unit": minimum_neurons_per_unit,  # Fixed
+    "maximum_neurons_per_unit": maximum_neurons_per_unit,
+    "INITIAL_LR_STAGE_I_B": 0.0039295722955565125,  # Fixed
+    # "WARMUP_STEPS": WARMUP_STEPS,
+    # "FIRST_DECAY_STEPS_STAGE_I_B": FIRST_DECAY_STEPS_STAGE_I_B,
+    "phase_i_b_epochs": phase_i_b_epochs,
+    "phase_i_b_gradient_accumulation_steps": phase_i_b_gradient_accumulation_steps,
+    "phase_i_b_weight_decay": phase_i_b_weight_decay,
+    "tokenizer_checkpoint": tokenizer_checkpoint,
+    "EMBEDDING_N": EMBEDDING_N,
+    "EMBEDDING_DIM": EMBEDDING_DIM,
+    "K_PROJ_CHUNKED": K_PROJ_CHUNKED,
+    "DFF_CHUNKED": DFF_CHUNKED,
+    "DROPOUT_RATE_CHUNKED": DROPOUT_RATE_CHUNKED,
+    "MAMBA_D_STATE": MAMBA_D_STATE,
+    "MAMBA_D_CONV": MAMBA_D_CONV,
+    "MAMBA_EXPAND": MAMBA_EXPAND,
+    "MAMBA_DROPOUT": MAMBA_DROPOUT,
+    "VOXEL_MAX_GRID_SIZE": VOXEL_MAX_GRID_SIZE,
+    "VOXEL_CA_STEPS": VOXEL_CA_STEPS,
+    "VOXEL_DROPOUT": VOXEL_DROPOUT,
+    "LINFORMER_K_PROJ": LINFORMER_K_PROJ,
+    "LINFORMER_DFF": LINFORMER_DFF,
+    "LINFORMER_DROPOUT": LINFORMER_DROPOUT,
+    "LINFORMER_FFN_DROPOUT": LINFORMER_FFN_DROPOUT,
+    "ADAPTER_DROPOUT": ADAPTER_DROPOUT,
+    "VOCABULARY_SIZE": VOCABULARY_SIZE,
+    "PROJECTION_N": PROJECTION_N
+}
+
+
 ## Get training data:
 
 ds = load_dataset(DATASET_TO_RUN)
@@ -510,506 +560,513 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     train_data_dtype=tf.int32,
     merging_strategy='concatenate')  # "mhc")
 
-cerebros_t0 = time.time()
-phase_i_a_result_0 = cerebros_automl.run_random_search()
-phase_i_a_result = float(phase_i_a_result_0)  # Deep copy that survives del() of parent object ...
-cerebros_t1 = time.time()
-cerebros_time_all_models_min = (cerebros_t1 - cerebros_t0) / 60
-models_tried = moities_to_try * tries_per_moity
-cerebros_time_per_model = cerebros_time_all_models_min / models_tried
+with mlflow.start_run() as run:
+    mlflow.log_params(PARAMS)
+    cerebros_t0 = time.time()
+    phase_i_a_result_0 = cerebros_automl.run_random_search()
+    phase_i_a_result = float(phase_i_a_result_0)  # Deep copy that survives del() of parent object ...
+    cerebros_t1 = time.time()
+    cerebros_time_all_models_min = (cerebros_t1 - cerebros_t0) / 60
+    models_tried = moities_to_try * tries_per_moity
+    cerebros_time_per_model = cerebros_time_all_models_min / models_tried
 
-print(
-    f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
-print(f'Cerebros best perplexity achieved in Phase I-a is {phase_i_a_result}')
+    mlflow.log_metric("phase_i_a_result", phase_i_a_result)
 
-MODEL_FILE_NAME = "cerebros-foundation-model.keras"
+    print(
+        f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
+    print(f'Cerebros best perplexity achieved in Phase I-a is {phase_i_a_result}')
 
-best_model_found = cerebros_automl.get_best_model(purge_model_storage_files='slate')
+    MODEL_FILE_NAME = "cerebros-foundation-model.keras"
 
-# Create config and generative model
-config = CerebrosNotGPTConfig(
-    max_sequence_length=MAX_SEQ_LENGTH,
-    padding_token=tokenizer.pad_token_id
-)
-# Instantiate generative model
-generator = CerebrosNotGPT(config, model=best_model_found)
+    best_model_found = cerebros_automl.get_best_model(purge_model_storage_files='slate')
 
-text = "This is a test ..."
+    # Create config and generative model
+    config = CerebrosNotGPTConfig(
+        max_sequence_length=MAX_SEQ_LENGTH,
+        padding_token=tokenizer.pad_token_id
+    )
+    # Instantiate generative model
+    generator = CerebrosNotGPT(config, model=best_model_found)
 
-PADDING_TOKEN = tokenizer.pad_token_id
+    text = "This is a test ..."
 
-input_ids = tokenizer(
-    text,
-    add_special_tokens=False
-)['input_ids']
-current_tokens = input_ids.copy()
+    PADDING_TOKEN = tokenizer.pad_token_id
 
-# Pad (Had been advised by AI when writing .generate() that this
-# should be done manually, not using the tokenizer ...)
-if len(current_tokens) > MAX_SEQ_LENGTH:
-    input_tokens = current_tokens[-MAX_SEQ_LENGTH:]
-else:
-    padding_needed = MAX_SEQ_LENGTH - len(current_tokens)
-    input_tokens = current_tokens + [PADDING_TOKEN] * padding_needed
-
-# Convert to tensor and get model prediction
-input_tensor = tf.constant([input_tokens], dtype=tf.int32)
-
-try:
-    _ = generator(input_tensor)
-    print("✅ Building LLM Model Successful!")
-except Exception as exc:
-    error_message = f"❌ Building model returned the error: {exc}"
-
-
-# Utility function to generate text from greedy sampling:
-def complete_text_greedy(text: str, max_new_tokens: int = 10) -> str:
     input_ids = tokenizer(
         text,
         add_special_tokens=False
     )['input_ids']
+    current_tokens = input_ids.copy()
 
-    generated_tokens = generator.generate(
-        token_ids=input_ids,  # Just the actual tokens, no padding
-        do_sample=False,
-        max_new_tokens=max_new_tokens
-    )
-    generated_text = \
-        tokenizer.decode(generated_tokens).replace(text, "")
-    return generated_text
+    # Pad (Had been advised by AI when writing .generate() that this
+    # should be done manually, not using the tokenizer ...)
+    if len(current_tokens) > MAX_SEQ_LENGTH:
+        input_tokens = current_tokens[-MAX_SEQ_LENGTH:]
+    else:
+        padding_needed = MAX_SEQ_LENGTH - len(current_tokens)
+        input_tokens = current_tokens + [PADDING_TOKEN] * padding_needed
 
+    # Convert to tensor and get model prediction
+    input_tensor = tf.constant([input_tokens], dtype=tf.int32)
 
-# Utility function to generate text from beam sampling:
-def complete_text_beam(text: str,
-                       max_new_tokens: int = 10,
-                       temperature: float = 0.75,
-                       top_k: int = 75,
-                       top_p: float = 0.98,
-                       repetition_penalty: float = None,
-                       presence_penalty: float = 1.3,
-                       frequency_penalty: float = 1.4) -> str:
-    input_ids = tokenizer(
-        text,
-        add_special_tokens=False
-    )['input_ids']
-
-    generated_tokens = generator.generate(
-        token_ids=input_ids,  # Just the actual tokens, no padding
-        do_sample=True,
-        max_new_tokens=max_new_tokens,
-        temperature=temperature,
-        top_k=top_k,
-        top_p=top_p,
-        # repetition_penalty=1.2,
-        presence_penalty=presence_penalty,
-        frequency_penalty=frequency_penalty
-    )
-    generated_text = \
-        tokenizer.decode(generated_tokens).replace(text, "")
-    return generated_text
+    try:
+        _ = generator(input_tensor)
+        print("✅ Building LLM Model Successful!")
+    except Exception as exc:
+        error_message = f"❌ Building model returned the error: {exc}"
 
 
-trial_number = 1
+    # Utility function to generate text from greedy sampling:
+    def complete_text_greedy(text: str, max_new_tokens: int = 10) -> str:
+        input_ids = tokenizer(
+            text,
+            add_special_tokens=False
+        )['input_ids']
 
-
-def test_text(test_prompt: str, max_new_tokens: int, result_cutoff: float, trial_id: int,
-              test_sample_number: int, result_0: float) -> None:
-    """
-    If the result_0 < result_cutoff, this will run a matrix of different sampling values and print out the resulting text for human subjective evaluation.
-
-    Parameters:
-        - test_prompt: a string to prompt generation
-        - max_new_tokens: int, number of tokens to generate unless we generate a stop token.
-        - sample_number: Metadata for sample...
-        - result_0: Perplexity score from this run
-        - result_cutoff: Perplexity score that would be expected to indicate a trial worth running this pn
-
-    """
-    if result_0 < result_cutoff:
-        generation_param_permutations = [
-            # #3
-            {
-                'max_new_tokens': max_new_tokens,
-                'temperature': 0.6,
-                'top_k': 75,
-                'top_p': 0.98,
-                'repetition_penalty': None,
-                'presence_penalty': 1.3,
-                'frequency_penalty': 1.4
-            },
-            # #4
-            {
-                'max_new_tokens': max_new_tokens,
-                'temperature': 0.7,
-                'top_k': 75,
-                'top_p': 0.98,
-                'repetition_penalty': None,
-                'presence_penalty': 1.3,
-                'frequency_penalty': 1.4
-            },
-            # #5
-            {
-                'max_new_tokens': max_new_tokens,
-                'temperature': 0.7,
-                'top_k': 75,
-                'top_p': 0.97,
-                'repetition_penalty': None,
-                'presence_penalty': 1.3,
-                'frequency_penalty': 1.4},
-            # #6
-            {
-                'max_new_tokens': max_new_tokens,
-                'temperature': 0.75,
-                'top_k': 75,
-                'top_p': 0.98,
-                'repetition_penalty': None,
-                'presence_penalty': 1.4,
-                'frequency_penalty': 1.4},
-            # #7
-            {
-                'max_new_tokens': max_new_tokens,
-                'temperature': 0.7,
-                'top_k': 75,
-                'top_p': 0.98,
-                'repetition_penalty': None,
-                'presence_penalty': 1.4,
-                'frequency_penalty': 1.4},
-            # #8
-            {
-                'max_new_tokens': max_new_tokens,
-                'temperature': 0.6,
-                'top_k': 75,
-                'top_p': 0.98,
-                'repetition_penalty': None,
-                'presence_penalty': 1.4,
-                'frequency_penalty': 1.4
-            },
-            {
-                'max_new_tokens': max_new_tokens,
-                'temperature': 0.6,
-                'top_k': 40,
-                'top_p': 0.96,
-                'repetition_penalty': None,
-                'presence_penalty': 1.4,
-                'frequency_penalty': 1.4
-            },
-            {
-                'max_new_tokens': max_new_tokens,
-                'temperature': 0.7,
-                'top_k': 45,
-                'top_p': 0.97,
-                'repetition_penalty': None,
-                'presence_penalty': 1.4,
-                'frequency_penalty': 1.3
-            },  #
-            {
-                'max_new_tokens': max_new_tokens,
-                'temperature': 0.6,
-                'top_k': 75,
-                'top_p': 0.99,
-                'repetition_penalty': None,
-                'presence_penalty': 1.4,
-                'frequency_penalty': 1.4
-            },
-            {
-                'max_new_tokens': max_new_tokens,
-                'temperature': 0.65,
-                'top_k': 75,
-                'top_p': 0.985,
-                'repetition_penalty': None,
-                'presence_penalty': 1.4,
-                'frequency_penalty': 1.4
-            },
-            {
-                'max_new_tokens': max_new_tokens,
-                'temperature': 0.8,
-                'top_k': 75,
-                'top_p': 0.99,
-                'repetition_penalty': None,
-                'presence_penalty': 0.7,
-                'frequency_penalty': 0.7
-            },
-            {
-                'max_new_tokens': max_new_tokens,
-                'temperature': 0.8,
-                'top_k': 75,
-                'top_p': 0.99,
-                'repetition_penalty': 1.4,
-                'presence_penalty': None,
-                'frequency_penalty': None
-            }
-        ]
-        # Default cases, no params
-        response_1 = complete_text_greedy(text=test_prompt, max_new_tokens=max_new_tokens)
-        print(
-            f"Trial #: {trial_id} Text Sample #: {test_sample_number} Perplexity: {result_0}  GENERATE SAMPLING PARAMS: Greedy max_new_tokens=10 otherwise - N/A: PROMPT: '{test_prompt}' RESPONSE: '{response_1}'")
-        # print(f"Sample {sample_number}: I ask the generator (greedy): {test_prompt}... It responds: '{response_1}'.")
-        response_2 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens)
-        print(
-            f"Trial #: {trial_id} Text Sample #: {test_sample_number} Perplexity: {result_0} GENERATE PARAMS: Beam Default - max_new_tokens = 10, temperature=0.75, top_k=75,  top_p=0.98, repetition_penalty=None, presence_penalty=1.3, frequency_penalty=1.4: PROMPT: '{test_prompt}' RESPONSE: '{response_2}'.")
-        # print(f"Sample {sample_number}: I ask the generator (Beam defaults - max_new_tokens: 10,  temperature: 0.75, top_k: 75, top_p: 0.98, repetition_penalty: None, presence_penalty: 1.3, frequency_penalty: 1.4): {test_prompt}... It responds: '{response_2}'.")
-
-        for perm_0 in generation_param_permutations:
-            response_0 = complete_text_beam(text=test_prompt,
-                                            max_new_tokens=max_new_tokens,
-                                            temperature=perm_0['temperature'],
-                                            top_k=perm_0['top_k'],
-                                            top_p=perm_0['top_p'],
-                                            repetition_penalty=perm_0['repetition_penalty'],
-                                            presence_penalty=perm_0['presence_penalty'],
-                                            frequency_penalty=perm_0['frequency_penalty'])
-            print(
-                f"Trial #: {trial_id} Text Sample #: {test_sample_number} Perplexity: {result_0} GENERATE PARAMS: max_new_tokens={perm_0['max_new_tokens']} temperature={perm_0['temperature']}, top_k={perm_0['top_k']}, top_p={perm_0['top_p']}, repetition_penalty={perm_0['repetition_penalty']} presence_penalty={perm_0['presence_penalty']} frequency_penalty{perm_0['frequency_penalty']} PROMPT: '{test_prompt}' RESPONSE: '{response_0}'")
-
-
-prompt_samples = [
-    "The next day, something unexpected happened. The bird changed into a big, scary",
-    "I have an idea, Ben. Let's build a",
-    '"Yes, we do," Mia says.'
-]
-
-counter = 0
-for sample in prompt_samples:
-    test_text(
-        test_prompt=sample,
-        max_new_tokens=MAX_NEW_TOKENS,
-        result_cutoff=999,
-        trial_id=trial_number,
-        test_sample_number=counter,
-        result_0=phase_i_a_result)
-    counter += 1
-
-collect()
-
-# Continue training the same model with a larger dataset (Phase I-b)
-
-print(f"Trial: {trial_number} proceeding to phase I-b:")
-
-
-# Create the Dataset Generator:
-#     Allows us to process larger data than we can hold in memory
-
-
-# Replace your existing class and function with these:
-class SampleExpansionGenerator:
-    def __init__(self,
-                 raw_text_samples,
-                 tokenizer,
-                 sample_expansion_batch_size=50,
-                 model_batch_size=10,
-                 prompt_length_0=PROMPT_LENGTH,
-                 max_seq_length=MAX_SEQ_LENGTH,
-                 vocabulary_size=VOCABULARY_SIZE):
-
-        self.raw_text_samples = raw_text_samples
-        self.tokenizer = tokenizer
-        self.sample_expansion_batch_size = sample_expansion_batch_size
-        self.model_batch_size = model_batch_size
-        self.prompt_length_0 = prompt_length_0
-        self.max_seq_length = max_seq_length
-        self.vocabulary_size = vocabulary_size
-        self.data = []
-        self.labels = []
-        self.current_index = 0
-
-    def _expand_next_batch(self):
-        # If we've already processed all raw samples for this epoch, do nothing.
-        if self.current_index >= len(self.raw_text_samples):
-            return
-
-        # Determine the next meta-batch
-        start_idx = self.current_index
-        end_idx = min(start_idx + self.sample_expansion_batch_size, len(self.raw_text_samples))
-
-        batch_samples = self.raw_text_samples[start_idx:end_idx]
-        self.current_index = end_idx
-
-        # Run prepare_data on this batch
-        input_ids_list, labels_list, _ = prepare_data(
-            data_0=batch_samples,
-            tokenizer_0=self.tokenizer,
-            max_seq_length=self.max_seq_length,
-            prompt_length=self.prompt_length_0)
-
-        # Add the new data to our internal queues
-        self.data.extend(input_ids_list)
-        self.labels.extend(labels_list)
-
-    def __iter__(self):
-        # Reset to initial state for new epoch
-        self.current_index = 0
-        self.data = []
-        self.labels = []
-        return self
-
-    def __next__(self):
-        # If queues are empty, try to expand them from raw samples
-        if not self.data:
-            self._expand_next_batch()
-
-        # If they are STILL empty after trying to expand, the epoch is over.
-        if not self.data:
-            raise StopIteration
-
-        # Pop and return one sample
-        input_sample = self.data.pop(0)
-        label_sample = self.labels.pop(0)
-
-        return ((input_sample,), label_sample)
-
-
-# Create the tf.data.Dataset
-def create_dataset(raw_text_samples, tokenizer, sample_expansion_batch_size=50, model_batch_size=10) -> tf.data.Dataset:
-    generator_0 = SampleExpansionGenerator(
-        raw_text_samples=raw_text_samples,
-        tokenizer=tokenizer,
-        sample_expansion_batch_size=sample_expansion_batch_size,
-        model_batch_size=model_batch_size  # Pass this parameter
-    )
-
-    dataset = tf.data.Dataset.from_generator(
-        lambda: generator_0,
-        # output_signature=(
-        #     (tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),),
-        #     # tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),  # Use generator's parameter
-        #     tf.TensorSpec(shape=(generator_0.vocabulary_size,), dtype=tf.float32)  # Use generator's parameter
-        # )
-        output_signature=(
-            (tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),),  # A tuple containing ONE TensorSpec
-            tf.TensorSpec(shape=(), dtype=tf.int32)
-            # tf.TensorSpec(shape=(generator_0.vocabulary_size,), dtype=tf.float32)  # A single TensorSpec
+        generated_tokens = generator.generate(
+            token_ids=input_ids,  # Just the actual tokens, no padding
+            do_sample=False,
+            max_new_tokens=max_new_tokens
         )
+        generated_text = \
+            tokenizer.decode(generated_tokens).replace(text, "")
+        return generated_text
+
+
+    # Utility function to generate text from beam sampling:
+    def complete_text_beam(text: str,
+                           max_new_tokens: int = 10,
+                           temperature: float = 0.75,
+                           top_k: int = 75,
+                           top_p: float = 0.98,
+                           repetition_penalty: float = None,
+                           presence_penalty: float = 1.3,
+                           frequency_penalty: float = 1.4) -> str:
+        input_ids = tokenizer(
+            text,
+            add_special_tokens=False
+        )['input_ids']
+
+        generated_tokens = generator.generate(
+            token_ids=input_ids,  # Just the actual tokens, no padding
+            do_sample=True,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            top_k=top_k,
+            top_p=top_p,
+            # repetition_penalty=1.2,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty
+        )
+        generated_text = \
+            tokenizer.decode(generated_tokens).replace(text, "")
+        return generated_text
+
+
+    trial_number = 1
+
+
+    def test_text(test_prompt: str, max_new_tokens: int, result_cutoff: float, trial_id: int,
+                  test_sample_number: int, result_0: float) -> None:
+        """
+        If the result_0 < result_cutoff, this will run a matrix of different sampling values and print out the resulting text for human subjective evaluation.
+
+        Parameters:
+            - test_prompt: a string to prompt generation
+            - max_new_tokens: int, number of tokens to generate unless we generate a stop token.
+            - sample_number: Metadata for sample...
+            - result_0: Perplexity score from this run
+            - result_cutoff: Perplexity score that would be expected to indicate a trial worth running this pn
+
+        """
+        if result_0 < result_cutoff:
+            generation_param_permutations = [
+                # #3
+                {
+                    'max_new_tokens': max_new_tokens,
+                    'temperature': 0.6,
+                    'top_k': 75,
+                    'top_p': 0.98,
+                    'repetition_penalty': None,
+                    'presence_penalty': 1.3,
+                    'frequency_penalty': 1.4
+                },
+                # #4
+                {
+                    'max_new_tokens': max_new_tokens,
+                    'temperature': 0.7,
+                    'top_k': 75,
+                    'top_p': 0.98,
+                    'repetition_penalty': None,
+                    'presence_penalty': 1.3,
+                    'frequency_penalty': 1.4
+                },
+                # #5
+                {
+                    'max_new_tokens': max_new_tokens,
+                    'temperature': 0.7,
+                    'top_k': 75,
+                    'top_p': 0.97,
+                    'repetition_penalty': None,
+                    'presence_penalty': 1.3,
+                    'frequency_penalty': 1.4},
+                # #6
+                {
+                    'max_new_tokens': max_new_tokens,
+                    'temperature': 0.75,
+                    'top_k': 75,
+                    'top_p': 0.98,
+                    'repetition_penalty': None,
+                    'presence_penalty': 1.4,
+                    'frequency_penalty': 1.4},
+                # #7
+                {
+                    'max_new_tokens': max_new_tokens,
+                    'temperature': 0.7,
+                    'top_k': 75,
+                    'top_p': 0.98,
+                    'repetition_penalty': None,
+                    'presence_penalty': 1.4,
+                    'frequency_penalty': 1.4},
+                # #8
+                {
+                    'max_new_tokens': max_new_tokens,
+                    'temperature': 0.6,
+                    'top_k': 75,
+                    'top_p': 0.98,
+                    'repetition_penalty': None,
+                    'presence_penalty': 1.4,
+                    'frequency_penalty': 1.4
+                },
+                {
+                    'max_new_tokens': max_new_tokens,
+                    'temperature': 0.6,
+                    'top_k': 40,
+                    'top_p': 0.96,
+                    'repetition_penalty': None,
+                    'presence_penalty': 1.4,
+                    'frequency_penalty': 1.4
+                },
+                {
+                    'max_new_tokens': max_new_tokens,
+                    'temperature': 0.7,
+                    'top_k': 45,
+                    'top_p': 0.97,
+                    'repetition_penalty': None,
+                    'presence_penalty': 1.4,
+                    'frequency_penalty': 1.3
+                },  #
+                {
+                    'max_new_tokens': max_new_tokens,
+                    'temperature': 0.6,
+                    'top_k': 75,
+                    'top_p': 0.99,
+                    'repetition_penalty': None,
+                    'presence_penalty': 1.4,
+                    'frequency_penalty': 1.4
+                },
+                {
+                    'max_new_tokens': max_new_tokens,
+                    'temperature': 0.65,
+                    'top_k': 75,
+                    'top_p': 0.985,
+                    'repetition_penalty': None,
+                    'presence_penalty': 1.4,
+                    'frequency_penalty': 1.4
+                },
+                {
+                    'max_new_tokens': max_new_tokens,
+                    'temperature': 0.8,
+                    'top_k': 75,
+                    'top_p': 0.99,
+                    'repetition_penalty': None,
+                    'presence_penalty': 0.7,
+                    'frequency_penalty': 0.7
+                },
+                {
+                    'max_new_tokens': max_new_tokens,
+                    'temperature': 0.8,
+                    'top_k': 75,
+                    'top_p': 0.99,
+                    'repetition_penalty': 1.4,
+                    'presence_penalty': None,
+                    'frequency_penalty': None
+                }
+            ]
+            # Default cases, no params
+            response_1 = complete_text_greedy(text=test_prompt, max_new_tokens=max_new_tokens)
+            print(
+                f"Trial #: {trial_id} Text Sample #: {test_sample_number} Perplexity: {result_0}  GENERATE SAMPLING PARAMS: Greedy max_new_tokens=10 otherwise - N/A: PROMPT: '{test_prompt}' RESPONSE: '{response_1}'")
+            # print(f"Sample {sample_number}: I ask the generator (greedy): {test_prompt}... It responds: '{response_1}'.")
+            response_2 = complete_text_beam(text=test_prompt, max_new_tokens=max_new_tokens)
+            print(
+                f"Trial #: {trial_id} Text Sample #: {test_sample_number} Perplexity: {result_0} GENERATE PARAMS: Beam Default - max_new_tokens = 10, temperature=0.75, top_k=75,  top_p=0.98, repetition_penalty=None, presence_penalty=1.3, frequency_penalty=1.4: PROMPT: '{test_prompt}' RESPONSE: '{response_2}'.")
+            # print(f"Sample {sample_number}: I ask the generator (Beam defaults - max_new_tokens: 10,  temperature: 0.75, top_k: 75, top_p: 0.98, repetition_penalty: None, presence_penalty: 1.3, frequency_penalty: 1.4): {test_prompt}... It responds: '{response_2}'.")
+
+            for perm_0 in generation_param_permutations:
+                response_0 = complete_text_beam(text=test_prompt,
+                                                max_new_tokens=max_new_tokens,
+                                                temperature=perm_0['temperature'],
+                                                top_k=perm_0['top_k'],
+                                                top_p=perm_0['top_p'],
+                                                repetition_penalty=perm_0['repetition_penalty'],
+                                                presence_penalty=perm_0['presence_penalty'],
+                                                frequency_penalty=perm_0['frequency_penalty'])
+                print(
+                    f"Trial #: {trial_id} Text Sample #: {test_sample_number} Perplexity: {result_0} GENERATE PARAMS: max_new_tokens={perm_0['max_new_tokens']} temperature={perm_0['temperature']}, top_k={perm_0['top_k']}, top_p={perm_0['top_p']}, repetition_penalty={perm_0['repetition_penalty']} presence_penalty={perm_0['presence_penalty']} frequency_penalty{perm_0['frequency_penalty']} PROMPT: '{test_prompt}' RESPONSE: '{response_0}'")
+
+
+    prompt_samples = [
+        "The next day, something unexpected happened. The bird changed into a big, scary",
+        "I have an idea, Ben. Let's build a",
+        '"Yes, we do," Mia says.'
+    ]
+
+    counter = 0
+    for sample in prompt_samples:
+        test_text(
+            test_prompt=sample,
+            max_new_tokens=MAX_NEW_TOKENS,
+            result_cutoff=999,
+            trial_id=trial_number,
+            test_sample_number=counter,
+            result_0=phase_i_a_result)
+        counter += 1
+
+    collect()
+
+    # Continue training the same model with a larger dataset (Phase I-b)
+
+    print(f"Trial: {trial_number} proceeding to phase I-b:")
+
+
+    # Create the Dataset Generator:
+    #     Allows us to process larger data than we can hold in memory
+
+
+    # Replace your existing class and function with these:
+    class SampleExpansionGenerator:
+        def __init__(self,
+                     raw_text_samples,
+                     tokenizer,
+                     sample_expansion_batch_size=50,
+                     model_batch_size=10,
+                     prompt_length_0=PROMPT_LENGTH,
+                     max_seq_length=MAX_SEQ_LENGTH,
+                     vocabulary_size=VOCABULARY_SIZE):
+
+            self.raw_text_samples = raw_text_samples
+            self.tokenizer = tokenizer
+            self.sample_expansion_batch_size = sample_expansion_batch_size
+            self.model_batch_size = model_batch_size
+            self.prompt_length_0 = prompt_length_0
+            self.max_seq_length = max_seq_length
+            self.vocabulary_size = vocabulary_size
+            self.data = []
+            self.labels = []
+            self.current_index = 0
+
+        def _expand_next_batch(self):
+            # If we've already processed all raw samples for this epoch, do nothing.
+            if self.current_index >= len(self.raw_text_samples):
+                return
+
+            # Determine the next meta-batch
+            start_idx = self.current_index
+            end_idx = min(start_idx + self.sample_expansion_batch_size, len(self.raw_text_samples))
+
+            batch_samples = self.raw_text_samples[start_idx:end_idx]
+            self.current_index = end_idx
+
+            # Run prepare_data on this batch
+            input_ids_list, labels_list, _ = prepare_data(
+                data_0=batch_samples,
+                tokenizer_0=self.tokenizer,
+                max_seq_length=self.max_seq_length,
+                prompt_length=self.prompt_length_0)
+
+            # Add the new data to our internal queues
+            self.data.extend(input_ids_list)
+            self.labels.extend(labels_list)
+
+        def __iter__(self):
+            # Reset to initial state for new epoch
+            self.current_index = 0
+            self.data = []
+            self.labels = []
+            return self
+
+        def __next__(self):
+            # If queues are empty, try to expand them from raw samples
+            if not self.data:
+                self._expand_next_batch()
+
+            # If they are STILL empty after trying to expand, the epoch is over.
+            if not self.data:
+                raise StopIteration
+
+            # Pop and return one sample
+            input_sample = self.data.pop(0)
+            label_sample = self.labels.pop(0)
+
+            return ((input_sample,), label_sample)
+
+
+    # Create the tf.data.Dataset
+    def create_dataset(raw_text_samples, tokenizer, sample_expansion_batch_size=50, model_batch_size=10) -> tf.data.Dataset:
+        generator_0 = SampleExpansionGenerator(
+            raw_text_samples=raw_text_samples,
+            tokenizer=tokenizer,
+            sample_expansion_batch_size=sample_expansion_batch_size,
+            model_batch_size=model_batch_size  # Pass this parameter
+        )
+
+        dataset = tf.data.Dataset.from_generator(
+            lambda: generator_0,
+            # output_signature=(
+            #     (tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),),
+            #     # tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),  # Use generator's parameter
+            #     tf.TensorSpec(shape=(generator_0.vocabulary_size,), dtype=tf.float32)  # Use generator's parameter
+            # )
+            output_signature=(
+                (tf.TensorSpec(shape=(generator_0.max_seq_length,), dtype=tf.int32),),  # A tuple containing ONE TensorSpec
+                tf.TensorSpec(shape=(), dtype=tf.int32)
+                # tf.TensorSpec(shape=(generator_0.vocabulary_size,), dtype=tf.float32)  # A single TensorSpec
+            )
+        )
+
+        # Batch it
+        dataset = dataset.batch(model_batch_size)
+        dataset = dataset.prefetch(tf.data.AUTOTUNE)  # Prefetch for performance
+        return dataset
+
+
+    phase_i_b_train_dataset = \
+        create_dataset(
+            raw_text_samples=phase_i_b_train_samples,
+            tokenizer=tokenizer,
+            sample_expansion_batch_size=PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE,
+            model_batch_size=batch_size)
+
+    phase_i_b_val_dataset = \
+        create_dataset(
+            raw_text_samples=phase_i_b_val_samples,
+            tokenizer=tokenizer,
+            sample_expansion_batch_size=PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE,
+            model_batch_size=batch_size)
+
+    phase_i_b_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    phase_i_b_categorical_accuracy = tf.keras.metrics.SparseCategoricalAccuracy()
+    phase_i_b_perplexity = SparsePerplexity(name="perplexity_phase_i_b")
+
+    # Create the schedule instance
+    lr_scheduler = WarmupCosineDecayRestarts(
+        initial_learning_rate=INITIAL_LR_STAGE_I_B,
+        warmup_steps=WARMUP_STEPS,
+        first_decay_steps=FIRST_DECAY_STEPS_STAGE_I_B,
+        t_mul=1.0,  # Keep the cycle length constant (restart every epoch)
+        m_mul=0.9,  # Decrease the peak LR by 10% at each restart for finer tuning
+        alpha=0.01  # Don't let the LR decay to zero within a cycle
     )
 
-    # Batch it
-    dataset = dataset.batch(model_batch_size)
-    dataset = dataset.prefetch(tf.data.AUTOTUNE)  # Prefetch for performance
-    return dataset
-
-
-phase_i_b_train_dataset = \
-    create_dataset(
-        raw_text_samples=phase_i_b_train_samples,
-        tokenizer=tokenizer,
-        sample_expansion_batch_size=PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE,
-        model_batch_size=batch_size)
-
-phase_i_b_val_dataset = \
-    create_dataset(
-        raw_text_samples=phase_i_b_val_samples,
-        tokenizer=tokenizer,
-        sample_expansion_batch_size=PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE,
-        model_batch_size=batch_size)
-
-phase_i_b_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-phase_i_b_categorical_accuracy = tf.keras.metrics.SparseCategoricalAccuracy()
-phase_i_b_perplexity = SparsePerplexity(name="perplexity_phase_i_b")
-
-# Create the schedule instance
-lr_scheduler = WarmupCosineDecayRestarts(
-    initial_learning_rate=INITIAL_LR_STAGE_I_B,
-    warmup_steps=WARMUP_STEPS,
-    first_decay_steps=FIRST_DECAY_STEPS_STAGE_I_B,
-    t_mul=1.0,  # Keep the cycle length constant (restart every epoch)
-    m_mul=0.9,  # Decrease the peak LR by 10% at each restart for finer tuning
-    alpha=0.01  # Don't let the LR decay to zero within a cycle
-)
-
-# Recompile the existing model
-generator.model.compile(
-    loss=phase_i_b_loss,
-    metrics=[
-        phase_i_b_categorical_accuracy,
-        phase_i_b_perplexity
-    ],
-    optimizer=tf.keras.optimizers.AdamW(
-        learning_rate=lr_scheduler,
-        weight_decay=phase_i_b_weight_decay,
-        gradient_accumulation_steps=phase_i_b_gradient_accumulation_steps
-    ),
-    jit_compile=True
-)
-
-# 2. Define the Early Stopping callback
-# This stops training when validation perplexity stops improving.
-early_stopping = tf.keras.callbacks.EarlyStopping(
-    monitor='perplexity_phase_i_b',  # Monitor validation perplexity
-    patience=10,  # Number of epochs with no improvement after which training will be stopped.
-    verbose=1,
-    restore_best_weights=True,  # Restores model weights from the epoch with the best value of the monitored metric.
-    mode='min',
-    start_from_epoch=40
-)
-
-callbacks_list = [early_stopping]
-
-print("Calculating steps per epoch...")
-
-# Calculate steps for the training dataset
-train_steps = 0
-for _ in phase_i_b_train_dataset:
-    train_steps += 1
-print(f"Calculated training steps per epoch: {train_steps}")
-
-# Calculate steps for the validation dataset
-val_steps = 0
-for _ in phase_i_b_val_dataset:
-    val_steps += 1
-print(f"Calculated validation steps: {val_steps}")
-
-phase_i_b_history = \
-    generator.model.fit(
-        x=phase_i_b_train_dataset,
-        validation_data=phase_i_b_val_dataset,
-        epochs=phase_i_b_epochs,
-        # steps_per_epoch=train_steps,
-        # validation_steps=val_steps # ,
-        callbacks=callbacks_list
+    # Recompile the existing model
+    generator.model.compile(
+        loss=phase_i_b_loss,
+        metrics=[
+            phase_i_b_categorical_accuracy,
+            phase_i_b_perplexity
+        ],
+        optimizer=tf.keras.optimizers.AdamW(
+            learning_rate=lr_scheduler,
+            weight_decay=phase_i_b_weight_decay,
+            gradient_accumulation_steps=phase_i_b_gradient_accumulation_steps
+        ),
+        jit_compile=True
     )
 
-phase_i_b_history = \
-    pd.DataFrame(phase_i_b_history.history)
+    # 2. Define the Early Stopping callback
+    # This stops training when validation perplexity stops improving.
+    early_stopping = tf.keras.callbacks.EarlyStopping(
+        monitor='perplexity_phase_i_b',  # Monitor validation perplexity
+        patience=10,  # Number of epochs with no improvement after which training will be stopped.
+        verbose=1,
+        restore_best_weights=True,  # Restores model weights from the epoch with the best value of the monitored metric.
+        mode='min',
+        start_from_epoch=40
+    )
 
-result_phase_i_b = float(phase_i_b_history['perplexity_phase_i_b'].min())
+    callbacks_list = [early_stopping]
 
-print("########### Phase I-b Model Checkpoint Generation Samples: ###########")
+    print("Calculating steps per epoch...")
 
-counter = 0
-for sample in prompt_samples:
-    test_text(
-        test_prompt=sample,
-        max_new_tokens=MAX_NEW_TOKENS,
-        result_cutoff=35,
-        trial_id=trial_number,
-        test_sample_number=counter,
-        result_0=result_phase_i_b)
-    counter += 1
+    # Calculate steps for the training dataset
+    train_steps = 0
+    for _ in phase_i_b_train_dataset:
+        train_steps += 1
+    print(f"Calculated training steps per epoch: {train_steps}")
 
-# Serialize stage I-b tokenizer
-# TOKENIZER_SAVE_PATH = f"tokenizer-tr-{trial_number}-stage-i-a"
-TOKENIZER_SAVE_PATH = f"{keras_models_folder}/tokenizer-tr-{trial_number}-stage-i-a"
-tokenizer.save_pretrained(TOKENIZER_SAVE_PATH)
-print(f"Tokenizer saved to {TOKENIZER_SAVE_PATH}")
+    # Calculate steps for the validation dataset
+    val_steps = 0
+    for _ in phase_i_b_val_dataset:
+        val_steps += 1
+    print(f"Calculated validation steps: {val_steps}")
 
-# Serialize stage I-b model
+    phase_i_b_history = \
+        generator.model.fit(
+            x=phase_i_b_train_dataset,
+            validation_data=phase_i_b_val_dataset,
+            epochs=phase_i_b_epochs,
+            # steps_per_epoch=train_steps,
+            # validation_steps=val_steps # ,
+            callbacks=callbacks_list
+        )
 
-# MODEL_SAVE_PATH = f"final_phase_ib_model_tr_{trial_number}-stage-i-a.keras"
-MODEL_SAVE_PATH = f"{keras_models_folder}/final_phase_ib_model_tr_{trial_number}-stage-i-a.keras"
-generator.save(MODEL_SAVE_PATH)
-print(f"Final model saved to {MODEL_SAVE_PATH}")
+    phase_i_b_history = \
+        pd.DataFrame(phase_i_b_history.history)
 
-print(f"🧪 Running serialization test for Stage I-b trial {trial_number}...")
-result = subprocess.run(
-    f"python3 test_llm_serialization.py {TOKENIZER_SAVE_PATH} {MODEL_SAVE_PATH}",
-    capture_output=True,
-    shell=True
-)
+    result_phase_i_b = float(phase_i_b_history['perplexity_phase_i_b'].min())
+    mlflow.log_metric("perplexity_phase_i_b", result_phase_i_b)
 
-if result.returncode == 0:
-    print("✅ Serialization test passed.")
-    print(str(result.stdout))
-else:
-    print("? Serialization test returned some strerr.")
-    print("STDERR:", str(result.stderr))
-    if result.stdout is not None:
+    print("########### Phase I-b Model Checkpoint Generation Samples: ###########")
+
+    counter = 0
+    for sample in prompt_samples:
+        test_text(
+            test_prompt=sample,
+            max_new_tokens=MAX_NEW_TOKENS,
+            result_cutoff=35,
+            trial_id=trial_number,
+            test_sample_number=counter,
+            result_0=result_phase_i_b)
+        counter += 1
+
+    # Serialize stage I-b tokenizer
+    # TOKENIZER_SAVE_PATH = f"tokenizer-tr-{trial_number}-stage-i-a"
+    TOKENIZER_SAVE_PATH = f"{keras_models_folder}/tokenizer-tr-{trial_number}-stage-i-a"
+    tokenizer.save_pretrained(TOKENIZER_SAVE_PATH)
+    print(f"Tokenizer saved to {TOKENIZER_SAVE_PATH}")
+
+    # Serialize stage I-b model
+
+    # MODEL_SAVE_PATH = f"final_phase_ib_model_tr_{trial_number}-stage-i-a.keras"
+    MODEL_SAVE_PATH = f"{keras_models_folder}/final_phase_ib_model_tr_{trial_number}-stage-i-a.keras"
+    generator.save(MODEL_SAVE_PATH)
+    print(f"Final model saved to {MODEL_SAVE_PATH}")
+
+    print(f"🧪 Running serialization test for Stage I-b trial {trial_number}...")
+    ser_test_cmd = f"""python3 test_llm_serialization.py "{TOKENIZER_SAVE_PATH}" "{MODEL_SAVE_PATH}" """
+    print(f"""Running command: "{ser_test_cmd}" """)
+    result = subprocess.run(
+        ser_test_cmd,
+        capture_output=True,
+        shell=True
+    )
+
+    if result.returncode == 0:
+        print("✅ Serialization test passed.")
         print(str(result.stdout))
+    else:
+        print("? Serialization test returned some strerr.")
+        print("STDERR:", str(result.stderr))
+        if result.stdout is not None:
+            print(str(result.stdout))
