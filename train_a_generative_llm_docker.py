@@ -353,7 +353,7 @@ x, y, vocab_size = prepare_data(data_0=non_instruct_samples, tokenizer_0=tokeniz
                                 prompt_length=PROMPT_LENGTH)  # Preprocess data for Stage I-a training
 
 X_train, X_test, y_train, y_test = \
-    train_test_split(x, y, test_size=0.85, shuffle=False)
+    train_test_split(x, y, test_size=0.15, shuffle=False)
 
 print("Debug info")
 
