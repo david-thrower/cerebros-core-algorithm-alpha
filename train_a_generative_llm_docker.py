@@ -86,6 +86,7 @@ MLFLOW_PORT = int(os.getenv("MLFLOW_PORT", 7777))
 
 # If you don't want Mlflow, just add `-e MLFLOW_PORT=0` to `docker run`
 if MLFLOW_PORT != 0:
+    mlflow.enable_system_metrics_logging()
     mlflow_artifacts_path = f"{ARTIFACTS_FOLDER}/mlflow-artifacts-{meta_trial_number}"
     Path(mlflow_artifacts_path).mkdir(parents=True, exist_ok=True)
     mlflow_db_dir= f"{ARTIFACTS_FOLDER}/mlruns-{meta_trial_number}"
@@ -568,7 +569,6 @@ ctx = mlflow.start_run() if MLFLOW_PORT else nullcontext()
 
 with ctx: # experiment_id=experiment_id):
     if MLFLOW_PORT:
-        mlflow.enable_system_metrics_logging()
         mlflow.log_params(PARAMS)
 
     cerebros_t0 = time.time()
