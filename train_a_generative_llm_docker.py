@@ -560,7 +560,14 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     train_data_dtype=tf.int32,
     merging_strategy='concatenate')  # "mhc")
 
-with mlflow.start_run():
+experiment = mlflow.get_experiment_by_name(MLFLOW_EXPERIMENT_NAME)
+if experiment:
+    experiment_id = experiment.experiment_id
+else:
+    # Handle the case where the experiment doesn't exist, e.g., create it
+    experiment_id = mlflow.create_experiment(MLFLOW_EXPERIMENT_NAME)
+
+with mlflow.start_run(experiment_id=experiment_id):
     mlflow.log_params(PARAMS)
     cerebros_t0 = time.time()
     phase_i_a_result_0 = cerebros_automl.run_random_search()
