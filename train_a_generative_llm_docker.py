@@ -111,7 +111,7 @@ PHASE_I_B_VAL_SPLIT = float(getenv("PHASE_I_B_VAL_SPLIT", "0.15"))
 
 # Set up MlFlow experiment
 
-EXPERIMENT_NAME = f"{TIME.replace("_","-")}--at-scale-llm-training--{DATASET_TO_RUN.split('/')[-1]}-" +\
+EXPERIMENT_NAME = f"{TIME.replace('_,'-')}--at-scale-llm-training--{DATASET_TO_RUN.split('/')[-1]}-" +\
                   f"ia-{PHASE_I_A_SAMPLES_TO_CREATE}-ib-{PHASE_I_B_SAMPLES_TO_CREATE}-a"
 
 mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
