@@ -5,6 +5,7 @@ from gc import collect
 from os import getenv
 from pathlib import Path
 from time import sleep
+from contextlib import nullcontext
 
 import tensorflow as tf
 import pandas as pd
@@ -572,8 +573,13 @@ cerebros_automl = SimpleCerebrosRandomSearch(
 # print(f"Current Tracking URI: {mlflow.get_tracking_uri()}")
 # os.environ.pop("MLFLOW_RUN_ID", None)  # The fix
 
-with mlflow.start_run(): # experiment_id=experiment_id):
-    mlflow.log_params(PARAMS)
+
+ctx = mlflow.start_run() if MLFLOW_PORT else nullcontext()
+
+with ctx: # experiment_id=experiment_id):
+    if MLFLOW_PORT:
+        mlflow.log_params(PARAMS)
+
     cerebros_t0 = time.time()
     phase_i_a_result_0 = cerebros_automl.run_random_search()
     phase_i_a_result = float(phase_i_a_result_0)  # Deep copy that survives del() of parent object ...
@@ -582,7 +588,8 @@ with mlflow.start_run(): # experiment_id=experiment_id):
     models_tried = moities_to_try * tries_per_moity
     cerebros_time_per_model = cerebros_time_all_models_min / models_tried
 
-    mlflow.log_metric("phase_i_a_result", phase_i_a_result)
+    if MLFLOW_PORT:
+        mlflow.log_metric("perplexity_stage_i_a", phase_i_a_result)
 
     print(
         f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
@@ -969,7 +976,7 @@ with mlflow.start_run(): # experiment_id=experiment_id):
 
     phase_i_b_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     phase_i_b_categorical_accuracy = tf.keras.metrics.SparseCategoricalAccuracy()
-    phase_i_b_perplexity = SparsePerplexity(name="perplexity_phase_i_b")
+    phase_i_b_perplexity = SparsePerplexity(name="perplexity_stage_i_b")
 
     # Create the schedule instance
     lr_scheduler = WarmupCosineDecayRestarts(
@@ -1036,8 +1043,9 @@ with mlflow.start_run(): # experiment_id=experiment_id):
     phase_i_b_history = \
         pd.DataFrame(phase_i_b_history.history)
 
-    result_phase_i_b = float(phase_i_b_history['perplexity_phase_i_b'].min())
-    mlflow.log_metric("perplexity_phase_i_b", result_phase_i_b)
+    result_phase_i_b = float(phase_i_b_history['perplexity_stage_i_b'].min())
+    if MLFLOW_PORT:
+        mlflow.log_metric("perplexity_stage_i_b", result_phase_i_b)
 
     print("########### Phase I-b Model Checkpoint Generation Samples: ###########")
 
