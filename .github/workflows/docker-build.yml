@@ -29,9 +29,9 @@ jobs:
           -v $(pwd)/artifacts:/opt/artifacts \
           -e MLFLOW_PORT=7777 \
           -e DATASET_TO_RUN="david-thrower/tiny-stories-mini-96-seq-len-50000-samples" \
-          -e PHASE_I_A_SAMPLES_TO_CREATE=30 \
-          -e PHASE_I_B_SAMPLES_TO_CREATE=20 \
-          -e PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE=10 \
+          -e PHASE_I_A_SAMPLES_TO_CREATE=10 \
+          -e PHASE_I_B_SAMPLES_TO_CREATE=10 \
+          -e PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE=5 \
           -e PHASE_I_B_VAL_SPLIT=0.15 \
           -e MAX_SEQ_LENGTH=96 \
           davidt101/cerebros-llm:${{ github.run_number }}
