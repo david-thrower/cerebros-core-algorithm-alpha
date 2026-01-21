@@ -2,7 +2,7 @@ jax[cuda12_pip]
 jaxlib==0.8.0
 pendulum==3.0.0
 # tensorflow==2.20.0
-numpy==2.3.5
+numpy<2.0  # Enforced for NVIDIA TF container compatibility (h5py binary linkage)
 pandas==2.3.3
 pyvis==0.3.2
 # plotly==5.20.0
