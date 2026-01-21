@@ -61,10 +61,11 @@ TIME = pendulum.now(tz='America/New_York').__str__()[:16] \
     .replace('T', '_') \
     .replace(':', '_') \
     .replace('-', '_')
+TIME_HYPHENATED = TIME.replace('_','-').replace(" ","--")
 PROJECT_NAME = f'{TIME}_cerebros_not-gpt'
 meta_trial_number = 42  # irrelevant unless in distributed training
 
-EXPERIMENT_FOLDER = f"{ARTIFACTS_FOLDER}/{TIME.replace('_','-')}-{OWNER}"
+EXPERIMENT_FOLDER = f"{ARTIFACTS_FOLDER}/{TIME_HYPHENATED}-{OWNER}"
 
 
 keras_models_folder = f"{EXPERIMENT_FOLDER}/keras_models-{meta_trial_number}"
@@ -121,7 +122,7 @@ if MLFLOW_PORT != 0:
         "--host 0.0.0.0 ",
         f"--port {str(MLFLOW_PORT)} ",
         f"--default-artifact-root {mlflow_artifacts_path} ",
-        f"--backend-store-uri sqlite:////{mlflow_db_path} &"
+        f"--backend-store-uri sqlite:///{mlflow_db_path} &"
     ])
 
     # Debug
@@ -134,9 +135,9 @@ if MLFLOW_PORT != 0:
 
 
     # Set up MlFlow experiment
-    time_hyphenated = TIME.replace('_','-')
+
     ds_root_name = DATASET_TO_RUN.split('/')[-1]
-    MLFLOW_EXPERIMENT_NAME = f"{time_hyphenated}--llm-training--{ds_root_name}-" +\
+    MLFLOW_EXPERIMENT_NAME = f"{TIME_HYPHENATED}--llm-training--{ds_root_name}-" +\
                       f"ia-{PHASE_I_A_SAMPLES_TO_CREATE}-ib-{PHASE_I_B_SAMPLES_TO_CREATE}-a"
 
     mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
