@@ -560,7 +560,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     train_data_dtype=tf.int32,
     merging_strategy='concatenate')  # "mhc")
 
-with mlflow.start_run() as run:
+with mlflow.start_run():
     mlflow.log_params(PARAMS)
     cerebros_t0 = time.time()
     phase_i_a_result_0 = cerebros_automl.run_random_search()
