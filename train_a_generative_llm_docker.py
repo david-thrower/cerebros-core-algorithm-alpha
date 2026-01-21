@@ -41,9 +41,25 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component \
 
 # Platform engineering constants and variables:
 
+
+
 ARTIFACTS_FOLDER = "/opt/artifacts"
 # Create the directory if it doesn't exist
 Path(ARTIFACTS_FOLDER).mkdir(parents=True, exist_ok=True)
+
+#
+# Project metadata
+#
+TIME = pendulum.now(tz='America/New_York').__str__()[:16] \
+    .replace('T', '_') \
+    .replace(':', '_') \
+    .replace('-', '_')
+PROJECT_NAME = f'{TIME}_cerebros_not-gpt'
+meta_trial_number = 42  # irrelevant unless in distributed training
+
+
+keras_models_folder = f"{ARTIFACTS_FOLDER}/{TIME}/keras_models"
+Path(keras_models_folder).mkdir(parents=True, exist_ok=True)
 
 
 MLFLOW_PORT = int(os.getenv("MLFLOW_PORT", 7777))
@@ -66,6 +82,7 @@ if MLFLOW_PORT != 0:
     answer = subprocess.run(cmd, shell=True)
     time.sleep(10)
     print(answer.stdout)
+
 
 
 ## Dataset Selection
@@ -429,16 +446,7 @@ else:
 
 ######## Cerebros Neural Architecture Search #######
 
-#
-# Project metadata
-#
-TIME = pendulum.now(tz='America/New_York').__str__()[:16] \
-    .replace('T', '_') \
-    .replace(':', '_') \
-    .replace('-', '_')
-PROJECT_NAME = f'{TIME}_cerebros_not-gpt'
 
-meta_trial_number = 42  # irrelevant unless in distributed training
 
 # Custom metric: Perplexity:
 sparse_perplexity_metric = SparsePerplexity()
@@ -968,12 +976,15 @@ for sample in prompt_samples:
     counter += 1
 
 # Serialize stage I-b tokenizer
-TOKENIZER_SAVE_PATH = f"tokenizer-tr-{trial_number}-stage-i-a"
+# TOKENIZER_SAVE_PATH = f"tokenizer-tr-{trial_number}-stage-i-a"
+TOKENIZER_SAVE_PATH = f"{keras_models_folder}/tokenizer-tr-{trial_number}-stage-i-a"
 tokenizer.save_pretrained(TOKENIZER_SAVE_PATH)
 print(f"Tokenizer saved to {TOKENIZER_SAVE_PATH}")
 
 # Serialize stage I-b model
-MODEL_SAVE_PATH = f"final_phase_ib_model_tr_{trial_number}-stage-i-a.keras"
+
+# MODEL_SAVE_PATH = f"final_phase_ib_model_tr_{trial_number}-stage-i-a.keras"
+MODEL_SAVE_PATH = f"{keras_models_folder}/final_phase_ib_model_tr_{trial_number}-stage-i-a.keras"
 generator.save(MODEL_SAVE_PATH)
 print(f"Final model saved to {MODEL_SAVE_PATH}")
 
