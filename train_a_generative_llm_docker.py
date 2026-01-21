@@ -64,6 +64,11 @@ Path(keras_models_folder).mkdir(parents=True, exist_ok=True)
 
 MLFLOW_PORT = int(os.getenv("MLFLOW_PORT", 7777))
 
+
+
+
+
+
 # If you don't want Mlflow, just add `-e MLFLOW_PORT=0` to `docker run`
 if MLFLOW_PORT != 0:
     mlflow_artifacts_path = f"{ARTIFACTS_FOLDER}/mlflow-artifacts"
@@ -102,6 +107,16 @@ PHASE_I_A_SAMPLES_TO_CREATE = int(getenv("PHASE_I_A_SAMPLES_TO_CREATE", "300"))
 # Samples to use for the main training stage
 PHASE_I_B_SAMPLES_TO_CREATE = int(getenv("PHASE_I_B_SAMPLES_TO_CREATE", "200"))
 PHASE_I_B_VAL_SPLIT = float(getenv("PHASE_I_B_VAL_SPLIT", "0.15"))
+
+
+# Set up MlFlow experiment
+
+EXPERIMENT_NAME = f"{TIME.replace("_","-")}--at-scale-llm-training--{DATASET_TO_RUN.split('/')[-1]}-" +\
+                  f"ia-{PHASE_I_A_SAMPLES_TO_CREATE}-ib-{PHASE_I_B_SAMPLES_TO_CREATE}-a"
+
+mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
+mlflow.set_experiment(EXPERIMENT_NAME)
+
 
 # This is a single head model. It only returns the next token. For this reason,
 # a training text sample is "expanded" into several sub - samples at training time.
