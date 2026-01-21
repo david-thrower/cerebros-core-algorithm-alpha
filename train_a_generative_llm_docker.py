@@ -71,12 +71,14 @@ EXPERIMENT_FOLDER = f"{ARTIFACTS_FOLDER}/{TIME_HYPHENATED}-{OWNER}"
 keras_models_folder = f"{EXPERIMENT_FOLDER}/keras_models-{meta_trial_number}"
 Path(keras_models_folder).mkdir(parents=True, exist_ok=True)
 
+STAGE_I_B_HISTORY_CSV_PATH = f"{keras_models_folder}/history-i-b-tr-{meta_trial_number}.csv"
+
 # File paths to save the model and toeknizer to:
 MODEL_SAVE_PATH = f"{keras_models_folder}/model_tr_{meta_trial_number}_1_b.keras"
 TOKENIZER_SAVE_PATH = f"{keras_models_folder}/tokenizer-tr-{meta_trial_number}-i-b"
 
 # Sanity check
-print(f"Model will be save to: '{MODEL_SAVE_PATH}'. Toeknizer is being saved to: '{TOKENIZER_SAVE_PATH}' ")
+print(f"Model will be save to: '{MODEL_SAVE_PATH}'. Toeknizer is being saved to: '{TOKENIZER_SAVE_PATH}': History csv saved at: {STAGE_I_B_HISTORY_CSV_PATH} ")
 
 ## Dataset Selection
 # Assumes:
@@ -1060,10 +1062,13 @@ with ctx: # experiment_id=experiment_id):
             callbacks=callbacks_list
         )
 
-    phase_i_b_history = \
+    phase_i_b_history_pd = \
         pd.DataFrame(phase_i_b_history.history)
 
-    result_phase_i_b = float(phase_i_b_history[ib_perplexity_key].min())
+
+    result_phase_i_b = float(phase_i_b_history_pd[ib_perplexity_key].min())
+    phase_i_b_history_pd.to_csv(STAGE_I_B_HISTORY_CSV_PATH)
+
     if MLFLOW_PORT:
         mlflow.log_metric(ib_perplexity_key, result_phase_i_b)
 
