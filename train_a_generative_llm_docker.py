@@ -44,10 +44,19 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component \
 # Platform engineering constants and variables:
 
 
-
 ARTIFACTS_FOLDER = "/opt/artifacts"
+
+OWNER = getenv("OWNER", "cerebros")
+
+#### Delete this ##################################################
+ARTIFACTS_FOLDER = "./sorta-devnull"
+########################################################
+
+
 # Create the directory if it doesn't exist
 Path(ARTIFACTS_FOLDER).mkdir(parents=True, exist_ok=True)
+
+
 
 #
 # Project metadata
@@ -59,9 +68,18 @@ TIME = pendulum.now(tz='America/New_York').__str__()[:16] \
 PROJECT_NAME = f'{TIME}_cerebros_not-gpt'
 meta_trial_number = 42  # irrelevant unless in distributed training
 
+EXPERIMENT_FOLDER = f"{ARTIFACTS_FOLDER}/{TIME.replace('_','-')}-{OWNER}"
 
-keras_models_folder = f"{ARTIFACTS_FOLDER}/{TIME}/keras_models"
+
+keras_models_folder = f"{EXPERIMENT_FOLDER}/keras_models-{meta_trial_number}"
 Path(keras_models_folder).mkdir(parents=True, exist_ok=True)
+
+# File paths to save the model and toeknizer to:
+MODEL_SAVE_PATH = f"{keras_models_folder}/model_tr_{meta_trial_number}_1_b.keras"
+TOKENIZER_SAVE_PATH = f"{keras_models_folder}/tokenizer-tr-{meta_trial_number}-i-b"
+
+# Sanity check
+print(f"Model will be save to: '{MODEL_SAVE_PATH}'. Toeknizer is being saved to: '{TOKENIZER_SAVE_PATH}' ")
 
 ## Dataset Selection
 # Assumes:
@@ -86,20 +104,33 @@ MLFLOW_PORT = int(os.getenv("MLFLOW_PORT", 7777))
 
 # If you don't want Mlflow, just add `-e MLFLOW_PORT=0` to `docker run`
 if MLFLOW_PORT != 0:
+    # Enable system metrics
     mlflow.enable_system_metrics_logging()
-    mlflow_artifacts_path = f"{ARTIFACTS_FOLDER}/mlflow-artifacts-{meta_trial_number}"
+
+    # Folder where artifacts will be logged.
+    mlflow_artifacts_path = f"{EXPERIMENT_FOLDER}/mlflow-artifacts-{meta_trial_number}"
     Path(mlflow_artifacts_path).mkdir(parents=True, exist_ok=True)
-    mlflow_db_dir= f"{ARTIFACTS_FOLDER}/mlruns-{meta_trial_number}"
+
+    # Directory for MlFlow database for this experiment:
+    mlflow_db_dir= f"{EXPERIMENT_FOLDER}/mlruns-{meta_trial_number}"
     Path(mlflow_db_dir).mkdir(parents=True, exist_ok=True)
-    mlflow_db_path = f"{mlflow_db_dir}/mlflow-exp-{meta_trial_number}.db"
+
+    # File name for MlFlow DB file:
+    mlflow_db_path = f"{mlflow_db_dir}/mlflow-tr-{meta_trial_number}.db"
+
+    print(f"Logging artifacts to: {mlflow_artifacts_path} and the databse file is at: {mlflow_db_path} ")
 
     cmd = "".join([
         "mlflow server ",
         "--host 0.0.0.0 ",
         f"--port {str(MLFLOW_PORT)} ",
         f"--default-artifact-root {mlflow_artifacts_path} ",
-        f"--backend-store-uri sqlite:////{mlflow_db_path} &"  # NOTE THE 4 SLASHES
+        f"--backend-store-uri sqlite:////{mlflow_db_path} &"
     ])
+
+    # Debug
+    print(f"cmd: {cmd}")
+    / Debug
 
     answer = subprocess.run(cmd, shell=True)
     time.sleep(30)
@@ -673,7 +704,7 @@ with ctx: # experiment_id=experiment_id):
         return generated_text
 
 
-    trial_number = 1
+    trial_number = meta_trial_number
 
 
     def test_text(test_prompt: str, max_new_tokens: int, result_cutoff: float, trial_id: int,
@@ -838,7 +869,7 @@ with ctx: # experiment_id=experiment_id):
             test_prompt=sample,
             max_new_tokens=MAX_NEW_TOKENS,
             result_cutoff=999,
-            trial_id=trial_number,
+            trial_id=meta_trial_number,
             test_sample_number=counter,
             result_0=phase_i_a_result)
         counter += 1
@@ -847,7 +878,7 @@ with ctx: # experiment_id=experiment_id):
 
     # Continue training the same model with a larger dataset (Phase I-b)
 
-    print(f"Trial: {trial_number} proceeding to phase I-b:")
+    print(f"Trial: {meta_trial_number} proceeding to phase I-b:")
 
 
     # Create the Dataset Generator:
@@ -1047,25 +1078,23 @@ with ctx: # experiment_id=experiment_id):
             test_prompt=sample,
             max_new_tokens=MAX_NEW_TOKENS,
             result_cutoff=35,
-            trial_id=trial_number,
+            trial_id=meta_trial_number,
             test_sample_number=counter,
             result_0=result_phase_i_b)
         counter += 1
 
     # Serialize stage I-b tokenizer
-    # TOKENIZER_SAVE_PATH = f"tokenizer-tr-{trial_number}-stage-i-a"
-    TOKENIZER_SAVE_PATH = f"{keras_models_folder}/tokenizer-tr-{trial_number}-stage-i-a"
+    # TOKENIZER_SAVE_PATH = f"tokenizer-tr-{meta_trail_number}-stage-i-a"
+
     tokenizer.save_pretrained(TOKENIZER_SAVE_PATH)
     print(f"Tokenizer saved to {TOKENIZER_SAVE_PATH}")
 
     # Serialize stage I-b model
 
-    # MODEL_SAVE_PATH = f"final_phase_ib_model_tr_{trial_number}-stage-i-a.keras"
-    MODEL_SAVE_PATH = f"{keras_models_folder}/final_phase_ib_model_tr_{trial_number}-stage-i-a.keras"
     generator.save(MODEL_SAVE_PATH)
     print(f"Final model saved to {MODEL_SAVE_PATH}")
 
-    print(f"🧪 Running serialization test for Stage I-b trial {trial_number}...")
+    print(f"🧪 Running serialization test for Stage I-b trial {meta_trial_number}...")
     ser_test_cmd = f"""python3 test_llm_serialization.py "{TOKENIZER_SAVE_PATH}" "{MODEL_SAVE_PATH}" """
     print(f"""Running command: "{ser_test_cmd}" """)
     result = subprocess.run(
