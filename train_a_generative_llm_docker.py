@@ -562,16 +562,6 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     train_data_dtype=tf.int32,
     merging_strategy='concatenate')  # "mhc")
 
-# experiment = mlflow.get_experiment_by_name(MLFLOW_EXPERIMENT_NAME)
-# if experiment:
-#     experiment_id = experiment.experiment_id
-# else:
-#     # Handle the case where the experiment doesn't exist, e.g., create it
-#     experiment_id = mlflow.create_experiment(MLFLOW_EXPERIMENT_NAME)
-#
-# print(f"Attempting to start run in Experiment ID: {experiment_id}")
-# print(f"Current Tracking URI: {mlflow.get_tracking_uri()}")
-# os.environ.pop("MLFLOW_RUN_ID", None)  # The fix
 
 mlflow.enable_system_metrics_logging()
 ctx = mlflow.start_run() if MLFLOW_PORT else nullcontext()
