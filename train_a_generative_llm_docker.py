@@ -6,9 +6,33 @@ from os import getenv
 from pathlib import Path
 from time import sleep
 
+# CRITICAL: Disable XLA BEFORE importing TensorFlow
+os.environ['TF_XLA_FLAGS'] = '--tf_xla_auto_jit=0'
+os.environ['TF_DISABLE_MKL'] = '1'
+os.environ['XLA_FLAGS'] = '--xla_gpu_cuda_data_dir=""'
+
 import tensorflow as tf
+
+# GPU Memory Growth - prevents OOM by allowing TF to allocate GPU memory incrementally
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    try:
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+        print(f"GPU(s) available: {[gpu.name for gpu in gpus]}")
+    except RuntimeError as e:
+        print(f"GPU memory growth config error: {e}")
+else:
+    print("No GPU detected - running on CPU")
+
+# Disable XLA JIT compilation - Cerebros NAS uses dynamic shapes incompatible with XLA
+tf.config.optimizer.set_jit(False)
+os.environ['TF_XLA_FLAGS'] = '--tf_xla_auto_jit=0'
+print("XLA JIT compilation disabled for dynamic shape compatibility")
+
 import pandas as pd
 import pendulum
+import mlflow
 
 from transformers import AutoTokenizer
 from datasets import load_dataset
@@ -28,13 +52,16 @@ from cerebrosllmutils.llm_utils import (
     ManifoldHyperConnect,
     ChunkedAttentionBlock,
     MambaBlock,
-    VoxelBlock,
+    # VoxelBlock,  # Replaced with Thunderline OptimizedVoxelBlock
     LinformerBlock,
     AdapterBlock,
     CerebrosNotGPTConfig,
     CerebrosNotGPT,
     WarmupCosineDecayRestarts
 )
+
+# Thunderline Integration - O(n) attention + TensorTree pruning for GPU acceleration
+from thunderline_integration import OptimizedVoxelBlock as VoxelBlock, AIMBlock
 
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component \
     import zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
@@ -43,9 +70,22 @@ from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component \
 
 
 
-ARTIFACTS_FOLDER = "/opt/artifacts"
-# Create the directory if it doesn't exist
-Path(ARTIFACTS_FOLDER).mkdir(parents=True, exist_ok=True)
+ARTIFACTS_FOLDER = os.getenv("ARTIFACTS_FOLDER", "./artifacts")  # Use local path for non-Docker runs
+# Create the directory if it doesn't exist - with defensive fallback
+try:
+    Path(ARTIFACTS_FOLDER).mkdir(parents=True, exist_ok=True)
+    # Verify we can actually write to the directory
+    test_file = Path(ARTIFACTS_FOLDER) / ".write_test"
+    test_file.touch()
+    test_file.unlink()
+except (PermissionError, OSError) as e:
+    # Fallback to a user-writable path
+    fallback = Path.cwd() / "artifacts"
+    print(f"WARNING: ARTIFACTS_FOLDER not writable: {ARTIFACTS_FOLDER} ({e}). Falling back to: {fallback}")
+    ARTIFACTS_FOLDER = str(fallback)
+    Path(ARTIFACTS_FOLDER).mkdir(parents=True, exist_ok=True)
+
+print(f"ARTIFACTS_FOLDER resolved to: {ARTIFACTS_FOLDER}")
 
 #
 # Project metadata
@@ -63,26 +103,31 @@ Path(keras_models_folder).mkdir(parents=True, exist_ok=True)
 
 
 MLFLOW_PORT = int(os.getenv("MLFLOW_PORT", 7777))
+EXPERIMENT_NAME = "cerebros-thunderline-training"
 
 # If you don't want Mlflow, just add `-e MLFLOW_PORT=0` to `docker run`
 if MLFLOW_PORT != 0:
     mlflow_artifacts_path = f"{ARTIFACTS_FOLDER}/mlflow-artifacts"
     Path(mlflow_artifacts_path).mkdir(parents=True, exist_ok=True)
-    mlflow_backend_path = f"{ARTIFACTS_FOLDER}/mlruns"
-    Path(mlflow_backend_path).mkdir(parents=True, exist_ok=True)
+    mlflow_db_path = f"{ARTIFACTS_FOLDER}/mlflow.db"
 
     cmd = "".join([
         "mlflow server ",
         "--host 0.0.0.0 ",
         f"--port {str(MLFLOW_PORT)} ",
-        f"--default-artifact-root  {str(mlflow_artifacts_path)} ",
-        f"--backend-store-uri {str(mlflow_backend_path)} &"
+        f"--default-artifact-root {str(mlflow_artifacts_path)} ",
+        f"--backend-store-uri sqlite:///{str(mlflow_db_path)} &"
     ])
 
     answer = subprocess.run(cmd, shell=True)
     time.sleep(10)
     print(answer.stdout)
 
+    # Configure MLflow tracking (pattern from llm_train_hpo_script.py)
+    mlflow.set_tracking_uri(uri=f"http://127.0.0.1:{MLFLOW_PORT}")
+    mlflow.set_experiment(EXPERIMENT_NAME)
+    mlflow.start_run(run_name="cerebros-thunderline-run")
+    print(f"MLflow run started. View at: http://127.0.0.1:{MLFLOW_PORT}")
 
 
 ## Dataset Selection
@@ -180,7 +225,7 @@ num_lateral_connection_tries_per_unit = 24
 learning_rate = 0.000474
 
 # Number of epochs for Training Stage I-a
-epochs = 113
+epochs = 40  # Phase I-a epochs
 
 # Batch size for both stages.
 batch_size = 20  # When training at scale, use a higher batch size.
@@ -382,12 +427,13 @@ x = MambaBlock(
     name="mamba_block"
 )(x)
 
-# --- Block 3: VoxelAttentionLayer ---
+# --- Block 3: VoxelAttentionLayer (Thunderline Enhanced) ---
 x = VoxelBlock(
     d_model=EMBEDDING_DIM,
     dropout_rate=VOXEL_DROPOUT,
     max_voxel_grid_size=VOXEL_MAX_GRID_SIZE,
     ca_steps=VOXEL_CA_STEPS,
+    pruning_threshold=0.1,  # Thunderline TensorTree pruning - 40-60% compute savings
     name="voxel_block"
 )(x)
 
@@ -511,6 +557,18 @@ cerebros_time_per_model = cerebros_time_all_models_min / models_tried
 print(
     f"Cerebros trained {models_tried} models FROM A COLD START in ONLY {cerebros_time_all_models_min} min. Cerebros took only {cerebros_time_per_model} minutes on average per model.")
 print(f'Cerebros best perplexity achieved in Phase I-a is {phase_i_a_result}')
+
+# Log Phase I-a to MLflow (run already started at init)
+if MLFLOW_PORT != 0:
+    mlflow.log_params({
+        "phase_i_a_epochs": epochs,
+        "batch_size": batch_size,
+        "max_seq_length": MAX_SEQ_LENGTH,
+        "embedding_dim": EMBEDDING_DIM,
+    })
+    mlflow.log_metric("stage_i_a_perplexity", phase_i_a_result)
+    mlflow.log_metric("phase_i_a_time_min", cerebros_time_all_models_min)
+    print(f"MLflow: Logged Phase I-a perplexity={phase_i_a_result}")
 
 MODEL_FILE_NAME = "cerebros-foundation-model.keras"
 
@@ -947,6 +1005,24 @@ for _ in phase_i_b_val_dataset:
     val_steps += 1
 print(f"Calculated validation steps: {val_steps}")
 
+# CRITICAL: Recompile with run_eagerly=True to bypass XLA SplitV dynamic shape error
+# Must use fresh metric instances - reusing compiled metrics causes signature conflicts in Keras 3.x
+generator.model.compile(
+    optimizer=tf.keras.optimizers.AdamW(
+        learning_rate=lr_scheduler,
+        weight_decay=phase_i_b_weight_decay,
+        gradient_accumulation_steps=phase_i_b_gradient_accumulation_steps
+    ),
+    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+    metrics=[
+        tf.keras.metrics.SparseCategoricalAccuracy(),
+        SparsePerplexity(name="perplexity_phase_i_b")
+    ],
+    run_eagerly=True,
+    jit_compile=False
+)
+print("Model recompiled with run_eagerly=True (XLA bypassed)")
+
 phase_i_b_history = \
     generator.model.fit(
         x=phase_i_b_train_dataset,
@@ -961,6 +1037,12 @@ phase_i_b_history = \
     pd.DataFrame(phase_i_b_history.history)
 
 result_phase_i_b = float(phase_i_b_history['perplexity_phase_i_b'].min())
+
+# Log Phase I-b to MLflow
+if MLFLOW_PORT != 0:
+    mlflow.log_metric("stage_i_b_perplexity", result_phase_i_b)
+    mlflow.log_param("phase_i_b_epochs", phase_i_b_epochs)
+    print(f"MLflow: Logged Phase I-b perplexity={result_phase_i_b}")
 
 print("########### Phase I-b Model Checkpoint Generation Samples: ###########")
 
@@ -1003,3 +1085,15 @@ else:
     print("STDERR:", str(result.stderr))
     if result.stdout is not None:
         print(str(result.stdout))
+
+# End MLflow run
+if MLFLOW_PORT != 0:
+    mlflow.end_run()
+    print("MLflow: Run completed")
+
+print("=" * 60)
+print("TRAINING COMPLETE")
+print(f"Phase I-a Perplexity: {phase_i_a_result}")
+print(f"Phase I-b Perplexity: {result_phase_i_b}")
+print(f"Model saved to: {MODEL_SAVE_PATH}")
+print("=" * 60)
