@@ -563,11 +563,12 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     merging_strategy='concatenate')  # "mhc")
 
 
-mlflow.enable_system_metrics_logging()
+
 ctx = mlflow.start_run() if MLFLOW_PORT else nullcontext()
 
 with ctx: # experiment_id=experiment_id):
     if MLFLOW_PORT:
+        mlflow.enable_system_metrics_logging()
         mlflow.log_params(PARAMS)
 
     cerebros_t0 = time.time()
