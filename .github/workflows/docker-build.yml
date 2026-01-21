@@ -5,7 +5,7 @@ name: Docker Build
 
 on:
   push:
-    branches: [ "main", "309-from-307-dockerize-the-best-run-from-hpo-study" ]
+    branches: [ "main", "310-from-309-improve-metadata-organization" ]
 
 permissions:
   contents: read
