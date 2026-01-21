@@ -567,6 +567,10 @@ else:
     # Handle the case where the experiment doesn't exist, e.g., create it
     experiment_id = mlflow.create_experiment(MLFLOW_EXPERIMENT_NAME)
 
+print(f"Attempting to start run in Experiment ID: {experiment_id}")
+print(f"Current Tracking URI: {mlflow.get_tracking_uri()}")
+os.environ.pop("MLFLOW_RUN_ID", None)  # The fix
+
 with mlflow.start_run(experiment_id=experiment_id):
     mlflow.log_params(PARAMS)
     cerebros_t0 = time.time()
