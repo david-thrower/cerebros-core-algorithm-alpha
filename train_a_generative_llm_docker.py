@@ -967,7 +967,8 @@ with ctx: # experiment_id=experiment_id):
 
     phase_i_b_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     phase_i_b_categorical_accuracy = tf.keras.metrics.SparseCategoricalAccuracy()
-    phase_i_b_perplexity = SparsePerplexity(name="perplexity_stage_i_b")
+    ib_perplexity_key = "perplexity_stage_i_b"
+    phase_i_b_perplexity = SparsePerplexity(name=ib_perplexity_key)
 
     # Create the schedule instance
     lr_scheduler = WarmupCosineDecayRestarts(
@@ -997,7 +998,7 @@ with ctx: # experiment_id=experiment_id):
     # 2. Define the Early Stopping callback
     # This stops training when validation perplexity stops improving.
     early_stopping = tf.keras.callbacks.EarlyStopping(
-        monitor='perplexity_phase_i_b',  # Monitor validation perplexity
+        monitor=ib_perplexity_key,  # Monitor validation perplexity
         patience=10,  # Number of epochs with no improvement after which training will be stopped.
         verbose=1,
         restore_best_weights=True,  # Restores model weights from the epoch with the best value of the monitored metric.
@@ -1034,9 +1035,9 @@ with ctx: # experiment_id=experiment_id):
     phase_i_b_history = \
         pd.DataFrame(phase_i_b_history.history)
 
-    result_phase_i_b = float(phase_i_b_history['perplexity_stage_i_b'].min())
+    result_phase_i_b = float(phase_i_b_history[ib_perplexity_key].min())
     if MLFLOW_PORT:
-        mlflow.log_metric("perplexity_stage_i_b", result_phase_i_b)
+        mlflow.log_metric(ib_perplexity_key, result_phase_i_b)
 
     print("########### Phase I-b Model Checkpoint Generation Samples: ###########")
 
