@@ -1,4 +1,16 @@
+# Train Cerebros LLM in Docker
 
+**Stable Container Version: `davidt101/cerebros-llm:41`**
+
+## Quick Start
+
+```bash
+# Make a folder:
+mkdir docker-llm-runs
+cd docker-llm-runs
+mkdir artifacts  # Do NOT cd into the artifacts directory
+chmod 777 ./artifacts  # Make sure the container can add, edit, delete files.
+```
 
 # Environment Variables:
 
@@ -39,21 +51,24 @@
 4. The samples tokenize consistent with the MAX_SEQUENCE_LENGTH
 
 
-# Example use
+# Example Usage
 
-```
+Run the docker container as-is (no need to supply a command or inject a script, the entrypoint will take care of it):
 
-docker run --gpus all -t \
-  -p 5000:7777 \
+```bash
+sudo docker run -it \
+  --gpus all \
+  --cpus="10" \
+  --memory="32g" \
+  -p 8989:7777 \
   -v $(pwd)/artifacts:/opt/artifacts \
   -e MLFLOW_PORT=7777 \
   -e DATASET_TO_RUN="david-thrower/tiny-stories-mini-96-seq-len-50000-samples" \
-  -e PHASE_I_A_SAMPLES_TO_CREATE=300 \
-  -e PHASE_I_B_SAMPLES_TO_CREATE=200 \
+  -e PHASE_I_A_SAMPLES_TO_CREATE=200 \
+  -e PHASE_I_B_SAMPLES_TO_CREATE=500 \
   -e PHASE_I_B_SAMPLE_EXPANSION_BATCH_SIZE=100 \
   -e PHASE_I_B_VAL_SPLIT=0.15 \
   -e MAX_SEQ_LENGTH=96 \
-  davidt101/cerebros-llm:latest
-
+  davidt101/cerebros-llm:41
 ```
 
