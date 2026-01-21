@@ -87,8 +87,9 @@ MLFLOW_PORT = int(os.getenv("MLFLOW_PORT", 7777))
 if MLFLOW_PORT != 0:
     mlflow_artifacts_path = f"{ARTIFACTS_FOLDER}/mlflow-artifacts-{meta_trial_number}"
     Path(mlflow_artifacts_path).mkdir(parents=True, exist_ok=True)
-    mlflow_db_path= f"{ARTIFACTS_FOLDER}/mlruns-{meta_trial_number}.db"
-    Path(mlflow_db_path).mkdir(parents=True, exist_ok=True)
+    mlflow_db_dir= f"{ARTIFACTS_FOLDER}/mlruns-{meta_trial_number}"
+    Path(mlflow_db_dir).mkdir(parents=True, exist_ok=True)
+    mlflow_db_path = f"{mlflow_db_dir}/mlflow-exp-{meta_trial_number}.db"
 
     cmd = "".join([
         "mlflow server ",
