@@ -573,7 +573,7 @@ cerebros_automl = SimpleCerebrosRandomSearch(
 # print(f"Current Tracking URI: {mlflow.get_tracking_uri()}")
 # os.environ.pop("MLFLOW_RUN_ID", None)  # The fix
 
-
+mlflow.enable_system_metrics_logging()
 ctx = mlflow.start_run() if MLFLOW_PORT else nullcontext()
 
 with ctx: # experiment_id=experiment_id):
