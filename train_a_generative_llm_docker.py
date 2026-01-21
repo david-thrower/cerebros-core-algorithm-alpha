@@ -85,17 +85,17 @@ MLFLOW_PORT = int(os.getenv("MLFLOW_PORT", 7777))
 
 # If you don't want Mlflow, just add `-e MLFLOW_PORT=0` to `docker run`
 if MLFLOW_PORT != 0:
-    mlflow_artifacts_path = f"{ARTIFACTS_FOLDER}/mlflow-artifacts"
+    mlflow_artifacts_path = f"{ARTIFACTS_FOLDER}/mlflow-artifacts-{meta_trial_number}"
     Path(mlflow_artifacts_path).mkdir(parents=True, exist_ok=True)
-    mlflow_backend_path = f"{ARTIFACTS_FOLDER}/mlruns"
-    Path(mlflow_backend_path).mkdir(parents=True, exist_ok=True)
+    mlflow_db_path= f"{ARTIFACTS_FOLDER}/mlruns-{meta_trial_number}"
+    Path(mlflow_db_path).mkdir(parents=True, exist_ok=True)
 
     cmd = "".join([
         "mlflow server ",
         "--host 0.0.0.0 ",
         f"--port {str(MLFLOW_PORT)} ",
-        f"--default-artifact-root  {str(mlflow_artifacts_path)} ",
-        f"--backend-store-uri {str(mlflow_backend_path)} &"
+        f"--default-artifact-root {mlflow_artifacts_path} ",
+        f"--backend-store-uri sqlite:////{mlflow_db_path} &"  # NOTE THE 4 SLASHES
     ])
 
     answer = subprocess.run(cmd, shell=True)
@@ -560,18 +560,18 @@ cerebros_automl = SimpleCerebrosRandomSearch(
     train_data_dtype=tf.int32,
     merging_strategy='concatenate')  # "mhc")
 
-experiment = mlflow.get_experiment_by_name(MLFLOW_EXPERIMENT_NAME)
-if experiment:
-    experiment_id = experiment.experiment_id
-else:
-    # Handle the case where the experiment doesn't exist, e.g., create it
-    experiment_id = mlflow.create_experiment(MLFLOW_EXPERIMENT_NAME)
+# experiment = mlflow.get_experiment_by_name(MLFLOW_EXPERIMENT_NAME)
+# if experiment:
+#     experiment_id = experiment.experiment_id
+# else:
+#     # Handle the case where the experiment doesn't exist, e.g., create it
+#     experiment_id = mlflow.create_experiment(MLFLOW_EXPERIMENT_NAME)
+#
+# print(f"Attempting to start run in Experiment ID: {experiment_id}")
+# print(f"Current Tracking URI: {mlflow.get_tracking_uri()}")
+# os.environ.pop("MLFLOW_RUN_ID", None)  # The fix
 
-print(f"Attempting to start run in Experiment ID: {experiment_id}")
-print(f"Current Tracking URI: {mlflow.get_tracking_uri()}")
-os.environ.pop("MLFLOW_RUN_ID", None)  # The fix
-
-with mlflow.start_run(experiment_id=experiment_id):
+with mlflow.start_run(): # experiment_id=experiment_id):
     mlflow.log_params(PARAMS)
     cerebros_t0 = time.time()
     phase_i_a_result_0 = cerebros_automl.run_random_search()
