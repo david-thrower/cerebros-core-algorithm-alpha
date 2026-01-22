@@ -1101,6 +1101,12 @@ with ctx: # experiment_id=experiment_id):
     print("Waiting 15 seconds to make sure sync is complete.")
     time.sleep(15)  # Allow time for network/disk I/O to complete
 
+    test_result = subprocess.run(f'ls -lR {ARTIFACTS_FOLDER}', shell=True)
+    if test_result.stdout:
+        print(test_result.stdout)
+    else:
+        print(test_result.stderr)
+
     print(f"🧪 Running serialization test for Stage I-b trial {meta_trial_number}...")
     ser_test_cmd = f"python3 test_llm_serialization.py {TOKENIZER_SAVE_PATH} {MODEL_SAVE_PATH}"
     print(f"""Running command: "{ser_test_cmd}" """)
