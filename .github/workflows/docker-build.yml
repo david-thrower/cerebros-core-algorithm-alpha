@@ -5,7 +5,7 @@ name: Docker Build
 
 on:
   push:
-    branches: [ "main", "310-from-309-improve-metadata-organization" ]
+    branches: [ "main", "311-from-310-add-mlflow-autolog-to-stage-1-b" ]
 
 permissions:
   contents: read
