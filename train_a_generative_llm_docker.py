@@ -951,7 +951,8 @@ with ctx: # experiment_id=experiment_id):
 
             return ((input_sample,), label_sample)
 
-
+    if MLFLOW_PORT != 0:
+        mlflow.autolog(log_model_signatures=False)
     # Create the tf.data.Dataset
     def create_dataset(raw_text_samples, tokenizer, sample_expansion_batch_size=50, model_batch_size=10) -> tf.data.Dataset:
         generator_0 = SampleExpansionGenerator(
