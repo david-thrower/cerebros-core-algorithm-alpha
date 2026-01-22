@@ -1096,8 +1096,13 @@ with ctx: # experiment_id=experiment_id):
     generator.save(MODEL_SAVE_PATH)
     print(f"Final model saved to {MODEL_SAVE_PATH}")
 
+    print("File system sync")
+    os.sync()  # Force write of buffer to disk
+    print("Waiting 15 seconds to make sure sync is complete.")
+    time.sleep(15)  # Allow time for network/disk I/O to complete
+
     print(f"🧪 Running serialization test for Stage I-b trial {meta_trial_number}...")
-    ser_test_cmd = f"""python3 test_llm_serialization.py "{TOKENIZER_SAVE_PATH}" "{MODEL_SAVE_PATH}" """
+    ser_test_cmd = f"python3 test_llm_serialization.py {TOKENIZER_SAVE_PATH} {MODEL_SAVE_PATH}"
     print(f"""Running command: "{ser_test_cmd}" """)
     result = subprocess.run(
         ser_test_cmd,
