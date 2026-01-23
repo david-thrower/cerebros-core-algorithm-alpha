@@ -45,6 +45,6 @@ jobs:
     - name: Push Docker Image
       # if: ${{ github.ref_name == '312-from-311-add-automated-dockerhub-push-of-container' }}
       run: |
-        docker tag davidt101/cerebros-llm:${{ github.run_number }} davidt101/cerebros-llm:latest
+        # docker tag davidt101/cerebros-llm:${{ github.run_number }} davidt101/cerebros-llm:latest
         docker push davidt101/cerebros-llm:${{ github.run_number }}
         docker push davidt101/cerebros-llm:testgpu
