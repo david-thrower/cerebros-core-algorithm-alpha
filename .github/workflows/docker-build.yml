@@ -5,7 +5,7 @@ name: Docker Build
 
 on:
   push:
-    branches: [ "main", "314-from-312-debug-jax-version-gpu-compat" ]
+    branches: [ "main", "315-from-314-add-gpu-metrics" ]
 
 permissions:
   contents: read
@@ -47,4 +47,4 @@ jobs:
       run: |
         # docker tag davidt101/cerebros-llm:${{ github.run_number }} davidt101/cerebros-llm:latest
         docker push davidt101/cerebros-llm:${{ github.run_number }}
-        docker push davidt101/cerebros-llm:testgpu
+        docker push davidt101/cerebros-llm:testgpumet
