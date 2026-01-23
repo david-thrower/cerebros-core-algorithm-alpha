@@ -9,3 +9,4 @@ plotly==5.20.0
 matplotlib==3.10.7
 imageio==2.37.2
 tqdm==4.67.1
+nvidia-ml-py==12.535.133
