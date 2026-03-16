@@ -15,6 +15,17 @@ if _repo_root not in sys.path:
 
 from nicegui import ui, app, background_tasks
 
+# Serve static assets (logo, etc.)
+_assets_dir = Path(__file__).parent / "assets"
+app.add_static_files("/assets", str(_assets_dir))
+
+# Cerebros brand colors
+CYAN = "#16CEEB"
+PINK = "#D04C90"
+INK = "#1A202C"
+BG_ALT = "#F7FAFC"
+GRADIENT = f"linear-gradient(to right, {CYAN}, {PINK})"
+
 from notgpt.storage.db import get_engine, init_db, get_session
 from notgpt.storage.models import (
     Colleague, ColleagueDocument, ColleagueQAPair, ColleagueSyntheticSample,
@@ -42,9 +53,15 @@ app.on_startup(startup)
 
 @ui.page("/")
 def splash_page():
-    ui.label("NotGPT — AI Colleague Studio").classes(
-        "text-3xl font-bold mb-6"
-    )
+    # Cerebros branded header
+    with ui.row().classes("items-center gap-4 mb-6"):
+        ui.image("/assets/cerebros-logo.png").classes("w-12 h-auto")
+        ui.html(
+            '<h1 style="font-size:1.875rem;font-weight:700;'
+            f'background:{GRADIENT};-webkit-background-clip:text;'
+            '-webkit-text-fill-color:transparent;">'
+            'NotGPT — AI Colleague Studio</h1>'
+        )
 
     with get_session(engine) as session:
         colleagues = (
@@ -74,7 +91,7 @@ def splash_page():
         "Create New Colleague",
         on_click=lambda: ui.navigate.to("/new"),
         icon="add",
-    ).classes("mt-6")
+    ).classes("mt-6").style(f"background:{PINK};color:white")
 
 
 # ============================================================
@@ -85,7 +102,14 @@ def splash_page():
 def wizard_page():
     state = {"colleague_id": None, "processing": False}
 
-    ui.label("Create a New AI Colleague").classes("text-2xl font-bold mb-4")
+    with ui.row().classes("items-center gap-3 mb-4"):
+        ui.image("/assets/cerebros-logo.png").classes("w-10 h-auto")
+        ui.html(
+            '<h1 style="font-size:1.5rem;font-weight:700;'
+            f'background:{GRADIENT};-webkit-background-clip:text;'
+            '-webkit-text-fill-color:transparent;">'
+            'Create a New AI Colleague</h1>'
+        )
 
     with ui.stepper().props("vertical").classes("w-full max-w-4xl") as stepper:
 
@@ -547,4 +571,9 @@ def wizard_page():
 # Run
 # ============================================================
 
-ui.run(title="NotGPT — AI Colleague Studio", port=8080, reload=True)
+ui.run(
+    title="NotGPT — AI Colleague Studio",
+    port=8080,
+    reload=True,
+    favicon="/assets/cerebros-logo.png",
+)
