@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+:root {
+  --cerebros-cyan: #16CEEB;
+  --cerebros-pink: #D04C90;
+  --cerebros-ink: #1A202C;
+  --cerebros-bg: #FFFFFF;
+  --cerebros-bg-alt: #F7FAFC;
+  --cerebros-gray: #718096;
+  --cerebros-light-gray: #E2E8F0;
+  --cerebros-gradient: linear-gradient(to right, #16CEEB, #D04C90);
+}
+
+.gradient-text {
+  background: var(--cerebros-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-bg {
+  background: var(--cerebros-gradient);
+}
+
+.gradient-border {
+  border: 2px solid transparent;
+  background-image: linear-gradient(white, white), var(--cerebros-gradient);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+.btn-primary {
+  background: var(--cerebros-pink);
+  color: white;
+  padding: 0.75rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: opacity 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background: var(--cerebros-cyan);
+  color: white;
+  padding: 0.75rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: opacity 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-secondary:hover {
+  opacity: 0.9;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--cerebros-ink);
+  padding: 0.75rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: background 0.2s;
+  cursor: pointer;
+  border: 1px solid var(--cerebros-light-gray);
+}
+
+.btn-ghost:hover {
+  background: var(--cerebros-bg-alt);
+}
+
+.card {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--cerebros-light-gray);
+}
+
+.upload-zone {
+  border: 2px dashed var(--cerebros-light-gray);
+  border-radius: 1rem;
+  padding: 3rem;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+  cursor: pointer;
+}
+
+.upload-zone:hover {
+  border-color: var(--cerebros-cyan);
+  background: rgba(22, 206, 235, 0.05);
+}
+
+.step-active {
+  background: var(--cerebros-gradient);
+  color: white;
+}
+
+.step-done {
+  background: var(--cerebros-cyan);
+  color: white;
+}
+
+.step-pending {
+  background: var(--cerebros-light-gray);
+  color: var(--cerebros-gray);
+}
+
+.status-ready { color: #38A169; }
+.status-training { color: var(--cerebros-cyan); }
+.status-draft { color: var(--cerebros-gray); }
+.status-failed { color: #E53E3E; }
