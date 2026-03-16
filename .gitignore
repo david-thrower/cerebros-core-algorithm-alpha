@@ -1,3 +1,9 @@
+.states
+*.db
+__pycache__/
+assets/external/
+*.py[cod]
+.web
 *.pyc
 .ropeproject
 .idea/*
