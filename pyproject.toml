@@ -41,6 +41,9 @@ test = ["pytest==8.3.5"]
 [tool.hatch.build.targets.wheel]
 packages = ["cerebros"]
 
+[tool.hatch.build.targets.sdist]
+exclude = ["artifacts/**"]
+
 [tool.pytest.ini_options]
 addopts = "-ra"
 testpaths = ["tests"]
