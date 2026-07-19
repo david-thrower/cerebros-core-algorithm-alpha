@@ -2,7 +2,7 @@
   "schema_version": "CerebrosBridgeSourcePinReceipt.v0",
   "package": "cerebros-core-algorithm-alpha",
   "package_version": "0.1.0",
-  "source_commit": "2dee0a9edb715e252ce0d4c655163a5a292161dd",
+  "source_commit": "9b762fbc13739ecc47071a1c829f1ec51a44ac01",
   "source_package_tree": "0bdc4a0691d4dd1bb0bcaaa1d3c8b0a2d29b9984",
   "target": {
     "implementation": "CPython",
@@ -11,10 +11,10 @@
     "profile": "CPU-only"
   },
   "hashes": {
-    "pyproject_toml_sha256": "ce83569ce03e32fe8b8dd6c5bfcf0ffc44dc3c3088e6ed292fb7660c53734db1",
+    "pyproject_toml_sha256": "7d324f20dca55cdad0e8927126152b3026557c825a5641794d98c5869d8d15f2",
     "uv_lock_sha256": "1c646185bd8830d8d4231f6d923f83be28b7a6941ded2afd3706d20d05482ebd",
     "wheel_sha256": "7c18619d7784c8a3648d4274ee2217dd59fd750d4210a61e1c848876b4cea8b8",
-    "sdist_sha256": "c8dd1089754ef5ddaccfea0f3888c7c834288c929ab2a36e0d7ce1b076b4de50"
+    "sdist_sha256": "afd7ef5547400efa04ebfaa26edd794427e2af426b02fdd46c14dad0b06a0950"
   },
   "functional_import_matrix": {
     "public_module_count": 13,
