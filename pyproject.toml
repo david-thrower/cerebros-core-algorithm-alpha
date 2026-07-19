@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cerebros-core-algorithm-alpha"
+version = "0.1.0"
+description = "Reproducible CPU-only packaging boundary for the Cerebros core algorithm."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+authors = [{ name = "Cerebros contributors" }]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: POSIX :: Linux",
+]
+dependencies = [
+  "jax==0.5.3",
+  "jaxlib==0.5.3",
+  "keras==3.11.3",
+  "ml-dtypes==0.5.1",
+  "numpy==1.26.4",
+  "pandas==2.3.3",
+  "pyvis==0.3.2",
+  "tensorflow==2.20.0",
+  "tqdm==4.67.1",
+]
+
+[project.optional-dependencies]
+orchestration = [
+  "huey==2.5.3",
+  "redis==6.2.0",
+]
+tracking = ["mlflow==3.1.1"]
+tuning = ["optuna==4.4.0"]
+
+[dependency-groups]
+test = ["pytest==8.3.5"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["cerebros"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
