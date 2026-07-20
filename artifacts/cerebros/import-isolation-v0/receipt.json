@@ -1,0 +1,93 @@
+{
+  "marker": "CEREBROS_IMPORT_ISOLATION_REMEDIATION_V0_PASS",
+  "profile": "strategy_a_deferred_backend_imports",
+  "source_pin_commit": "ef3650ecb22e68fb108e3dd0f9bc2f4073e43ccc",
+  "candidate_commit_binding": "containing_git_commit",
+  "branch": "feat/cerebros-import-isolation-remediation-v0",
+  "lease": {
+    "state_dir": "/home/mo/DEV/Thunderline/.tmp/archon-write-leases",
+    "session_id": "019f70f8-ba50-7ea1-8a7b-fa2721ce0d97",
+    "writer_pid": 3033922,
+    "process_start_time": 19558649,
+    "authorized_path_count": 9,
+    "authorized_paths_sha256": "22830eae30fd7ff0fd89d05beaa4f1a7c40f158cb42954fc01118d86a4c4ff10",
+    "lease_ids": [
+      "38ecb6e4e9eca084eac0f31fd2018618",
+      "1cb70b3c2ed1b7418cead50273a6dc06",
+      "db6852ce15d8bb110e9fd71e6fcf5ab7",
+      "af7753c2cd6ecb48f0ad7a2e7569b339",
+      "5de47a1b2e2f197ae27c713b16dd4015",
+      "cb32cd6a5a3be10558f23ba45f000bf5",
+      "38f348703660826b0d68967dd7839756",
+      "d7555e8acba975923f161fee0821f3ce",
+      "3d4cb0b28125d3bb00949abbe7a454cb"
+    ],
+    "duplicate_writer_count": 0,
+    "overlapping_path_lease_count": 0,
+    "mechanical_status_receipt_sha256": "488db46e39362272fab38c99dde63d458b13c2c3e7fde8a7af985f010d823b50"
+  },
+  "runtime": {
+    "python_implementation": "CPython",
+    "python_version": "3.12.13",
+    "cpu_only": true,
+    "cpu_affinity_count": 1,
+    "compute_pool_size": 1,
+    "thread_count_before_import": 1,
+    "thread_count_after_import": 1,
+    "persistent_non_main_thread_count": 0,
+    "persistent_child_process_count": 0,
+    "backend_module_count_after_import": 0,
+    "network_guard_enforced": true,
+    "network_namespace_enforced": false,
+    "network_namespace_unavailable_reason": "host_disallows_unprivileged_network_namespaces",
+    "network_syscall_count": 0,
+    "network_connect_attempt_count": 0,
+    "listener_operation_count": 0,
+    "thread_or_process_creation_syscall_count": 0,
+    "filesystem_write_syscall_count": 0,
+    "writes_outside_sandbox": 0,
+    "source_tree_write_count": 0,
+    "gpu_visibility": false,
+    "accelerator_initialization_count": 0
+  },
+  "tests": {
+    "focused_source_tests_passed": 15,
+    "focused_source_tests_failed": 0,
+    "isolated_locked_wheel_imports_passed": 26,
+    "isolated_locked_wheel_imports_failed": 0,
+    "aggregate_locked_wheel_imports_passed": 2,
+    "aggregate_locked_wheel_imports_failed": 0,
+    "completed_summaries_parsed": true
+  },
+  "hashes": {
+    "wheel_sha256": "45fb3fb9a4647de16fe6237b616104125d1621040df0d2e4c2f2c96ea24cfaa4",
+    "dependency_lock_sha256": "1c646185bd8830d8d4231f6d923f83be28b7a6941ded2afd3706d20d05482ebd",
+    "exported_lock_sha256": "ac3773ef5681e955cdb7585cb0b1863195a3c0f0936671093023b33e30866bde",
+    "pyproject_sha256": "7d324f20dca55cdad0e8927126152b3026557c825a5641794d98c5869d8d15f2",
+    "syscall_trace_sha256": "0c4be3ee7930dfb29c340daee816c6b9961b708ee743aadac9f23558a782528b",
+    "clean_room_probe_sha256": "33a08f097e5c47240e2126125527dd9189915d2cdfc1080802f512bfefaef3eb",
+    "clean_room_matrix_runner_sha256": "cc91608a527db5f4c870244deca9642f980b28bf27f8dd8c2d44f00bc8000d1d"
+  },
+  "file_sha256": {
+    "cerebros/denseautomlstructuralcomponent/dense_automl_structural_component.py": "c70f36ede1efce07f314c1c4dd6f8d3567d6003b1a0a0337bf53f6501c31128f",
+    "cerebros/levels/levels.py": "772bc27b08f1893ace11f6b28cc9ad77c860a942a5c412de500bf9691a5d6f55",
+    "cerebros/neuralnetworkfuture/neural_network_future.py": "1379659e07cd19200fe5e22968f1949ba28faf6aaa68a9c857f63f4c431c272b",
+    "cerebros/simplecerebrosrandomsearch/simple_cerebros_random_search.py": "88ac5bccbdc7f1538aa6b19da8d6257a9b4c12c2534916e306865e5216367493",
+    "cerebros/units/units.py": "de31b5cf8de3f99ad031ef3d207125b9f27cc1c2ffdf974f774cb13d1cf051fc",
+    "tests/test_import_side_effects.py": "24bb0c951b92c8d16653bc4122a6db856bb24b110afceda27c189cf39ff9f1a8",
+    "tests/import_contract/test_deferred_backend_imports.py": "bfb82ad6331343468a54d87427a6ec5362bc6faade84693ea8898b99de2f9e26"
+  },
+  "authority": {
+    "algorithm_changes": 0,
+    "training_execution_count": 0,
+    "inference_execution_count": 0,
+    "campaign_002_activity_count": 0,
+    "oracle_call_count": 0,
+    "holdout_access_count": 0,
+    "scientific_verdict_count": 0,
+    "production_activation_count": 0,
+    "dependency_changes": 0,
+    "integration_authority": false
+  },
+  "blocking_invariants": 0
+}

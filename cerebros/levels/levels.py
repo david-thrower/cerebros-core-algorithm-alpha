@@ -8,16 +8,22 @@ Objects of class Level.
     will be added to add support for other types of layers, such as
     Conv2D, Conv1D, Conv3D, GRUs, ... and any avante garde layer objects
 """
+
+from __future__ import annotations
+
 from cerebros.units.units import InputUnit, DenseUnit, FinalDenseUnit,\
     RealNeuron, FinalRealNeuron
 from cerebros.nnfuturecomponent.neural_network_future_component\
     import NeuralNetworkFutureComponent
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component \
     import DenseAutoMlStructuralComponent, DenseLateralConnectivity, \
-    zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
-import jax.numpy as jnp
+    zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid, _DeferredModule, \
+    _DEFAULT_BACKEND_VALUE
 import numpy as np
-from tensorflow import float32
+
+
+jnp = _DeferredModule("jax.numpy")
+tf = _DeferredModule("tensorflow")
 
 
 class Level(NeuralNetworkFutureComponent,
@@ -208,7 +214,7 @@ class Level(NeuralNetworkFutureComponent,
                  predecessor_level_connection_affinity_factor_main_rounding_rule='ceil',
                  predecessor_level_connection_affinity_factor_decay_main=zero_7_exp_decay,
                  seed=8675309,
-                 train_data_dtype=float32,
+                 train_data_dtype=_DEFAULT_BACKEND_VALUE,
                  *args,
                  **kwargs):
         # inbound_connections now kept at the DenseUnit level.
@@ -243,7 +249,11 @@ class Level(NeuralNetworkFutureComponent,
                              "real objects just doesn't make any sense.")
         self.successor_levels = []
         self.successor_connectivity_errors_2d = jnp.array([])
-        self.train_data_dtype = train_data_dtype
+        self.train_data_dtype = (
+            tf.float32
+            if train_data_dtype is _DEFAULT_BACKEND_VALUE
+            else train_data_dtype
+        )
 
     def set_possible_predecessor_connections(self):
         """

@@ -1,5 +1,8 @@
 """A furutes object that coordinates the neural network's high-level
 architecture"""
+
+from __future__ import annotations
+
 import warnings
 from cerebros.nnfuturecomponent.neural_network_future_component \
     import NeuralNetworkFutureComponent
@@ -10,11 +13,14 @@ import numpy as np
 
 from cerebros.denseautomlstructuralcomponent.dense_automl_structural_component \
     import DenseAutoMlStructuralComponent, DenseLateralConnectivity, \
-    zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
+    zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid, _DeferredModule, \
+    _DEFAULT_BACKEND_VALUE
 
 import pandas as pd
-import tensorflow as tf
 from pyvis.network import Network
+
+
+tf = _DeferredModule("tensorflow")
 
 
 class NeuralNetworkFuture(NeuralNetworkFutureComponent,
@@ -53,9 +59,9 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
              #merging_strategy=
              learning_rate=0.005,
              loss="mse",
-             metrics=[tf.keras.metrics.RootMeanSquaredError()],
+             metrics=_DEFAULT_BACKEND_VALUE,
              model_graph_file='test_model_graph.html',
-             train_data_dtype=tf.float32,
+             train_data_dtype=_DEFAULT_BACKEND_VALUE,
              gradient_accumulation_steps=1,
              *args,
              **kwargs):
@@ -72,11 +78,18 @@ class NeuralNetworkFuture(NeuralNetworkFutureComponent,
             predecessor_level_connection_affinity_factor_final_to_kminus1
         self.learning_rate = learning_rate
         self.loss = loss
-        self.metrics = metrics
+        self.metrics = (
+            [tf.keras.metrics.RootMeanSquaredError()]
+            if metrics is _DEFAULT_BACKEND_VALUE else metrics
+        )
         self.uncompiled_materialized_neural_network = []
         self.compiled_materialized_neural_network = []
         self.model_graph_file = model_graph_file
-        self.train_data_dtype = train_data_dtype
+        self.train_data_dtype = (
+            tf.float32
+            if train_data_dtype is _DEFAULT_BACKEND_VALUE
+            else train_data_dtype
+        )
         self.gradient_accumulation_steps = gradient_accumulation_steps    
 
         # super().__init__(self,
@@ -491,7 +504,7 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
              #merging_strategy=
              learning_rate=0.005,
              loss="mse",
-             metrics=[tf.keras.metrics.RootMeanSquaredError()],
+             metrics=_DEFAULT_BACKEND_VALUE,
              model_graph_file='test_model_graph.html',
              *args,
              **kwargs):
@@ -511,7 +524,10 @@ class RealNeuronNeuralNetworkFuture(NeuralNetworkFutureComponent,
             predecessor_level_connection_affinity_factor_final_to_kminus1
         self.learning_rate = learning_rate
         self.loss = loss
-        self.metrics = metrics
+        self.metrics = (
+            [tf.keras.metrics.RootMeanSquaredError()]
+            if metrics is _DEFAULT_BACKEND_VALUE else metrics
+        )
         self.uncompiled_materialized_neural_network = []
         self.compiled_materialized_neural_network = []
         self.model_graph_file = model_graph_file

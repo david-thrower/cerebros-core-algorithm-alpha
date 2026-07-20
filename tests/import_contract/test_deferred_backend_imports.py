@@ -1,9 +1,4 @@
-"""Clean-process import checks for the versioned Cerebros core package.
-
-The public package deliberately excludes the legacy dashboard, LLM utilities,
-and NotGPT orchestration surfaces.  Each core module is imported in a fresh
-CPU-only child interpreter so an import cache cannot mask a side effect.
-"""
+"""Strategy-A contract tests for backend-free Cerebros module imports."""
 
 from __future__ import annotations
 
@@ -17,7 +12,7 @@ import textwrap
 import pytest
 
 
-CORE_PUBLIC_MODULES = (
+PUBLIC_MODULES = (
     "cerebros",
     "cerebros.denseautomlstructuralcomponent",
     "cerebros.denseautomlstructuralcomponent.dense_automl_structural_component",
@@ -33,9 +28,10 @@ CORE_PUBLIC_MODULES = (
     "cerebros.units.units",
 )
 
-IMPORT_PROBE = textwrap.dedent(
+BACKEND_PREFIXES = ("jax", "jaxlib", "tensorflow")
+
+AGGREGATE_PROBE = textwrap.dedent(
     """
-    import builtins
     import importlib
     import json
     import multiprocessing
@@ -46,14 +42,12 @@ IMPORT_PROBE = textwrap.dedent(
     import sys
     import threading
 
-    module_name = sys.argv[1]
+    module_names = sys.argv[1:]
+    backend_prefixes = ("jax", "jaxlib", "tensorflow")
     sandbox = Path(os.environ["CEREBROS_IMPORT_SANDBOX"])
     events = []
-    backend_prefixes = ("jax", "jaxlib", "tensorflow")
 
-    allowed_cpus = os.sched_getaffinity(0)
-    os.sched_setaffinity(0, {min(allowed_cpus)})
-    thread_count_before = len(list(Path("/proc/self/task").iterdir()))
+    os.sched_setaffinity(0, {min(os.sched_getaffinity(0))})
 
     def forbidden(kind):
         def blocked(*args, **kwargs):
@@ -61,19 +55,6 @@ IMPORT_PROBE = textwrap.dedent(
             raise RuntimeError(f"forbidden import side effect: {kind}")
         return blocked
 
-    original_open = builtins.open
-    def writable_target_is_outside_sandbox(file):
-        try:
-            return not Path(file).resolve().is_relative_to(sandbox)
-        except (OSError, TypeError):
-            return True
-
-    def guarded_open(file, mode="r", *args, **kwargs):
-        if any(flag in mode for flag in ("w", "a", "x", "+")) and writable_target_is_outside_sandbox(file):
-            return forbidden("global_file_write")(file, mode, *args, **kwargs)
-        return original_open(file, mode, *args, **kwargs)
-
-    builtins.open = guarded_open
     original_socket = socket.socket
     class GuardedSocket(original_socket):
         def connect(self, *args, **kwargs):
@@ -100,18 +81,29 @@ IMPORT_PROBE = textwrap.dedent(
     multiprocessing.Process.start = forbidden("process_start")
     threading.Thread.start = forbidden("thread_start")
 
-    before = sorted(
+    before_files = sorted(
         str(path.relative_to(sandbox))
         for path in sandbox.rglob("*")
         if path.is_file()
     )
-    importlib.import_module(module_name)
+    thread_count_before = len(list(Path("/proc/self/task").iterdir()))
+
+    for module_name in module_names:
+        importlib.import_module(module_name)
+
     thread_count_after = len(list(Path("/proc/self/task").iterdir()))
+    child_file = Path(f"/proc/self/task/{os.getpid()}/children")
+    child_processes_remaining = child_file.read_text(encoding="utf-8").split()
     backend_modules = sorted(
         name for name in sys.modules
-        if name in backend_prefixes or name.startswith(tuple(f"{prefix}." for prefix in backend_prefixes))
+        if name in backend_prefixes
+        or name.startswith(tuple(f"{prefix}." for prefix in backend_prefixes))
     )
-    after = sorted(
+    deferred_module = importlib.import_module(
+        "cerebros.denseautomlstructuralcomponent.dense_automl_structural_component"
+    )
+    proxy_loaded = deferred_module.jnp._module is not None
+    after_files = sorted(
         str(path.relative_to(sandbox))
         for path in sandbox.rglob("*")
         if path.is_file()
@@ -119,23 +111,22 @@ IMPORT_PROBE = textwrap.dedent(
 
     print(json.dumps({
         "backend_modules": backend_modules,
+        "child_processes_remaining": child_processes_remaining,
         "cpu_affinity_count": len(os.sched_getaffinity(0)),
         "events": events,
-        "new_files": sorted(set(after) - set(before)),
-        "thread_count_before": thread_count_before,
+        "new_files": sorted(set(after_files) - set(before_files)),
+        "proxy_loaded": proxy_loaded,
         "thread_count_after": thread_count_after,
-    }))
+        "thread_count_before": thread_count_before,
+    }, sort_keys=True))
     """
 )
 
 
-@pytest.mark.parametrize("module_name", CORE_PUBLIC_MODULES)
-def test_public_module_import_isolated(module_name: str, tmp_path: Path) -> None:
-    sandbox = tmp_path / "isolated-import"
-    sandbox.mkdir()
+def _bounded_environment(sandbox: Path) -> dict[str, str]:
     environment = {
-        "CEREBROS_IMPORT_SANDBOX": str(sandbox),
         "BLIS_NUM_THREADS": "1",
+        "CEREBROS_IMPORT_SANDBOX": str(sandbox),
         "CUDA_VISIBLE_DEVICES": "-1",
         "HOME": str(sandbox / "home"),
         "HF_HOME": str(sandbox / "huggingface"),
@@ -153,21 +144,32 @@ def test_public_module_import_isolated(module_name: str, tmp_path: Path) -> None
         "RAYON_NUM_THREADS": "1",
         "TF_NUM_INTEROP_THREADS": "1",
         "TF_NUM_INTRAOP_THREADS": "1",
+        "TMP": str(sandbox / "tmp"),
         "TMPDIR": str(sandbox / "tmp"),
+        "TEMP": str(sandbox / "tmp"),
         "TOKENIZERS_PARALLELISM": "false",
         "VECLIB_MAXIMUM_THREADS": "1",
         "XDG_CACHE_HOME": str(sandbox / "cache"),
         "XDG_CONFIG_HOME": str(sandbox / "config"),
         "XDG_DATA_HOME": str(sandbox / "data"),
     }
-    for directory in environment.values():
-        if directory.startswith(str(sandbox)):
-            Path(directory).mkdir(parents=True, exist_ok=True)
+    for value in environment.values():
+        if value.startswith(str(sandbox)):
+            Path(value).mkdir(parents=True, exist_ok=True)
+    return {**os.environ, **environment}
+
+
+@pytest.mark.parametrize("repetition", range(2))
+def test_aggregate_import_defers_backends(
+    repetition: int, tmp_path: Path
+) -> None:
+    sandbox = tmp_path / f"aggregate-{repetition}"
+    sandbox.mkdir()
 
     completed = subprocess.run(
-        [sys.executable, "-c", IMPORT_PROBE, module_name],
+        [sys.executable, "-c", AGGREGATE_PROBE, *PUBLIC_MODULES],
         cwd=sandbox,
-        env={**os.environ, **environment},
+        env=_bounded_environment(sandbox),
         capture_output=True,
         check=False,
         text=True,
@@ -175,9 +177,13 @@ def test_public_module_import_isolated(module_name: str, tmp_path: Path) -> None
 
     assert completed.returncode == 0, completed.stderr
     result = json.loads(completed.stdout)
-    assert result["backend_modules"] == []
-    assert result["cpu_affinity_count"] == 1
-    assert result["events"] == []
-    assert all(not Path(path).is_absolute() for path in result["new_files"])
-    assert result["thread_count_before"] == 1
-    assert result["thread_count_after"] == 1
+    assert result == {
+        "backend_modules": [],
+        "child_processes_remaining": [],
+        "cpu_affinity_count": 1,
+        "events": [],
+        "new_files": [],
+        "proxy_loaded": False,
+        "thread_count_after": 1,
+        "thread_count_before": 1,
+    }

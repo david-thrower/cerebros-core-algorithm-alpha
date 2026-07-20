@@ -1,6 +1,6 @@
+from __future__ import annotations
+
 import numpy as np
-import jax.numpy as jnp
-import tensorflow as tf
 from cerebros.nnfuturecomponent.neural_network_future_component import \
     NeuralNetworkFutureComponent
 
@@ -8,7 +8,12 @@ from cerebros.denseautomlstructuralcomponent.\
     dense_automl_structural_component \
     import zero_7_exp_decay, zero_95_exp_decay, \
     simple_sigmoid, \
-    DenseAutoMlStructuralComponent, DenseLateralConnectivity
+    DenseAutoMlStructuralComponent, DenseLateralConnectivity, _DeferredModule, \
+    _DEFAULT_BACKEND_VALUE
+
+
+jnp = _DeferredModule("jax.numpy")
+tf = _DeferredModule("tensorflow")
 
 
 class Unit(NeuralNetworkFutureComponent):
@@ -80,7 +85,7 @@ class InputUnit(Unit):
                  n_neurons=1,
                  level_number=0,
                  base_models=[''],
-                 train_data_dtype=tf.float32,
+                 train_data_dtype=_DEFAULT_BACKEND_VALUE,
                  *args,
                  **kwargs):
         if isinstance(input_shape, int):
@@ -92,7 +97,11 @@ class InputUnit(Unit):
             self.input_shape = tuple(_input_shape)
         self.neural_network_layer = []
         self.base_models = base_models
-        self.train_data_dtype = train_data_dtype
+        self.train_data_dtype = (
+            tf.float32
+            if train_data_dtype is _DEFAULT_BACKEND_VALUE
+            else train_data_dtype
+        )
 
         super().__init__(n_neurons,
                          predecessor_levels,

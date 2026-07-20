@@ -1,12 +1,13 @@
-import jax.numpy as jnp
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 from tqdm import tqdm
 from cerebros.denseautomlstructuralcomponent.\
     dense_automl_structural_component \
     import DenseAutoMlStructuralComponent, DenseLateralConnectivity, \
-    zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid
+    zero_7_exp_decay, zero_95_exp_decay, simple_sigmoid, _DeferredModule, \
+    _DEFAULT_BACKEND_VALUE
 from cerebros.units.units import Unit, InputUnit, FinalDenseUnit
 from cerebros.neuralnetworkfuture.neural_network_future \
     import NeuralNetworkFuture, RealNeuronNeuralNetworkFuture
@@ -15,6 +16,10 @@ from multiprocessing import Process, Lock
 import os
 from gc import collect
 from shutil import rmtree
+
+
+jnp = _DeferredModule("jax.numpy")
+tf = _DeferredModule("tensorflow")
 
 
 # import optuna
@@ -310,7 +315,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                  num_lateral_connection_tries_per_unit=1,
                  learning_rate=0.005,
                  loss="mse",
-                 metrics=[tf.keras.metrics.RootMeanSquaredError()],
+                 metrics=_DEFAULT_BACKEND_VALUE,
                  epochs=7,
                  patience=7,
                  project_name='cerebros-auto-ml-test',
@@ -318,7 +323,7 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
                  gradient_accumulation_steps=1,
                  meta_trial_number=0,
                  base_models=[''],
-                 train_data_dtype=tf.float32,
+                 train_data_dtype=_DEFAULT_BACKEND_VALUE,
                  chart_network_graph: bool=False,
                  *args,
                  **kwargs):
@@ -372,14 +377,21 @@ class SimpleCerebrosRandomSearch(DenseAutoMlStructuralComponent,
         self.oracle_table = f'{self.project_name}_oracle'
         self.learning_rate = learning_rate
         self.loss = loss
-        self.metrics = metrics
+        self.metrics = (
+            [tf.keras.metrics.RootMeanSquaredError()]
+            if metrics is _DEFAULT_BACKEND_VALUE else metrics
+        )
         self.epochs = epochs
         self.batch_size = batch_size
         self.gradient_accumulation_steps=gradient_accumulation_steps
         self.meta_trial_number = meta_trial_number
         self.base_models = base_models
         self.best_model_path = ""
-        self.train_data_dtype = train_data_dtype
+        self.train_data_dtype = (
+            tf.float32
+            if train_data_dtype is _DEFAULT_BACKEND_VALUE
+            else train_data_dtype
+        )
         self.chart_network_graph = chart_network_graph
         # Can be varied throughout the serch session;
         # must be controlled internally

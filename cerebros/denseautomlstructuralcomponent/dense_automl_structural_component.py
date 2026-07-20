@@ -1,12 +1,48 @@
 """DenseAutoMlStructuralComponent: A base class that the NeuralNetworkFuture, Layers, Units, etc inherit from."""
 
-import tensorflow as tf
-import jax.numpy as jnp
-from jax import jit
+from __future__ import annotations
+
+from functools import wraps
+import importlib
 import numpy as np
 
 
-@jit
+class _DeferredModule:
+    """Load a numerical backend only when an operation first needs it."""
+
+    def __init__(self, module_name):
+        self._module_name = module_name
+        self._module = None
+
+    def _load(self):
+        if self._module is None:
+            self._module = importlib.import_module(self._module_name)
+        return self._module
+
+    def __getattr__(self, attribute):
+        return getattr(self._load(), attribute)
+
+
+_DEFAULT_BACKEND_VALUE = object()
+jnp = _DeferredModule("jax.numpy")
+
+
+def _deferred_jit(function):
+    """Compile with JAX on first execution rather than module import."""
+
+    compiled = None
+
+    @wraps(function)
+    def deferred(*args, **kwargs):
+        nonlocal compiled
+        if compiled is None:
+            compiled = importlib.import_module("jax").jit(function)
+        return compiled(*args, **kwargs)
+
+    return deferred
+
+
+@_deferred_jit
 def jit_zero_7_exp_decay(x):
     return 0.7 ** x
 
@@ -17,7 +53,7 @@ def zero_7_exp_decay(x):
     return float(jit_zero_7_exp_decay(x))
 
 
-@jit
+@_deferred_jit
 def jit_zero_95_exp_decay(x):
     return 0.95 ** x
 
@@ -28,7 +64,7 @@ def zero_95_exp_decay(x):
     return float(jit_zero_95_exp_decay(x))
 
 
-@jit
+@_deferred_jit
 def jit_sigmoid(x):
     s = 1/(1+jnp.exp(-x))
     return s
